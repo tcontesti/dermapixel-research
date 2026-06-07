@@ -1,0 +1,75 @@
+%% --------------------------------------------------------------------
+%% Versión reducida para revisión por el tutor.
+%% Contiene únicamente: Resumen + Abstract + Cap1 Introducción +
+%% Cap2 Estado del arte + Bibliografía.
+%% Genera MemoriaTFG_TutorCap12.pdf
+%% --------------------------------------------------------------------
+
+\documentclass[spanish, GINF]{TFGEPSUIB}
+
+% --- Paquetes adicionales ---
+\usepackage{amsmath, amssymb}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{array}
+\usepackage{colortbl}
+
+% Color para tablas
+\definecolor{rowgray}{gray}{0.93}
+
+% Ruta de figuras
+\graphicspath{{figures/}}
+
+% Hyperref al final
+\usepackage[backref, colorlinks=true, allcolors=black]{hyperref}
+\usepackage{cleveref}
+
+%----------------------------------------------
+% Datos de la portada
+%----------------------------------------------
+
+\title{Evaluación de modelos fundacionales para Dermatología Clínica}
+
+\author{Antonio Contestí Coll}
+
+\tutor{Dr.\ Javier Varona Gómez}
+
+\date{Año académico 2025--2026}
+
+\paraulesclau{modelos fundacionales, dermatología clínica, PanDerm, DermLIP, evaluación empírica, ontología, equidad, heterogeneidad taxonómica}
+
+%----------------------------------------------
+% Definición de \chapter ficticios para que las \ref{} a capítulos
+% posteriores no dejen 'Reference undefined'. Estos labels apuntan
+% a ningún sitio visible; sólo evitan que pdflatex emita warning.
+%----------------------------------------------
+
+\begin{document}
+
+\portada
+\portadainterior
+\frontmatter
+
+% Sumario
+\cleartorecto \tableofcontents
+
+% Lista de acrónimos
+\include{Acronims}
+
+% Resumen + Abstract
+\include{Resum}
+
+\mainmatter\pagestyle{ruled}
+
+%%%%%% CUERPO REDUCIDO PARA REVISIÓN DEL TUTOR %%%%%%
+
+\include{Cap1_Introduccion_Tutor}
+\include{Cap2_EstadoArte_Tutor}
+
+% Bibliografía
+\backmatter
+\include{Bibliografia}
+
+\end{document}

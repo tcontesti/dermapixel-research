@@ -1,0 +1,122 @@
+%!TeX root=MemoriaTFG.tex
+
+\chapter*{Resumen}
+\addcontentsline{toc}{chapter}{Resumen}
+\markboth{RESUMEN}{RESUMEN}
+
+¿Cuál es el rendimiento real y la capacidad de generalización de los
+modelos fundacionales dermatológicos disponibles, en función del
+volumen de datos etiquetados, del tipo de supervisión, de la
+heterogeneidad taxonómica entre conjuntos de datos y de la
+disparidad entre fototipos cutáneos? Esta pregunta articula el
+presente trabajo. Su respuesta condiciona la viabilidad de integrar
+estos modelos en flujos de teledermatología hospitalaria con
+cohortes mediterráneas en español, escenario donde tres referencias
+recientes liberadas por el grupo de la Universidad Monash
+---PanDerm como codificador visual, Derm1M y la familia DermLIP como
+modelos vision-lenguaje contrastivos, y DermFM-Zero como sistema
+con capacidad zero-shot nativa--- no disponen de evaluación
+independiente comparable a la fecha de cierre.
+
+Para responderla, hemos evaluado catorce modelos fundacionales sobre
+doce conjuntos de datos externos públicos, armonizados mediante una
+ontología jerárquica de tres niveles ($4$ categorías etiológicas,
+$43$ subcategorías clínicas y $367$ diagnósticos individuales)
+codificada en SNOMED~CT y CIE-10. La evaluación combina cuatro
+protocolos ---sondeo lineal, ajuste fino supervisado, segmentación
+binaria con adaptación de bajo rango (LoRA) y clasificación
+zero-shot multimodal--- ejecutados sobre una NVIDIA DGX Spark con
+chip Grace Hopper GB10, $128$\,GB de memoria unificada y precisión
+BF16, plataforma aarch64 no habitual en la literatura experimental.
+
+PanDerm Large se confirma como el codificador congelado más fiable,
+con una mejora media de $+9{,}0$\,pp en exactitud balanceada
+respecto a PanDerm Base, y satura con un volumen reducido de datos
+etiquetados: el $1\%$ del conjunto de entrenamiento de HAM10000
+recupera el $96{,}2\%$ del AUROC obtenido con el conjunto completo.
+La evaluación zero-shot multimodal queda $29{,}4$\,pp por debajo del
+sondeo lineal, lo que cuantifica el coste de prescindir de
+adaptación supervisada. La auditoría sistemática de solapamiento por
+hash MD5 detecta fuga de información entre el preentrenamiento de
+Derm1M y tres de los doce conjuntos de evaluación (Dermnet, HIBA y
+MSKCC); cualquier cifra zero-shot reportada sobre ellos en la
+literatura previa debe interpretarse acompañada de este
+\emph{caveat}. La validación sobre el corpus DermapixelAI~1.0
+---construido en paralelo a este trabajo--- confirma la
+transferencia de los modelos a material clínico no anglosajón sin
+reentrenamiento de la rama lingüística.
+
+El trabajo aporta tres contribuciones reproducibles: un benchmark
+comparativo homogéneo de las catorce familias bajo un mismo
+protocolo, el dataset DermapixelAI~1.0 ---$1\,089$ imágenes
+vinculadas a $669$ casos clínicos con texto narrativo y captions
+sintéticas multi-perspectiva en castellano, distribuido bajo
+licencia CC-BY-NC-SA~4.0--- y la auditoría sistemática de
+solapamiento sobre los doce conjuntos de evaluación. Los tres
+artefactos quedan disponibles para verificación independiente y
+forman la base experimental sobre la que se construyen las líneas
+de continuación documentadas en el capítulo de conclusiones.
+
+\section*{Palabras clave}
+modelos fundacionales, dermatología clínica, PanDerm, DermLIP,
+evaluación empírica, ontología, equidad, heterogeneidad taxonómica.
+
+% ----------------------------------------------------------------------
+
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+\markboth{ABSTRACT}{ABSTRACT}
+
+What is the actual performance and generalisation capacity of the
+available dermatology foundation models, as a function of the
+labelled data budget, the supervision regime, taxonomic
+heterogeneity across datasets and skin phototype disparity? This
+question articulates the present work. Its answer conditions the
+viability of integrating these models into hospital teledermatology
+workflows on Spanish-speaking Mediterranean cohorts, a scenario in
+which three recent references released by the Monash group
+---PanDerm as a vision encoder, Derm1M and the DermLIP family as
+contrastive vision-language models, and DermFM-Zero as a system with
+native zero-shot capability--- lack an independent comparable
+evaluation at the time of writing.
+
+To answer it, we evaluate fourteen foundation models over twelve
+public external datasets, harmonised through a three-level
+hierarchical ontology ($4$ aetiological families, $43$ clinical
+subcategories and $367$ individual diagnoses) encoded in SNOMED~CT
+and ICD-10. The evaluation combines four protocols ---linear
+probing, supervised fine-tuning, binary lesion segmentation with
+Low-Rank Adaptation (LoRA) and multimodal zero-shot
+classification--- executed on a NVIDIA DGX Spark with a Grace
+Hopper GB10 chip, $128$\,GB of unified memory and BF16 precision,
+an aarch64 platform uncommon in the experimental literature.
+
+PanDerm Large stands out as the most reliable frozen encoder, with a
+mean improvement of $+9{,}0$\,pp in balanced accuracy over PanDerm
+Base, and saturates with a small labelled budget: $1\%$ of the
+HAM10000 training set recovers $96{,}2\%$ of the AUROC obtained with
+the full set. Multimodal zero-shot evaluation falls $29{,}4$\,pp
+below linear probing, bounding the cost of forgoing supervised
+adaptation. The systematic MD5-based overlap audit detects
+information leakage between the Derm1M pretraining set and three of
+the twelve evaluation datasets (Dermnet, HIBA and MSKCC); any
+zero-shot figure reported on them in prior literature must be
+interpreted with this \emph{caveat}. Validation on the
+DermapixelAI~1.0 corpus ---built in parallel with this work---
+confirms model transfer to non-Anglophone clinical material without
+retraining the language branch.
+
+The work contributes three reproducible items: a homogeneous
+comparative benchmark of the fourteen families under a common
+protocol, the DermapixelAI~1.0 dataset ---$1\,089$ images linked to
+$669$ clinical cases with narrative text and multi-perspective
+synthetic captions in Spanish, released under a CC-BY-NC-SA~4.0
+licence--- and the systematic overlap audit across the twelve
+evaluation sets. The three artefacts remain available for
+independent verification and form the experimental basis on which
+the lines of continuation documented in the conclusions chapter are
+built.
+
+\section*{Keywords}
+foundation models, clinical dermatology, PanDerm, DermLIP, empirical
+evaluation, ontology, fairness, taxonomic heterogeneity.

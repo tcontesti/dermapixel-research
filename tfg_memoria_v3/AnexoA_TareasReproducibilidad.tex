@@ -1,0 +1,180 @@
+%!TeX root=MemoriaTFG.tex
+
+\chapter{Mapa de tareas experimentales y estructura del repositorio}
+\label{anexo:tareas}
+\label{cap:anexoa}
+
+Este anexo documenta el conjunto de tareas experimentales
+reproducibles ejecutadas durante el trabajo y la estructura del
+repositorio asociado. La finalidad es habilitar la reproducción
+independiente de las cifras del capítulo~\ref{cap:resultados} a
+partir del código publicado y de los \emph{checkpoints} de modelo.
+
+\section{Estructura del repositorio}
+\label{sec:anexoa-repo}
+
+El repositorio se organiza en cinco directorios principales que
+encapsulan responsabilidades disjuntas. La
+tabla~\ref{tab:anexoa-repo} sintetiza su contenido.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Estructura del repositorio de código del trabajo.}
+\label{tab:anexoa-repo}
+\begin{tabular}{ll}
+\hline
+Directorio                       & Contenido \\
+\hline
+\texttt{classification/}         & Pipeline de sondeo lineal y ajuste fino. Carga de datasets, modelos, métricas. \\
+\texttt{classification/panderm\_model/} & \emph{Wrappers} de encoders fundacionales (PanDerm, DINOv2, DermLIP). \\
+\texttt{classification/panderm\_model/downstream/eval\_features/} & Sondeo lineal, regresión logística L-BFGS, \emph{bootstrap}. \\
+\texttt{classification/datasets/}& Adaptadores por dataset, \emph{splits} canónicos. \\
+\texttt{classification/models/}  & \emph{Builder} de modelos, \emph{timm} \emph{wrappers}. \\
+\texttt{segmentation/}           & Pipeline de segmentación. SAM2.1 con LoRA, CAE-seg, dataset ISIC2018. \\
+\texttt{ontology/}               & Vocabulario L1/L2/L3, mapeos por dataset, scripts de armonización. \\
+\texttt{data/}                   & Índices locales con \emph{splits}, embeddings precomputados. \\
+\texttt{datasets/}               & Datasets y dataset DermapixelAI~1.0. \\
+\texttt{results/}                & Reportes técnicos por experimento (formato Markdown). \\
+\texttt{output/}                 & Salidas de evaluación: predicciones, máscaras, \emph{checkpoints}. \\
+\texttt{tfg\_figures/}           & Figuras del documento, generadas por scripts reproducibles. \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Mapa de tareas experimentales}
+\label{sec:anexoa-tareas}
+
+La tabla~\ref{tab:anexoa-tareas} enumera las tareas
+experimentales reproducibles del trabajo, su sección de referencia
+en el documento y la ubicación de los \emph{outputs} en el
+repositorio. Las cifras del capítulo~\ref{cap:resultados} pueden
+reconstruirse íntegramente a partir de estos \emph{outputs} sin
+reejecutar los experimentos.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Tareas experimentales y \emph{outputs} asociados.}
+\label{tab:anexoa-tareas}
+\begin{tabular}{lll}
+\hline
+Tarea                                   & Referencia      & \emph{Output} principal \\
+\hline
+Sondeo lineal PanDerm Base/Large (10ds) & secci\'on~\ref{sec:rep-panderm}     & \texttt{RESULTADOS\_TFG.md} \\
+Benchmark CNN vs encoders (3ds)         & secci\'on~\ref{sec:benchmark}       & \texttt{results/CNN\_BASELINE\_RESULTS.md} \\
+Ajuste fino PanDerm Base (4ds)          & secci\'on~\ref{sec:ft-results}      & \texttt{RESULTADOS\_TFG.md} \\
+Eficiencia en etiquetas (HAM, PAD)      & secci\'on~\ref{sec:label-eff-results}& \texttt{RESULTADOS\_TFG.md} \\
+Segmentación SAM2.1+LoRA (ISIC2018)     & secci\'on~\ref{sec:seg-results}     & \texttt{results/SEG\_GENERALIZATION\_RESULTS.md} \\
+Zero-shot DermLIP (3 prompts, 2 tok.)   & secci\'on~\ref{sec:zs-results}      & \texttt{results/zs\_concepts\_results.md} \\
+LLM multimodales (12 modelos, 3ds)      & secci\'on~\ref{sec:llm-results}     & \texttt{results/\{GPT4O,GEMINI,MEDGEMMA,BLIP2\}\_RESULTS.md} \\
+MedGemma~27B + LoRA (HAM, PAD, DDI)     & secci\'on~\ref{sec:llm-results}     & \texttt{results/MEDGEMMA\_FT\_RESULTS.md} \\
+Equidad por fototipo (5 enc., 6 FST)    & secci\'on~\ref{sec:equidad-results} & \texttt{results/FITZPATRICK\_FULL\_RESULTS.md} \\
+Equidad cruzada Light/Dark              & secci\'on~\ref{sec:equidad-results} & \texttt{tfg\_figures/fairness\_5models/summary\_5models.md} \\
+Ensemble seguridad melanoma             & secci\'on~\ref{sec:ensemble-results}& \texttt{output/ensemble\_eval/ENSEMBLE\_REPORT.md} \\
+SAE Large + CBM SkinCon                 & Anexo~\ref{cap:anexof}      & \texttt{results/\{SAE\_LARGE,SKINCON\_CBM\}\_RESULTS.md} \\
+Auditoría leakage MD5 (12ds vs Derm1M)  & secci\'on~\ref{sec:auditoria-resultados} & \textbf{[NO ESPECIFICADO]} \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Comandos de ejecución}
+\label{sec:anexoa-comandos}
+
+A continuación se documenta el comando de ejecución de las
+tareas centrales del trabajo. Todos los comandos se ejecutan
+desde la raíz del repositorio sobre el entorno declarado en
+secci\'on~\ref{sec:infraestructura} (Python~$3.12.3$, PyTorch~$2.11.0$,
+\texttt{timm}~$0.9.16$, CUDA~$13.0$).
+
+\paragraph{Extracción de \emph{embeddings} (paso previo al sondeo
+lineal).}
+\begin{verbatim}
+python -m classification.panderm_model.downstream.extract_features \
+    --model panderm_large \
+    --dataset ham10000 \
+    --output data/embeddings/ham10000_panderm_large.npz
+\end{verbatim}
+
+\paragraph{Sondeo lineal sobre \emph{embeddings} extraídos.}
+\begin{verbatim}
+python -m classification.panderm_model.downstream.eval_features.linear_probe \
+    --embeddings data/embeddings/ham10000_panderm_large.npz \
+    --C 1.0 --max_iter 5000 --random_state 42
+\end{verbatim}
+
+\paragraph{Ajuste fino supervisado.}
+\begin{verbatim}
+python -m classification.run_class_finetuning \
+    --model panderm_base --dataset ham10000 \
+    --opt adamw --weight_decay 0.05 --lr 5e-4 \
+    --warmup_epochs 10 --epochs 50 \
+    --layer_decay 0.65 --drop_path 0.2 --smoothing 0.1 \
+    --mixup 0.8 --cutmix 1.0 --tta 5 --seed 0
+\end{verbatim}
+
+\paragraph{Segmentación SAM2.1 con LoRA.}
+\begin{verbatim}
+python -m segmentation.train_sam2_lora \
+    --dataset isic2018 --rank 8 --lr 1e-4 \
+    --weight_decay 0.05 --epochs 50 --batch_size 4 \
+    --norm uniform_05 --seed 0
+\end{verbatim}
+
+\paragraph{Evaluación zero-shot multimodal.}
+\begin{verbatim}
+python -m classification.zs_eval \
+    --model dermlip_original --dataset ham10000 \
+    --prompts derm1m_a3 --tokenizer gpt2_clip
+\end{verbatim}
+
+\section{Versiones de software y semillas}
+\label{sec:anexoa-versiones}
+
+El entorno de ejecución se fija explícitamente. Las semillas de
+\texttt{torch}, \texttt{numpy} y \texttt{random} se inicializan a
+$0$ en los protocolos de \emph{fine-tuning} y segmentación, y
+el parámetro \texttt{random\_state} se fija a $42$ en los
+basados en \texttt{scikit-learn}. La variable
+\texttt{WANDB\_MODE} se fija a \texttt{disabled} y
+\texttt{CUDA\_VISIBLE\_DEVICES} a \texttt{0}. La especificación
+completa del entorno se documenta en el archivo \texttt{environment.yml}
+del repositorio.
+
+\section{Checkpoints publicados}
+\label{sec:anexoa-checkpoints}
+
+La tabla~\ref{tab:anexoa-checkpoints} enumera los
+\emph{checkpoints} de modelo derivados del trabajo, con su tamaño
+aproximado y la métrica de referencia sobre la que se evaluaron.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{\emph{Checkpoints} publicados del trabajo.}
+\label{tab:anexoa-checkpoints}
+\begin{tabular}{llrl}
+\hline
+\emph{Checkpoint}                          & Modelo base       & Tamaño & Métrica de referencia \\
+\hline
+\texttt{panderm\_base\_ft\_ham10000.pth}   & PanDerm Base + TTA & $\sim 350$\,MB & Acc HAM10000 $0{,}920$ \\
+\texttt{panderm\_large\_ft\_ham10000.pth}  & PanDerm Large     & $1{,}2$\,GB & Acc HAM10000 $0{,}919$ \\
+\texttt{panderm\_large\_ft\_padufes.pth}   & PanDerm Large     & $1{,}2$\,GB & Acc PAD-UFES $0{,}755$ \\
+\texttt{sam2\_lora\_isic2018.pth}          & SAM2.1-Large + LoRA & $\sim 17$\,MB & Dice $0{,}947$ \\
+\texttt{sae\_large\_panderm.pth}           & PanDerm Large + SAE & $\sim 200$\,MB & Esparsidad $16{,}5\%$ \\
+\texttt{medgemma\_27b\_lora\_ham10000.pth} & MedGemma~27B + LoRA & $\sim 320$\,MB & Acc HAM10000 $0{,}802$ \\
+\hline
+\end{tabular}
+\end{table}
+
+El acceso a los \emph{checkpoints} se realiza mediante el
+repositorio de releases del proyecto, sujeto a la licencia
+declarada en el documento de entrega
+(Anexo~\ref{cap:anexoe}). La verificación de integridad se
+realiza por hash SHA-256 publicado junto a cada \emph{checkpoint}.

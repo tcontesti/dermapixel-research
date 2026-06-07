@@ -1,0 +1,703 @@
+%!TeX root=MemoriaTFG.tex
+
+\chapter{Diseño experimental: modelos, protocolos y métricas}
+\label{cap:experimental}
+
+Este capítulo describe el conjunto de modelos evaluados en el
+trabajo, los protocolos experimentales aplicados sobre los datasets
+caracterizados en el capítulo~\ref{cap:datos} y las métricas
+empleadas para reportar los resultados. La descripción se acota al
+diseño y a los hiperparámetros: ninguna cifra de rendimiento aparece
+en este capítulo. Los valores cuantitativos obtenidos se reservan al
+capítulo~\ref{cap:resultados}.
+
+El capítulo se estructura en cuatro bloques. El primero
+(sección~\ref{sec:hardware-cap4}) describe el equipo físico y el
+entorno de software sobre el que se ejecutan todos los
+experimentos. El segundo (sección~\ref{sec:modelos-evaluados})
+enumera los modelos evaluados, agrupados por familia y con sus
+características de tamaño y entrada. El tercero
+(secciones~\ref{sec:protocolos-base}--\ref{sec:protocolos-auxiliares})
+describe los protocolos experimentales aplicados, sus
+hiperparámetros y las decisiones metodológicas asociadas. El
+cuarto (sección~\ref{sec:metricas-cap4}) formaliza las métricas
+utilizadas y, por último, la sección~\ref{sec:reproducibilidad}
+recoge los elementos de trazabilidad y reproducibilidad del
+trabajo.
+
+\section{Hardware y entorno de ejecución}
+\label{sec:hardware-cap4}
+
+\subsection{Equipo de cómputo}
+\label{sec:hardware-equipo}
+
+Todos los experimentos del trabajo se ejecutan sobre una única
+unidad NVIDIA DGX Spark equipada con el chip Grace Hopper GB10 y
+ciento veintiocho gigabytes de memoria unificada compartida entre
+CPU y GPU. El sistema operativo es Linux sobre arquitectura ARM de
+sesenta y cuatro bits (aarch64), no x86\_64, y la versión de CUDA
+instalada es la 13.0. La precisión nativa empleada es BF16
+(\emph{brain floating-point} de 16 bits) en la mayor parte de las
+operaciones de inferencia y entrenamiento.
+
+Frente al hardware típico de los trabajos publicados (clústeres de
+varias GPU A100 o H100 en plataformas x86\_64 con CPU EPYC o Xeon),
+esta configuración presenta dos diferencias prácticas relevantes
+para el diseño experimental.
+
+\paragraph{Memoria unificada.} El bus PCIe deja de constituir el
+cuello de botella habitual entre el host y la GPU, dado que ambos
+acceden al mismo banco físico de memoria. La consecuencia operativa
+es que pueden mantenerse cargados en GPU modelos del orden de
+cincuenta y cinco gigabytes en BF16 sin necesidad de \emph{offloading}
+ni de cuantización agresiva. Esta capacidad resulta determinante
+para la familia MedGemma evaluada en la
+sección~\ref{sec:llm-protocol}, donde la variante de veintisiete mil
+millones de parámetros opera en local sin técnicas de compresión
+adicionales.
+
+\paragraph{Arquitectura.} La inmensa mayoría de los pesos públicos
+empleados en este trabajo se entrenaron y validaron sobre
+x86\_64. Diferencias sutiles en la aritmética flotante BF16, en las
+bibliotecas BLAS subyacentes y en los \emph{kernels} CUDA
+compilados para una u otra arquitectura podrían introducir un sesgo
+medible en los resultados. La verificación implícita de que ese
+sesgo es despreciable se documenta cuantitativamente en el
+capítulo~\ref{cap:resultados}.
+
+\subsection{Entorno de software}
+\label{sec:hardware-software}
+
+El entorno de ejecución se compone de Python 3.12.3, PyTorch
+2.11.0 y la biblioteca \texttt{timm} 0.9.16 como base. Para las
+métricas se emplea \texttt{scikit-learn}; para los modelos
+fundacionales publicados, las bibliotecas oficiales de sus autores
+(\texttt{open\_clip}, \texttt{transformers}, \texttt{sam2}); para la
+adaptación de SAM2.1 se utiliza la biblioteca \texttt{peft} con
+LoRA. Para la búsqueda vectorial densa empleada en el módulo de
+recuperación visual se utiliza FAISS~\cite{faiss2019}. La variable
+de entorno \texttt{WANDB\_MODE} se fija a \texttt{disabled} para
+impedir el envío de telemetría a servicios externos, y
+\texttt{CUDA\_VISIBLE\_DEVICES} a \texttt{0} para forzar la
+ejecución sobre la única GPU presente.
+
+\subsection{Tiempos de ejecución típicos}
+\label{sec:hardware-tiempos}
+
+Los tiempos de cálculo característicos sobre este equipo
+proporcionan la medida del coste experimental del trabajo:
+
+\begin{itemize}
+\item Linear probing completo de un encoder sobre un dataset
+estándar: del orden de uno a tres minutos por dataset.
+\item Fine-tuning supervisado de PanDerm Large sobre HAM10000 a
+cincuenta épocas con \emph{test-time augmentation}: aproximadamente
+quince horas.
+\item Fine-tuning supervisado de SAM2.1-Large sobre ISIC2018 a
+cincuenta épocas con LoRA: aproximadamente veinticuatro horas.
+\item Entrenamiento de un Sparse Autoencoder Large (16\,384
+características) sobre los embeddings de PanDerm: aproximadamente
+cuatro horas.
+\item Inferencia sobre el conjunto de evaluación de HAM10000 (1\,232
+imágenes) con un encoder fundacional cargado: del orden de
+segundos.
+\end{itemize}
+
+Estos órdenes de magnitud habilitan la reproducibilidad del trabajo
+sobre un único equipo accesible económicamente, sin recurso a
+clústeres distribuidos.
+
+\section{Modelos evaluados}
+\label{sec:modelos-evaluados}
+
+El trabajo evalúa modelos pertenecientes a cuatro familias: encoders
+visuales puros, modelos vision-lenguaje contrastivos, modelo de
+segmentación y modelos de lenguaje multimodales generalistas. La
+caracterización detallada de cada familia y de sus referentes se
+desarrolla en el capítulo~\ref{cap:sota}; esta sección los enumera
+con los atributos relevantes para el diseño experimental.
+
+\subsection{Encoders visuales}
+\label{sec:modelos-encoders}
+
+\begin{itemize}
+\item \textbf{PanDerm Base}~\cite{panderm2025}: ViT-Base/16,
+$\sim$~86 millones de parámetros, embedding de salida de 768
+dimensiones. Pesos públicos del paper de Yan et al.~(2025).
+
+\item \textbf{PanDerm Large}~\cite{panderm2025}: ViT-Large/16,
+$\sim$~307 millones de parámetros, embedding de salida de 1\,024
+dimensiones. Referente principal del trabajo.
+
+\item \textbf{DINOv2 ViT-L/14}~\cite{dinov2}: encoder de visión
+auto-supervisado de propósito general (Meta AI), $\sim$~300
+millones de parámetros. Se incluye como referencia no dermatológica
+para contrastar la ventaja de un encoder específico de dominio.
+
+\item \textbf{ConvNeXt-Large}: red convolucional moderna entrenada
+de forma supervisada sobre ImageNet-21k, $\sim$~198 millones de
+parámetros. Referencia clásica no transformer.
+
+\item \textbf{EfficientNetV2-Large}: red convolucional entrenada de
+forma supervisada sobre ImageNet, $\sim$~118 millones de parámetros.
+Referencia clásica adicional.
+\end{itemize}
+
+\subsection{Modelos vision-lenguaje contrastivos}
+\label{sec:modelos-vl}
+
+\begin{itemize}
+\item \textbf{DermLIP v1 y v2 (encoder textual PubMedBERT)}~\cite{derm1m}: modelos contrastivos al estilo CLIP con
+encoder visual basado en PanDerm Base y encoder textual PubMedBERT
+extendido a 256 tokens. La variante DermLIP v2 es la configuración
+de mejor rendimiento reportada por los autores en los benchmarks
+del propio paper de Derm1M.
+
+\item \textbf{DermLIP original (encoder textual GPT-2/CLIP)}~\cite{derm1m}: variante de la misma familia con encoder visual
+ViT-Base y encoder textual GPT-2 con el tokenizador de CLIP (77
+tokens). Se incluye como variante de tokenizador para el análisis
+de sensibilidad documentado en el capítulo~\ref{cap:resultados}.
+
+\item \textbf{BiomedCLIP}~\cite{biomedclip}: modelo contrastivo
+biomédico generalista entrenado sobre $\sim$~15 millones de pares
+imagen-texto procedentes de literatura científica.
+
+\item \textbf{SigLIP-Large SO400M}~\cite{siglip2023}: modelo
+contrastivo con pérdida sigmoide, embedding visual de 1\,152
+dimensiones, $\sim$~878 millones de parámetros. Se incluye en el
+trabajo como modelo no específico de dominio para la rama del
+ensemble de seguridad descrito en la
+sección~\ref{sec:ensemble-protocol}.
+\end{itemize}
+
+\subsection{Modelo de segmentación}
+\label{sec:modelos-segmentacion}
+
+\textbf{SAM2.1-Large}~\cite{sam2} (\emph{Segment Anything Model
+versión 2.1}): modelo de segmentación promptable, $\sim$~227
+millones de parámetros, ampliado en este trabajo con adaptadores
+LoRA sobre las componentes \texttt{mask\_decoder} y
+\texttt{promptable\_encoder}, manteniendo congelado el
+\texttt{image\_encoder}. Como referencias se contrastan la versión
+\emph{zero-shot} sin ajuste (SAM2 original) y un \emph{Convolutional
+AutoEncoder} de segmentación (CAE-seg) entrenado desde cero como
+\emph{baseline} clásico.
+
+\subsection{Modelos de lenguaje multimodales generalistas}
+\label{sec:modelos-llm}
+
+\begin{itemize}
+\item \textbf{GPT-4o} (OpenAI): modelo de lenguaje multimodal de
+propósito general, accedido vía API; tamaño no público.
+
+\item \textbf{Gemini 2.5 Pro} (Google DeepMind): modelo multimodal
+de propósito general, accedido vía API; tamaño no público.
+
+\item \textbf{MedGemma 4B Vision} (Google): modelo multimodal
+abierto, $\sim$~4 mil millones de parámetros, instalado y ejecutado
+en local sobre el equipo descrito en la
+sección~\ref{sec:hardware-equipo}.
+
+\item \textbf{MedGemma 27B Text} (Google): variante de mayor escala
+de la familia MedGemma, $\sim$~27 mil millones de parámetros,
+ejecutada en local en BF16 sobre los 128~GB de memoria unificada
+disponibles. Se evalúa además una variante ajustada con LoRA en el
+mismo conjunto de evaluación.
+
+\item \textbf{BLIP-2}~\cite{blip2_2023}: modelo de visión-lenguaje
+general con arquitectura Q-Former, referenciado como contraste
+metodológico aunque sin adaptación específica a dermatología en el
+presente trabajo.
+\end{itemize}
+
+\section{Protocolos experimentales principales}
+\label{sec:protocolos-base}
+
+El trabajo aplica cinco protocolos experimentales principales sobre
+los modelos descritos. Esta sección formaliza sus hiperparámetros y
+decisiones metodológicas; los resultados que cada protocolo genera
+se reportan en el capítulo~\ref{cap:resultados}.
+
+\subsection{Linear probing}
+\label{sec:lp-protocol}
+
+El protocolo de linear probing mantiene el encoder visual con sus
+pesos congelados y entrena un clasificador lineal sobre los
+embeddings extraídos. La configuración exacta empleada es la
+siguiente:
+
+\begin{itemize}
+\item \textbf{Extracción de embeddings.} Cada imagen se preprocesa
+con la normalización canónica del modelo (\texttt{ImageNet}
+$\mu=[0{,}485, 0{,}456, 0{,}406]$,
+$\sigma=[0{,}229, 0{,}224, 0{,}225]$ para PanDerm y DINOv2;
+parámetros OpenAI CLIP para los modelos de la familia DermLIP).
+El embedding resultante (768 dimensiones en PanDerm Base, 1\,024 en
+PanDerm Large, 1\,152 en SigLIP-Large, 1\,024 en DINOv2 ViT-L/14)
+se almacena en disco para evitar recomputaciones entre experimentos.
+
+\item \textbf{Clasificador.} Regresión logística multinomial con
+algoritmo de optimización L-BFGS (\emph{Limited-memory
+Broyden--Fletcher--Goldfarb--Shanno}), de tipo quasi-Newton,
+implementado en \texttt{scikit-learn}. Penalización L2 con coste
+$C=1{,}0$ por defecto; en algunos experimentos se emplea búsqueda
+automática del coste mediante validación cruzada interna.
+\texttt{max\_iter}~$=5\,000$ iteraciones.
+\texttt{random\_state}~$=42$.
+
+\item \textbf{Splits.} Particiones canónicas de cada dataset
+descritas en la tabla~\ref{tab:datasets-resumen} del
+capítulo~\ref{cap:datos}.
+
+\item \textbf{Modelos evaluados con LP.} PanDerm Base y Large,
+DINOv2, ConvNeXt-Large, EfficientNetV2-Large, los modelos
+vision-lenguaje en su rama visual (DermLIP v2, BiomedCLIP,
+SigLIP-Large).
+\end{itemize}
+
+El protocolo proporciona una medida directa de la calidad de las
+representaciones aprendidas durante el preentrenamiento: si las
+\emph{features} son adecuadas para la tarea, basta una capa lineal
+para alcanzar un buen rendimiento. La elección de regresión
+logística sobre alternativas no lineales responde a esa finalidad
+diagnóstica.
+
+\subsection{Fine-tuning supervisado}
+\label{sec:ft-protocol}
+
+A diferencia del linear probing, el protocolo de fine-tuning
+supervisado ajusta los pesos del encoder visual conjuntamente con
+los de una cabeza de clasificación específica de la tarea. La
+configuración empleada reproduce la descrita en el paper original
+de PanDerm~\cite{panderm2025}.
+
+\begin{itemize}
+\item \textbf{Optimizador.} AdamW con \emph{weight decay} 0{,}05.
+\item \textbf{Tasa de aprendizaje.} $\eta=5\times10^{-4}$ inicial.
+\item \textbf{Scheduler.} Cosine annealing con fase inicial de
+\emph{warmup} lineal de 10 épocas.
+\item \textbf{Layer decay.} 0{,}65 (las capas profundas adaptan a
+mayor velocidad que las superficiales).
+\item \textbf{Regularización por trayectoria.} \emph{Drop-path}
+con probabilidad 0{,}2.
+\item \textbf{Suavizado de etiquetas.} \emph{Label smoothing} con
+$\epsilon=0{,}1$.
+\item \textbf{Augmentaciones de mezcla.} Mixup con $\alpha=0{,}8$
+y CutMix con $\alpha=1{,}0$.
+\item \textbf{Augmentaciones de imagen.} Recortes aleatorios,
+volteo horizontal, \emph{jitter} de color moderado.
+\item \textbf{Muestreo.} \emph{Weighted random sampler} con pesos
+inversamente proporcionales a la frecuencia de cada clase, para
+compensar el desbalance de los datasets con clase dominante muy
+representada (notablemente HAM10000).
+\item \textbf{Épocas.} 50.
+\item \textbf{\emph{Test-time augmentation} (TTA).} En la
+evaluación final sobre HAM10000 se promedian los logits sobre 5
+augmentaciones deterministas (volteos horizontal y vertical,
+rotación, jitter de color) aplicadas a cada imagen del split de
+test.
+\item \textbf{Precisión numérica.} BF16 en el cuerpo del modelo,
+FP32 en el optimizador y en la pérdida (precisión mixta canónica).
+\item \textbf{Seed.} \texttt{torch}, \texttt{numpy} y
+\texttt{random} fijados a 0.
+\end{itemize}
+
+El protocolo se aplica sobre PanDerm Base y Large en los datasets
+HAM10000, PAD-UFES-20, DDI y MSKCC, conforme a las cifras
+$N_{\mathrm{test}}$ recogidas en la
+tabla~\ref{tab:datasets-resumen}.
+
+\subsection{Eficiencia de etiquetas}
+\label{sec:label-eff-protocol}
+
+El protocolo de eficiencia de etiquetas mide la dependencia del
+rendimiento respecto al volumen de datos de entrenamiento
+disponibles, manteniendo congelado el encoder. Sobre HAM10000 y
+PAD-UFES-20 se entrenan clasificadores lineales (con los mismos
+hiperparámetros que el protocolo de linear probing,
+sección~\ref{sec:lp-protocol}) con submuestreos estratificados del
+conjunto de entrenamiento al 1\,\%, 5\,\%, 10\,\%, 20\,\%, 50\,\%
+y 100\,\%. La estratificación preserva la proporción original de
+clases en cada subconjunto. Los submuestreos se generan con
+\texttt{random\_state}~$=42$ para garantizar reproducibilidad.
+
+El protocolo se aplica con PanDerm Large como encoder; PanDerm
+Base se utiliza como referencia adicional sobre HAM10000.
+
+\subsection{Segmentación binaria de lesión}
+\label{sec:seg-protocol}
+
+El protocolo de segmentación binaria de lesión cutánea adapta
+SAM2.1-Large al dominio dermatológico mediante fine-tuning con
+LoRA. La configuración empleada es la siguiente:
+
+\begin{itemize}
+\item \textbf{Componentes ajustadas.} Decodificador de máscaras
+(\texttt{mask\_decoder}) y \emph{promptable encoder}.
+\item \textbf{Componentes congeladas.} \texttt{image\_encoder}
+(Hiera-Large preentrenado), parte mayoritaria de los parámetros del
+modelo.
+\item \textbf{Rango LoRA.} Configuración estándar de la biblioteca
+\texttt{peft} con \emph{rank} $r=8$.
+\item \textbf{Optimizador.} AdamW con $\eta=1\times10^{-4}$ y
+\emph{weight decay} 0{,}05.
+\item \textbf{Pérdida.} Suma ponderada de \emph{cross-entropy} y
+\emph{Dice loss} sobre la máscara binaria predicha.
+\item \textbf{Tamaño de batch.} 4 imágenes (limitado por el coste
+de SAM2.1-Large en BF16).
+\item \textbf{Épocas.} Se evalúan dos configuraciones: 50 épocas
+(resultado de referencia) y 100 épocas con \emph{early stopping} en
+el \emph{best val} (Dice de validación).
+\item \textbf{Normalización.} Uniforme con
+$\mu=\sigma=0{,}5$ en los tres canales, según la convención de
+SAM2.
+\item \textbf{Dataset de entrenamiento.}
+ISIC2018~\cite{isic2018} (2\,594 imágenes en el split de
+evaluación, máscara binaria por imagen).
+\item \textbf{Generalización fuera de dominio.} El modelo entrenado
+en ISIC2018 se evalúa adicionalmente sobre ISIC2017 y PH2 sin
+reentrenamiento, para estimar la capacidad de transferencia a
+fuentes con condiciones de captura distintas.
+\end{itemize}
+
+Como referencias se contrastan SAM2 \emph{zero-shot} sin
+adaptación y un \emph{Convolutional AutoEncoder} de segmentación
+(CAE-seg) entrenado desde cero con la misma pérdida y
+configuración de optimización.
+
+\subsection{Zero-shot multimodal}
+\label{sec:zs-protocol}
+
+El protocolo de clasificación zero-shot multimodal aprovecha el
+espacio de representación compartido imagen-texto de los modelos
+vision-lenguaje contrastivos. La configuración es la siguiente:
+
+\begin{itemize}
+\item \textbf{Codificación de clases.} Cada clase candidata del
+dataset se formula como una o varias frases de plantilla. Las
+frases se codifican mediante el encoder textual del modelo
+correspondiente y, cuando existen varias plantillas para una
+misma clase, los vectores resultantes se promedian para obtener un
+único vector representativo de la clase.
+\item \textbf{Codificación de imágenes.} Cada imagen de
+evaluación se codifica mediante el encoder visual con la
+normalización canónica del modelo.
+\item \textbf{Predicción.} La clase ganadora es la de mayor
+similitud coseno con el vector de la imagen.
+\item \textbf{Métrica de comparación.} Similitud coseno.
+\end{itemize}
+
+Sobre HAM10000 se evalúan tres configuraciones de prompts:
+
+\begin{enumerate}
+\item \textbf{Prompts genéricos en inglés} del estilo \emph{``a
+dermoscopic image of a melanoma''}, una plantilla por clase.
+\item \textbf{Prompts del paper de Derm1M}~\cite{derm1m}: conjunto
+A3 de plantillas más extensas, con varios prompts por clase y
+promediado posterior.
+\item \textbf{Prompts enriquecidos}: descriptores clínicos
+adicionales (modalidad, localización anatómica, criterios
+diagnósticos visuales) sobre la base del conjunto A3.
+\end{enumerate}
+
+El protocolo se aplica con dos tokenizadores distintos:
+PubMedBERT extendido a 256 tokens (DermLIP v1/v2) y GPT-2 con el
+tokenizador de CLIP de 77 tokens (DermLIP original). Esta dualidad
+permite caracterizar la sensibilidad del rendimiento al
+tokenizador, cuyo análisis se recoge en el
+capítulo~\ref{cap:resultados}.
+
+Sobre HIBA, MSKCC, DDI y Derm7pt clínico se ejecuta una versión
+reducida del protocolo, con los prompts genéricos y los Derm1M,
+para la formulación binaria melanoma/no-melanoma.
+
+\subsection{Evaluación de modelos de lenguaje multimodales generalistas}
+\label{sec:llm-protocol}
+
+El protocolo evalúa modelos de lenguaje multimodales generalistas
+sobre HAM10000 como referencia común con el resto de protocolos.
+La configuración es la siguiente:
+
+\begin{itemize}
+\item \textbf{Prompt clínico estandarizado.} Texto de
+aproximadamente trescientas palabras que (i)~describe el contexto
+de la tarea (apoyo al diagnóstico dermatológico, no sustitución
+del juicio del especialista), (ii)~presenta la imagen como
+entrada, (iii)~enumera las siete categorías diagnósticas de
+HAM10000 con su descripción breve y (iv)~solicita el diagnóstico
+más probable junto con un breve razonamiento estructurado.
+\item \textbf{Conjunto de evaluación.} Mismo split de test
+oficial de HAM10000 (1\,232 imágenes) que el utilizado en el
+linear probing y el fine-tuning, lo que garantiza comparabilidad
+numérica entre los tres protocolos.
+\item \textbf{Modo.} \emph{Zero-shot} (sin fine-tuning previo).
+Para MedGemma 27B se evalúa adicionalmente una variante ajustada
+con LoRA (\emph{rank} $r=8$) sobre el split de entrenamiento de
+HAM10000.
+\item \textbf{Modelos.} GPT-4o (API OpenAI), Gemini 2.5 Pro (API
+Google), MedGemma 4B Vision (local), MedGemma 27B Text (local en
+BF16 sobre los 128~GB de memoria unificada).
+\item \textbf{Métrica.} La etiqueta predicha por el modelo se
+extrae del texto generado mediante una rutina de \emph{parsing}
+determinista que mapea el nombre del diagnóstico al código
+correspondiente de HAM10000; las respuestas no mapeables (menos
+del 1\,\% en todos los modelos) se contabilizan como predicción
+incorrecta.
+\end{itemize}
+
+\section{Protocolos auxiliares}
+\label{sec:protocolos-auxiliares}
+
+Junto a los cinco protocolos principales, el trabajo emplea tres
+protocolos auxiliares para abordar aspectos específicos del
+comportamiento de los modelos (equidad por fototipo, seguridad de
+detección de melanoma y consistencia entre datasets ante
+solapamiento).
+
+\subsection{Evaluación de equidad por fototipo}
+\label{sec:equidad-protocol}
+
+El protocolo de equidad evalúa cinco encoders fundacionales sobre
+el dataset Fitzpatrick17k completo (16\,577 imágenes, 114
+patologías, 6 fototipos cutáneos I-VI).
+
+\begin{itemize}
+\item \textbf{Modelos comparados.} PanDerm Large, PanDerm Base,
+DermLIP v2 (rama visual), DINOv2 ViT-L/14, BiomedCLIP.
+\item \textbf{Protocolo común.} Linear probing con regresión
+logística L-BFGS, penalización L2 con $C=1{,}0$,
+\texttt{max\_iter}~$=5\,000$, \texttt{random\_state}~$=42$. Cada
+modelo emplea su normalización canónica (ImageNet o CLIP) en la
+extracción de embeddings.
+\item \textbf{Niveles de evaluación.} Se reportan dos
+formulaciones: (i)~clasificación a 114 patologías (grano fino del
+dataset), y (ii)~clasificación a 3 clases de malignidad
+(benigno / no neoplásico / maligno), que es la formulación
+habitualmente empleada en estudios de equidad sobre
+Fitzpatrick17k.
+\item \textbf{Subgrupos.} Las métricas por fototipo se calculan
+sobre los seis subgrupos Fitzpatrick (I, II, III, IV, V, VI). La
+métrica de equidad declarada es el \emph{gap} entre los fototipos
+extremos:
+$\mathrm{Gap}_{\mathrm{I\to VI}} = \mathrm{BAcc}_\mathrm{I} -
+\mathrm{BAcc}_\mathrm{VI}$.
+\item \textbf{Validación cruzada del script.} El experimento se
+re-ejecuta sobre PanDerm Large como verificación, comprobando
+coincidencia hasta cuatro decimales con el resultado original.
+\end{itemize}
+
+\subsection{Ensemble de seguridad para detección de melanoma}
+\label{sec:ensemble-protocol}
+
+El protocolo combina tres clasificadores independientes para
+maximizar la sensibilidad en la detección de melanoma sobre el
+split de test de HAM10000.
+
+\begin{itemize}
+\item \textbf{Clasificadores integrados.}
+(i)~PanDerm Large fine-tuned sobre HAM10000 (M1, módulo del
+prototipo descrito en el capítulo~\ref{cap:dermapixel}),
+(ii)~el clasificador unificado L1/L2/L3 entrenado sobre el corpus
+armonizado descrito en el capítulo~\ref{cap:caminos} (M7) mapeado
+a las 7 clases de HAM10000, (iii)~SigLIP-Large SO400M con linear
+probing sobre el conjunto de entrenamiento de HAM10000.
+\item \textbf{Conjunto de evaluación.} Split de test oficial de
+HAM10000 (1\,232 imágenes, de las cuales 70 son melanoma).
+\item \textbf{Reglas de combinación evaluadas.}
+\begin{itemize}
+\item \emph{OR top-3 M1+SigLIP}: la imagen se marca como
+sospechosa de melanoma si la clase melanoma aparece entre las
+tres primeras posiciones del ranking de cualquiera de los dos
+clasificadores.
+\item \emph{MaxMel M1+SigLIP}: la probabilidad final de melanoma
+es el máximo de las probabilidades reportadas por cada
+clasificador.
+\item \emph{Avg 3 modelos} (sobre la intersección de los 198
+ejemplos con predicciones disponibles para los tres modelos):
+promedio aritmético de las tres probabilidades.
+\end{itemize}
+\item \textbf{Métricas reportadas.} Recall de melanoma en top-1 y
+top-3, AUROC binarizada melanoma/no-melanoma, accuracy global, y
+número de falsos positivos en el escenario \emph{safety screen}.
+\end{itemize}
+
+\subsection{Auditoría de leakage frente a Derm1M}
+\label{sec:leakage-protocol}
+
+La auditoría de leakage caracteriza el solapamiento entre el split
+de test de cada uno de los datasets contrastados y el corpus de
+preentrenamiento Derm1M empleado por DermLIP, dado que un
+solapamiento no detectado invalidaría la interpretación de los
+resultados zero-shot. El procedimiento es el siguiente:
+
+\begin{itemize}
+\item \textbf{Hash MD5 por imagen.} Cada imagen del split de test
+de los datasets contrastados se reduce a su hash MD5 con la
+biblioteca estándar de Python. El mismo procedimiento se aplica a
+las imágenes del corpus Derm1M en la fracción a la que el trabajo
+tiene acceso.
+\item \textbf{Comparación.} La intersección entre los conjuntos
+de hashes determina las imágenes presentes simultáneamente en
+ambos corpus. La cardinalidad de esa intersección se reporta por
+dataset.
+\item \textbf{Datasets auditados.} Los doce datasets externos
+descritos en el capítulo~\ref{cap:datos}, con la excepción de
+SkinCon que no se evalúa sobre clases diagnósticas.
+\item \textbf{Resultado anticipado.} Tres datasets presentan
+solapamiento documentado en la literatura (Dermnet, HIBA, MSKCC) y
+así se reflejan con \emph{caveat} en la
+tabla~\ref{tab:datasets-resumen}. La cuantificación exacta del
+solapamiento se reporta en el capítulo~\ref{cap:resultados}.
+\end{itemize}
+
+\section{Métricas}
+\label{sec:metricas-cap4}
+
+Las métricas empleadas a lo largo del trabajo se eligen según el
+tipo de tarea: clasificación, segmentación o equidad por
+subgrupos. Todas se calculan con la biblioteca \texttt{scikit-learn}
+(módulos \texttt{sklearn.metrics}, \texttt{sklearn.model\_selection})
+salvo las específicas de segmentación que se implementan en código
+propio sobre PyTorch.
+
+\subsection{Métricas de clasificación}
+\label{sec:metricas-clasif}
+
+\paragraph{Accuracy.} Proporción de predicciones correctas sobre
+el total. Sensible al desbalance: una clase mayoritaria
+artificialmente eleva el valor. Útil únicamente como referencia
+comparativa entre modelos sobre el mismo dataset y la misma
+distribución de clases.
+
+\paragraph{Balanced accuracy (BAcc).} Promedio de la sensibilidad
+(\emph{recall}) sobre todas las clases:
+$\mathrm{BAcc}=\frac{1}{C}\sum_{c=1}^{C}\mathrm{recall}_c$,
+donde $C$ es el número de clases. Penaliza a los modelos que
+concentran su rendimiento en las clases mayoritarias y constituye
+la métrica principal del trabajo en escenarios con desbalance.
+
+\paragraph{F1 ponderada (W-F1).} Media armónica de precisión y
+\emph{recall} ponderada por la frecuencia de cada clase. Refleja
+el rendimiento agregado conservando sensibilidad al desbalance.
+
+\paragraph{Área bajo la curva ROC (AUROC).} Para problemas
+binarios, el área bajo la curva que relaciona la tasa de
+verdaderos positivos con la de falsos positivos al barrer todos
+los umbrales. Para problemas multiclase, se calcula con la
+estrategia \emph{one-vs-rest} de \texttt{scikit-learn}
+(\texttt{multi\_class='ovr'}) y se reporta el valor medio. Es la
+métrica más robusta al desbalance y la más comparable entre
+trabajos publicados.
+
+\paragraph{Coeficiente kappa de Cohen.} Mide la concordancia entre
+predicción y etiqueta corrigiendo por la concordancia esperada por
+azar. Útil para datasets multiclase muy desbalanceados.
+
+\paragraph{Recall@$k$.} Para clasificación con $C$ clases,
+\emph{recall@$k$} mide si la etiqueta verdadera aparece entre las
+$k$ primeras posiciones del ranking de probabilidades del modelo.
+El trabajo lo reporta específicamente para la clase melanoma
+sobre HAM10000, dado que en un escenario de tamizaje clínico es
+preferible que una lesión maligna aparezca entre las primeras
+opciones, aunque no sea la predicción principal, a que pase
+desapercibida.
+
+\subsection{Métricas de segmentación}
+\label{sec:metricas-segm}
+
+\paragraph{Coeficiente Dice (DSC).}
+$\mathrm{DSC} = \frac{2\,|P \cap G|}{|P| + |G|}$,
+donde $P$ es la máscara predicha y $G$ la máscara de referencia.
+Métrica canónica para segmentación binaria de lesión.
+
+\paragraph{Intersección sobre unión (IoU).}
+$\mathrm{IoU} = \frac{|P \cap G|}{|P \cup G|}$,
+también conocida como índice de Jaccard. Complementaria al Dice.
+
+\subsection{Métricas de equidad}
+\label{sec:metricas-equidad}
+
+\paragraph{BAcc por subgrupo Fitzpatrick.} El protocolo de equidad
+(sección~\ref{sec:equidad-protocol}) reporta la BAcc separadamente
+para cada uno de los seis fototipos cutáneos I-VI, sobre la
+formulación de 3 clases de malignidad.
+
+\paragraph{Gap I-VI.} Diferencia entre la BAcc del fototipo I y la
+del fototipo VI. Valores próximos a cero indican que el rendimiento
+es comparable entre fototipos extremos. Esta cifra se interpreta
+junto con la BAcc global: un \emph{gap} pequeño asociado a una
+BAcc global también pequeña reflejaría un modelo uniformemente
+inferior, no un modelo equitativo en sentido sustantivo.
+
+\subsection{Métricas operativas}
+\label{sec:metricas-operativas}
+
+Junto a las métricas de rendimiento se reportan dos métricas
+operativas relevantes para el despliegue:
+
+\paragraph{Latencia por consulta.} Tiempo desde la entrada de la
+imagen hasta la salida del modelo (inferencia más posproceso),
+medido en milisegundos sobre el equipo descrito en
+la~\ref{sec:hardware-equipo}.
+
+\paragraph{Huella de memoria.} VRAM ocupada por el modelo cargado
+en GPU durante la inferencia, expresada en gigabytes en BF16.
+
+\section{Trazabilidad y reproducibilidad}
+\label{sec:reproducibilidad}
+
+El diseño experimental incorpora las prácticas habituales para
+garantizar la reproducibilidad de los resultados reportados en el
+capítulo~\ref{cap:resultados}.
+
+\paragraph{Semillas aleatorias.} Las semillas de
+\texttt{torch}, \texttt{numpy} y \texttt{random} se fijan a
+$0$ al inicio de cada experimento de fine-tuning supervisado y de
+segmentación. Para los experimentos basados en \texttt{scikit-learn}
+(linear probing, eficiencia de etiquetas, equidad por fototipo) la
+semilla declarada en el parámetro \texttt{random\_state} es
+$42$.
+
+\paragraph{Versionado del software.} El entorno de ejecución
+queda fijado en Python 3.12.3, PyTorch 2.11.0, \texttt{timm}
+0.9.16 y CUDA 13.0. Cualquier desviación respecto a estas
+versiones se documenta explícitamente en el experimento
+correspondiente.
+
+\paragraph{Splits y vocabularios.} Todos los protocolos emplean
+los splits canónicos descritos en la
+tabla~\ref{tab:datasets-resumen} del capítulo~\ref{cap:datos}. Los
+mapeos de etiquetas nativas a la ontología jerárquica L1/L2/L3 se
+mantienen fijos a través de los experimentos y se documentan en el
+anexo~\ref{anexo:tareas}.
+
+\paragraph{Aislamiento del entorno de ejecución.} La variable
+\texttt{WANDB\_MODE} se fija a \texttt{disabled} para impedir el
+envío de telemetría a servicios externos durante el entrenamiento.
+\texttt{CUDA\_VISIBLE\_DEVICES} se fija a \texttt{0} para forzar la
+ejecución sobre la única GPU presente en el equipo.
+
+\paragraph{Almacenamiento de resultados.} Los resultados numéricos
+de cada experimento se vuelcan a ficheros CSV o JSON con esquema
+estable, lo que permite la reconstrucción a posteriori de cualquier
+tabla o figura del capítulo~\ref{cap:resultados} sin necesidad de
+reejecución. El listado de tareas reproducibles, sus comandos de
+ejecución, ficheros de salida y \emph{checkpoints} de modelo se
+documenta en el anexo~\ref{anexo:tareas}.
+
+\paragraph{Trazabilidad inter-experimentos.} Cuando un experimento
+emplea como entrada el resultado de otro (por ejemplo, los
+embeddings extraídos en la fase de linear probing sirven de base a
+los modelos vision-lenguaje contrastivos en zero-shot), la
+identidad de la entrada se preserva mediante hash MD5 sobre el
+fichero correspondiente. Esto permite verificar a posteriori que
+los experimentos encadenados parten del mismo material y son
+mutuamente consistentes.
+
+Con el hardware, el conjunto de modelos, los siete protocolos
+formalizados y las métricas descritas, queda definido el marco
+experimental sobre el que se reportan los resultados del
+capítulo~\ref{cap:resultados} y se discuten en el mismo. El
+capítulo~\ref{cap:caminos} retoma esos elementos para enmarcar las
+líneas de continuación no abordadas en el periodo cubierto por
+este documento.

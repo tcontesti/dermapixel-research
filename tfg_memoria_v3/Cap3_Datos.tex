@@ -1,0 +1,358 @@
+%!TeX root=MemoriaTFG.tex
+
+\chapter{Conjunto de datos y ontología}
+\label{cap:datos}
+
+Este capítulo describe el conjunto de datos sobre el que se realiza
+el trabajo experimental y, de forma resumida, el corpus propio
+resultante del trabajo. El núcleo experimental son los doce datasets
+externos públicos descritos por familia, sobre los que se evalúan
+los modelos del estado del arte. El corpus propio DermapixelAI 1.0,
+derivado del archivo Dermapixel y desarrollado en paralelo al
+presente trabajo en el marco de la modernización tecnológica del
+archivo descrito en el capítulo~\ref{cap:intro}, se introduce en la
+misma sección que los datasets externos y se documenta de forma
+exhaustiva en el anexo~\ref{anexo:pipeline}; no es un dataset
+preexistente sobre el que se evalúan modelos, sino una contribución
+del propio proyecto a la comunidad investigadora hispanohablante.
+
+Tras la presentación de los datasets se introduce la ontología
+jerárquica L1/L2/L3 utilizada para armonizar las taxonomías
+diagnósticas nativas heterogéneas. El capítulo cierra con un
+inventario de las limitaciones del conjunto de datos sobre el que
+opera la evaluación experimental del trabajo.
+
+\section{Vista general del material de trabajo}
+\label{sec:vista-general-datos}
+
+El TFG opera sobre material procedente de tres orígenes distintos:
+datasets públicos publicados por la comunidad científica, datasets
+institucionales liberados parcialmente para investigación, y el
+corpus propio del autor construido sobre el archivo Dermapixel. La
+tabla~\ref{tab:datasets-resumen} resume las características
+principales de los doce datasets externos sobre los que se realiza
+la evaluación experimental del trabajo. El corpus propio
+DermapixelAI 1.0 se introduce de forma resumida en la
+sección~\ref{sec:dermapixel-summary}, junto a los demás conjuntos
+descritos por familia, y su pipeline de construcción y
+caracterización cuantitativa completa se desarrollan en el
+anexo~\ref{anexo:pipeline}, dado que el corpus no constituye objeto
+de evaluación del trabajo sino resultado del mismo.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Resumen del material de trabajo. ``$N_{\mathrm{test}}$''
+denota el tamaño nominal del split de evaluación canónico empleado en
+linear probing; ``Clases'' indica el número de categorías
+diagnósticas o conceptos según la convención propia del dataset.
+Un asterisco (\textsuperscript{$\ast$}) en ``Uso principal'' marca
+los datasets con caveat de leakage frente al corpus de
+preentrenamiento Derm1M.}
+\label{tab:datasets-resumen}
+\begin{tabular}{lrcll}
+\hline
+Dataset & $N_{\mathrm{test}}$ & Clases & Modalidad & Uso principal \\
+\hline
+HAM10000~\cite{ham10000}             & 1\,232  & 7          & Dermoscopia      & LP, FT, ZS, LLMs \\
+BCN20000~\cite{bcn20000}             & 1\,242  & 9          & Dermoscopia      & LP \\
+PAD-UFES-20~\cite{padufes}           & 461     & 6          & Clínica (móvil)  & LP, FT \\
+DDI~\cite{ddi}                       & 137     & 2          & Clínica          & LP, FT, equidad \\
+Dermnet~\cite{dermnet}               & 4\,002  & 23         & Clínica (atlas)  & LP\textsuperscript{$\ast$} \\
+Derm7pt clínico~\cite{kawahara2019}  & 168     & 2          & Clínica          & LP \\
+Derm7pt dermo~\cite{kawahara2019}    & 225     & 2          & Dermoscopia      & LP \\
+HIBA                                 & 334     & 2          & Dermoscopia      & LP\textsuperscript{$\ast$} \\
+MSKCC                                & 1\,664  & 2          & Dermoscopia      & LP, FT\textsuperscript{$\ast$} \\
+WSI patches                          & 12\,354 & 16         & Histopatología   & LP \\
+ISIC2018~\cite{isic2018}             & 2\,594  & binaria    & Dermoscopia      & Segmentación (LoRA) \\
+Fitzpatrick17k~\cite{fitzpatrick17k} & 16\,577 & 114 + 6 FP & Clínica          & Equidad fototipo \\
+SkinCon~\cite{skincon}               & 3\,230  & 48 conc.   & Clínica          & CBM sobre SAE \\
+\hline
+\end{tabular}
+\end{table}
+
+La columna ``$N_{\mathrm{test}}$'' reúne las cifras nominales del
+split de evaluación que el presente trabajo emplea, no necesariamente
+el tamaño total del dataset. La columna ``Uso principal'' anticipa el
+protocolo experimental asociado a cada dataset, cuya descripción
+formal se desarrolla en el capítulo~\ref{cap:experimental}. Tres
+datasets aparecen marcados con un \emph{caveat de leakage} frente al
+corpus de preentrenamiento Derm1M (Dermnet, HIBA, MSKCC). En este
+contexto, el término \emph{caveat} designa una advertencia
+metodológica que debe acompañar al uso del dataset; \emph{leakage}
+designa el solapamiento entre las imágenes del split de evaluación y
+las imágenes con las que el modelo se preentrenó. La consecuencia
+operativa es que las métricas obtenidas sobre un dataset afectado por
+leakage no reflejan la capacidad del modelo de generalizar a material
+nuevo, sino que pueden recoger, total o parcialmente, su capacidad de
+reconocer material previamente visto durante el preentrenamiento. El
+tratamiento detallado de este caveat se desarrolla en el
+capítulo~\ref{cap:resultados}.
+
+\section{Datasets externos por familia}
+\label{sec:datasets-externos}
+
+Los datasets externos se agrupan por familia de modalidad y
+finalidad. Las cifras presentadas en cada subsección corresponden a
+los valores publicados por los responsables de cada conjunto y se
+emplean tal como están en los splits canónicos.
+
+\subsection{Datasets dermatoscópicos}
+\label{sec:datasets-dermo}
+
+\textbf{HAM10000}~\cite{ham10000} (\emph{Human Against Machine with
+10\,000 training images}) es el dataset dermatoscópico de referencia
+para clasificación multiclase desde su publicación. Reúne 10\,015
+imágenes dermatoscópicas de siete clases (\emph{nv}, \emph{mel},
+\emph{bkl}, \emph{bcc}, \emph{akiec}, \emph{vasc}, \emph{df}) con un
+fuerte desbalance hacia \emph{nv}. El split oficial utilizado en este
+trabajo dispone de 1\,232 imágenes en test.
+
+\textbf{BCN20000}~\cite{bcn20000} (\emph{Barcelona Dataset for Skin
+Lesion Classification}) extiende el espectro diagnóstico a nueve
+clases sobre dermoscopias del Hospital Clínic de Barcelona. El test
+empleado en este trabajo contiene 1\,242 imágenes. Su distribución de
+clases incluye, además de las siete categorías de HAM10000, dos
+adicionales asociadas a lesiones no clasificables y a entidades poco
+representadas en HAM.
+
+\textbf{Derm7pt} (variante dermatoscópica)~\cite{kawahara2019} forma
+parte del corpus \emph{Seven-Point Checklist} y constituye, junto a
+su variante clínica, uno de los pocos datasets con anotaciones
+multitarea ligadas a criterios diagnósticos estructurados. La
+variante dermatoscópica del split de evaluación dispone de 225
+imágenes en una formulación binaria melanoma/no-melanoma.
+
+\textbf{HIBA} es un dataset dermatoscópico originario del Hospital
+Italiano de Buenos Aires, liberado parcialmente para la comunidad
+investigadora a través del ISIC Archive. El test utilizado contiene
+334 imágenes en formulación binaria. Aparece marcado con caveat de
+leakage frente a Derm1M.
+
+\textbf{MSKCC} es el subconjunto dermatoscópico del Memorial Sloan
+Kettering Cancer Center, distribuido a través del ISIC Archive. El
+test empleado dispone de 1\,664 imágenes en formulación binaria
+melanoma/benigno. También aparece con caveat de leakage frente a
+Derm1M.
+
+\textbf{ISIC2018}~\cite{isic2018}, en su tarea de segmentación
+binaria de lesión, proporciona 2\,594 imágenes dermatoscópicas con
+máscara binaria por imagen. Es el dataset canónico de referencia para
+fine-tuning de modelos de segmentación en dermatología; en el
+presente trabajo se emplea para el fine-tuning con LoRA de SAM2.1
+descrito en el capítulo~\ref{cap:experimental}.
+
+\subsection{Datasets de fotografía clínica}
+\label{sec:datasets-clinicos}
+
+\textbf{PAD-UFES-20}~\cite{padufes} (\emph{Patient and Dataset of
+Skin Lesions, UFES}) recoge fotografías clínicas tomadas con
+teléfono móvil en consultas comunitarias del estado brasileño de
+Espírito Santo, cubriendo seis clases diagnósticas. Se trata del
+material que mejor reproduce las condiciones reales de imagen
+clínica generada por atención primaria: variabilidad de iluminación,
+encuadre y dispositivo de captura. El test utilizado dispone de 461
+imágenes.
+
+\textbf{DDI}~\cite{ddi} (\emph{Diverse Dermatology Images}) es un
+dataset curado específicamente para evaluar equidad: contiene 656
+imágenes clínicas con representación equilibrada de fototipos I-II,
+III-IV y V-VI, anotadas con una formulación binaria maligna/benigna.
+El test utilizado contiene 137 imágenes. Su tamaño reducido y su
+diversidad lo convierten en una referencia para análisis de
+robustez por subgrupo cutáneo.
+
+\textbf{Dermnet}~\cite{dermnet} es un dataset clínico construido a
+partir del atlas dermatológico Dermnet NZ, con 23 categorías
+diagnósticas y 4\,002 imágenes en test. Aparece con caveat de
+leakage frente a Derm1M: parte de su material se solapa con el corpus
+de preentrenamiento.
+
+\textbf{Derm7pt} (variante clínica)~\cite{kawahara2019} es la
+contraparte clínica del corpus \emph{Seven-Point Checklist}. El test
+contiene 168 imágenes en formulación binaria melanoma/no-melanoma.
+La existencia de las dos variantes (clínica y dermatoscópica) sobre
+un mismo conjunto de lesiones permite contrastes intra-paciente
+entre modalidades.
+
+\subsection{Datasets histopatológicos}
+\label{sec:datasets-histo}
+
+\textbf{WSI patches} es un conjunto de \emph{parches} (recortes
+rectangulares de tamaño fijo) extraídos de \emph{Whole-Slide Images}
+de piezas histopatológicas dermatológicas, distribuido como benchmark
+de evaluación para encoders fundacionales. El test utilizado en el
+presente trabajo contiene 12\,354 parches sobre 16 clases
+histopatológicas, derivadas de piezas etiquetadas por patólogos.
+
+\subsection{Datasets especializados}
+\label{sec:datasets-especiales}
+
+Dos datasets se incorporan al trabajo no como benchmarks generales de
+clasificación sino para evaluar dimensiones específicas del
+rendimiento.
+
+\textbf{Fitzpatrick17k}~\cite{fitzpatrick17k} agrupa 16\,577 imágenes
+clínicas anotadas conjuntamente con diagnóstico (114 patologías
+distribuidas en tres grandes familias etiológicas) y fototipo cutáneo
+Fitzpatrick (escala de seis niveles, I-VI). Su finalidad en el
+presente trabajo es la evaluación de equidad por fototipo descrita en
+el capítulo~\ref{cap:experimental}.
+
+\textbf{SkinCon}~\cite{skincon} es un dataset clínico de 3\,230
+imágenes anotadas densamente con 48 conceptos clínicos visuales por
+varios dermatólogos independientes. Su finalidad en el presente
+trabajo es servir como ground-truth conceptual para la evaluación de
+los Concept Bottleneck Models construidos sobre las representaciones
+del Sparse Autoencoder.
+
+\subsection{Corpus propio del trabajo: DermapixelAI 1.0}
+\label{sec:dermapixel-summary}
+
+\textbf{DermapixelAI 1.0} es el corpus propio resultante del
+trabajo, construido a partir del archivo del blog Dermapixel
+mantenido por la Dra.~R.~Taberner y desarrollado en paralelo al
+TFG en el marco de la modernización tecnológica del archivo
+descrita en el capítulo~\ref{cap:intro}. La versión 1.0 contiene
+1\,089 imágenes vinculadas a 672 casos clínicos con texto narrativo
+asociado en castellano (mediana de 223 palabras por caso),
+mayoritariamente fotografía clínica (1\,036) con un subconjunto
+dermatoscópico reducido (49) y unas pocas imágenes de otras
+modalidades. Las imágenes están etiquetadas conforme a la ontología
+jerárquica L1/L2/L3 descrita en la sección~\ref{sec:ontologia} y
+particionadas en train/val/test bajo regla \emph{case-aware} (891
+/ 157 / 41), con 97{,}93\,\% del corpus validado mediante mapeo
+ontológico experto.
+
+DermapixelAI 1.0 no se concibe como benchmark de evaluación del
+presente TFG sino como contribución del proyecto a la comunidad
+investigadora y, por extensión, al sistema sanitario. Su finalidad
+principal es servir de base para investigaciones posteriores sobre
+dermatología clínica en castellano ---en particular las orientadas
+a la integración del texto clínico como componente del aprendizaje
+multimodal--- y habilitar la reutilización del archivo Dermapixel
+en proyectos académicos y aplicados orientados al apoyo al
+diagnóstico dermatológico, con el correspondiente retorno previsto
+sobre la práctica asistencial y la formación de profesionales. Su
+uso en el presente trabajo se limita a experimentación parcial
+sobre material clínico en español. El detalle exhaustivo del
+pipeline de construcción, las distribuciones por L1/L2/L3, los
+splits, el texto narrativo y los campos de validación experta se
+desarrolla en el anexo~\ref{anexo:pipeline}.
+
+\section{Ontología jerárquica L1/L2/L3}
+\label{sec:ontologia}
+
+La heterogeneidad de las taxonomías diagnósticas entre datasets ---
+desde la categorización binaria melanoma/no-melanoma de Derm7pt y
+HIBA hasta las 114 patologías incluidas en Fitzpatrick17k---
+dificulta una comparación directa entre evaluaciones. Para permitir
+comparaciones entre datasets y facilitar el desarrollo de un
+clasificador unificado sobre un dominio común, el presente trabajo
+emplea una ontología jerárquica de tres niveles diseñada por el autor
+y revisada por la Dra.~R.~Taberner.
+
+\subsection{Estructura jerárquica}
+\label{sec:ontologia-estructura}
+
+La ontología organiza los diagnósticos en tres niveles jerárquicos
+encajados.
+
+\textbf{Nivel L1 (etiológico)} agrupa los diagnósticos en cuatro
+grandes familias etiológicas que reflejan el mecanismo causal
+predominante: patología inflamatoria, patología tumoral, patología
+infecciosa y genodermatosis. Estas cuatro categorías cubren el
+espectro diagnóstico habitual esperado en la práctica dermatológica.
+
+\textbf{Nivel L2 (subcategoría clínica)} desglosa cada categoría L1
+en subcategorías clínicas más específicas. El vocabulario completo de
+la ontología contiene 43 entradas L2 (p.~ej.~\emph{Eccemas y
+dermatitis} dentro de Patología inflamatoria, \emph{Tumores
+malignos} dentro de Patología tumoral o \emph{Infecciones por virus}
+dentro de Patología infecciosa).
+
+De estas 43 entradas, cinco no presentan diagnósticos L3 asociados:
+\emph{Esclerosis tuberosa}, \emph{Neurofibromatosis tipo 1},
+\emph{Incontinentia pigmenti}, \emph{Queratodermia palmoplantar
+hereditaria} y \emph{Pseudoxantoma elástico}. Estas entidades se
+consideran suficientemente específicas y mantienen su representación
+directamente en el nivel L2, sin desagregación diagnóstica adicional.
+
+\textbf{Nivel L3 (diagnóstico)} contiene los diagnósticos
+individuales utilizados por el sistema de clasificación. El
+vocabulario completo incorpora 367 entradas L3.
+
+\subsection{Códigos externos asociados}
+\label{sec:ontologia-codigos}
+
+Cada entrada L3 de la ontología lleva asociados códigos de dos
+nomenclaturas externas reconocidas: SNOMED CT
+(\emph{Systematized Nomenclature of Medicine -- Clinical Terms}) y
+CIE-10 (\emph{Clasificación Internacional de Enfermedades, décima
+revisión}).
+
+La incorporación de estos códigos persigue tres objetivos:
+facilitar el mapeo bidireccional entre la ontología propia y las
+taxonomías clínicas utilizadas habitualmente en el entorno
+hospitalario, habilitar la interoperabilidad con sistemas de
+información clínica y reducir el esfuerzo necesario para incorporar
+nuevos diagnósticos mediante el respaldo de nomenclaturas externas
+estables.
+
+\subsection{Mapeo de los datasets a la ontología}
+\label{sec:ontologia-mapeo}
+
+Once de los doce datasets externos se mapean a la ontología
+jerárquica mediante una correspondencia explícita entre cada
+etiqueta nativa del dataset y la entrada L3 (o, en su defecto, L2)
+correspondiente. Este mapeo permite construir un corpus armonizado
+agregado de 72\,654 imágenes etiquetadas sobre vocabulario común,
+que constituye la base del clasificador unificado descrito en el
+capítulo~\ref{cap:caminos}. SkinCon, al estar anotado con conceptos
+y no con diagnósticos categóricos, no participa de este mapeo a
+nivel diagnóstico.
+
+\section{Limitaciones del conjunto de datos del trabajo}
+\label{sec:limitaciones-datos}
+
+El conjunto de datasets externos descrito en este capítulo presenta
+tres limitaciones que conviene declarar explícitamente, dado que
+condicionan la interpretación de los resultados del
+capítulo~\ref{cap:resultados}.
+
+\textbf{(i)~Solapamiento con Derm1M.} Tres de los doce datasets
+externos contrastados (Dermnet, HIBA, MSKCC) presentan solapamiento
+documentado con el corpus de preentrenamiento Derm1M empleado por
+DermLIP. Las evaluaciones sobre estos tres datasets se interpretan
+con caveat explícito en el capítulo~\ref{cap:resultados}.
+
+\textbf{(ii)~Sesgo geográfico del material.} Los doce datasets
+externos provienen mayoritariamente de instituciones de Estados
+Unidos, Australia, Europa central y Brasil. La población
+hispanohablante europea no está representada de forma específica en
+los conjuntos de evaluación.
+
+\textbf{(iii)~Heterogeneidad de las taxonomías diagnósticas
+nativas.} Los doce datasets emplean taxonomías propias incompatibles
+entre sí (binarias en Derm7pt, HIBA y MSKCC; multiclase con número
+variable en HAM10000, BCN20000, PAD-UFES-20, Dermnet y WSI patches;
+114 patologías en Fitzpatrick17k). La ontología jerárquica
+introducida en la sección~\ref{sec:ontologia} mitiga esta
+limitación al armonizar el conjunto agregado, pero no la elimina:
+cada dataset conserva su grano original y la comparación
+inter-dataset requiere acumulación en un nivel L superior al de la
+etiqueta nativa más fina.
+
+El corpus propio DermapixelAI 1.0, al no ser objeto de evaluación
+del trabajo, presenta limitaciones específicas (desbalance
+estructural por modalidad, cola larga diagnóstica, cobertura
+incompleta de la ontología y cobertura parcial por subcategoría en
+los splits) que se documentan en detalle en el
+anexo~\ref{anexo:pipeline}.
+
+Estas limitaciones no invalidan los resultados del trabajo pero
+delimitan el dominio de validez de las cifras reportadas en el
+capítulo~\ref{cap:resultados} y las direcciones de continuación
+recogidas en el capítulo~\ref{cap:caminos}.

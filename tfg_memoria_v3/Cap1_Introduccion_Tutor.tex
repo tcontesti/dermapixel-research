@@ -1,0 +1,397 @@
+%!TeX root=MemoriaTFG.tex
+
+\chapter{Introducción}
+\label{cap:intro}
+
+\section{Contexto clínico}
+\label{sec:contexto}
+
+La dermatología clínica atiende un espectro amplio de entidades con
+distribución concentrada en un número reducido de motivos de
+consulta. El estudio observacional DIADERM, sobre $10\,999$
+diagnósticos en $8\,953$ pacientes en territorio español,
+ordena los diez diagnósticos más prevalentes como queratosis
+actínica, carcinoma basocelular, nevus melanocítico, queratosis
+seborreica, otras neoplasias benignas, psoriasis, acné, verrugas
+víricas, otros trastornos de la pigmentación y otras
+dermatitis~\cite{diaderm2018}. El trabajo local de Taberner et~al.\
+sobre el servicio dermatológico del Hospital Universitario Son
+Llàtzer (HUSLL) documenta $213$ diagnósticos diferentes en un
+único año asistencial~\cite{taberner2010_motivos}. Ambos coinciden
+en un peso elevado de dermatosis benignas, inflamatorias e
+infecciosas habituales.
+
+La sensibilidad temporal del proceso diagnóstico resulta crítica en
+el melanoma cutáneo. La supervivencia específica a cinco años
+desciende desde aproximadamente $99\%$ en estadio~I hasta
+$25\%$ en estadio~IV según la octava edición de la American
+Joint Committee on Cancer~\cite{ajcc8}. El acceso al especialista
+se realiza mediante derivación desde atención primaria. La
+capacidad asistencial del circuito presencial es limitada frente a
+una demanda creciente, lo que justifica el interés por sistemas de
+apoyo al diagnóstico basados en imagen.
+
+El sustrato visual del diagnóstico dermatológico se articula en tres
+modalidades: fotografía clínica (presentación general y contexto
+anatómico), dermatoscopia (patrones pigmentarios y estructurales no
+visibles a simple vista) e histopatología (confirmación
+tisular). Sobre esta tríada operan los sistemas de apoyo basados en
+aprendizaje automático.
+
+\section{Análisis automatizado: paradigma clásico y limitaciones}
+\label{sec:paradigma-clasico}
+
+El primer hito establecido del aprendizaje profundo en dermatología
+es el clasificador convolucional de Esteva et~al.~\cite{esteva2017},
+con rendimiento equivalente al de dermatólogos certificados sobre
+un conjunto curado de lesiones. La aproximación clásica entrena
+arquitecturas convolucionales desde inicialización aleatoria o desde
+pesos preentrenados en ImageNet, ajustadas posteriormente sobre
+datasets dermatológicos etiquetados~\cite{tschandl2018,ham10000}. La
+literatura posterior incorpora aumento de datos, balanceo de clases,
+ensembles y arquitecturas específicas para tareas concretas como
+segmentación binaria~\cite{isic2018} o clasificación binaria
+melanoma/no-melanoma~\cite{kawahara2019}.
+
+Tres limitaciones definen este paradigma. La primera es el coste de
+anotación: el rendimiento escala con el volumen de datos etiquetados
+y la anotación dermatológica requiere expertos clínicos con
+disponibilidad limitada. La segunda es la fragmentación entre
+conjuntos públicos: los datasets disponibles utilizan taxonomías
+heterogéneas, distintos protocolos de adquisición y diferentes
+esquemas de balance de clases, lo que limita comparaciones directas
+entre estudios y transferencia entre dominios. La tercera es la
+pérdida de rendimiento fuera del dominio de entrenamiento,
+documentada de forma reiterada en pacientes de fototipo cutáneo
+elevado~\cite{fitzpatrick17k,ddi}. Estas tres limitaciones motivan
+la transición hacia el paradigma fundacional.
+
+\section{Modelos fundacionales en imagen médica}
+\label{sec:fundacionales-medica}
+
+Los modelos fundacionales son arquitecturas preentrenadas sobre
+grandes datasets sin etiquetar mediante objetivos auto-supervisados o
+multimodales. Sus representaciones se adaptan posteriormente a
+tareas específicas con cantidades reducidas de datos etiquetados.
+Las arquitecturas predominantes son el Vision Transformer (ViT) y
+sus variantes~\cite{vit2021}. Los objetivos de preentrenamiento más
+extendidos son la reconstrucción enmascarada, la destilación
+auto-supervisada y la alineación contrastiva imagen-texto al estilo
+CLIP~\cite{clip2021,siglip2023}.
+
+En imagen médica, DINOv2~\cite{dinov2} representa la referencia
+abierta de encoder auto-supervisado de propósito general, entrenado
+sobre $\sim 142$ millones de imágenes naturales mediante
+destilación entre vistas. BiomedCLIP~\cite{biomedclip} extiende el
+paradigma contrastivo al dominio biomédico sobre PMC-15M
+($\sim 15$ millones de pares figura-leyenda). El paradigma de
+segmentación promptable se establece con SAM~\cite{sam2023} y su
+evolución SAM2.1~\cite{sam2}; su transferencia a dominios médicos
+requiere adaptación, habitualmente vía LoRA~\cite{lora}. La
+arquitectura BLIP-2~\cite{blip2_2023} bridge un encoder visual
+congelado con un modelo de lenguaje mediante un módulo
+intermedio (Q-Former). La evidencia disponible muestra que el
+preentrenamiento sobre datos del dominio clínico de interés
+incrementa de forma consistente el rendimiento respecto a encoders
+generalistas adaptados.
+
+\section{Modelos fundacionales para dermatología}
+\label{sec:fundacionales-derma}
+
+Tres referencias relevantes liberadas por el grupo de la Universidad
+Monash definen el estado del arte específico durante el periodo
+2024--2026.
+
+\paragraph{PanDerm~\cite{panderm2025}.}
+Encoder visual auto-supervisado entrenado mediante reconstrucción
+enmascarada sobre $\sim 2{,}1$ millones de imágenes
+dermatológicas en cuatro modalidades (fotografía corporal total,
+dermatoscopia, fotografía clínica, histopatología). Libera pesos en
+dos tamaños: \emph{Base} ($\sim 86$\,M parámetros, embedding
+$768$) y \emph{Large} ($\sim 307$\,M parámetros, embedding
+$1\,024$). Sus autores reportan una mejora media del
+$+10{,}2\%$ sobre el estado del arte previo en $28$ tareas
+dermatológicas. La disponibilidad simultánea de pesos, código y
+benchmark hace de PanDerm el primer modelo fundacional dermatológico
+verificable de forma independiente.
+
+\paragraph{Derm1M y la familia DermLIP~\cite{derm1m}.}
+Derm1M es un dataset dermatológico vision-lenguaje de
+$\sim 1{,}03$ millones de pares imagen-texto, construido a
+partir de fuentes clínicas y de literatura especializada. DermLIP es
+el modelo contrastivo entrenado sobre Derm1M al estilo
+CLIP~\cite{clip2021}, distribuido en variantes con encoder visual
+ViT-B/16 y encoder textual basado en PubMedBERT o GPT-2/CLIP. La
+alineación habilita clasificación zero-shot guiada por
+\emph{prompts} y recuperación bidireccional visión-texto sin
+entrenamiento específico por tarea.
+
+\paragraph{DermFM-Zero~\cite{dermfmzero2026}.}
+Integra encoder visual, rama lingüística y mecanismo de
+interpretabilidad mediante Sparse Autoencoders sobre las
+representaciones internas~\cite{templeton2024}. Reporta rendimientos
+superiores a PanDerm y DermLIP en los benchmarks que define. Sus
+pesos no son públicos en la fecha de cierre del trabajo, lo que
+restringe su tratamiento a la discusión conceptual.
+
+A estos tres modelos específicos se añaden, en el espacio de
+comparación, encoders generalistas (DINOv2, BiomedCLIP,
+SigLIP-Large), arquitecturas convolucionales clásicas (ConvNeXt-L,
+EfficientNetV2-L), el modelo de segmentación SAM2.1 con adaptación
+LoRA y modelos de lenguaje multimodales (GPT-4o, Gemini~2.5~Pro,
+MedGemma~4B Vision, MedGemma~27B Text)~\cite{amie2024}, junto con
+BLIP-2 como referencia metodológica.
+
+\section{Brechas operativas y motivación}
+\label{sec:brechas}
+
+La revisión de la literatura identifica cinco brechas operativas
+sobre las que el presente estudio aporta evidencia empírica.
+
+\paragraph{Benchmarks no homogéneos entre familias.}
+Los benchmarks reportados por los autores originales de PanDerm,
+DermLIP y DermFM-Zero se construyen, en buena medida, sobre
+subconjuntos derivados de los datos de preentrenamiento, y aplican
+protocolos no equivalentes entre familias. La comparación entre
+encoders específicos de dominio, modelos contrastivos
+vision-lenguaje, encoders generalistas y modelos de lenguaje
+multimodales sobre un mismo conjunto de datasets externos y un
+mismo protocolo no está documentada en la literatura disponible.
+
+\paragraph{Heterogeneidad taxonómica entre datasets.}
+Los doce datasets externos públicos identificados como accesibles
+para el trabajo utilizan taxonomías nativas incompatibles:
+binarias melanoma/no-melanoma en Derm7pt, HIBA y MSKCC;
+multiclase con $C\in[6,23]$ en HAM10000, BCN20000, PAD-UFES-20,
+Dermnet y WSI~patches; $114$ patologías en
+Fitzpatrick17k~\cite{fitzpatrick17k}; $48$ conceptos clínicos en
+SkinCon~\cite{skincon}. La comparación directa entre modelos sobre
+estos datasets exige un esquema explícito de armonización
+taxonómica que la literatura no proporciona.
+
+\paragraph{Fuga de información entre conjuntos de evaluación y
+preentrenamiento.}
+La construcción de Derm1M a partir de fuentes web abiertas
+introduce un riesgo no cuantificado de solapamiento con los
+conjuntos públicos habituales de evaluación. La cuantificación
+sistemática mediante hash MD5 exhaustivo no se documenta en la
+literatura previa al inicio del trabajo y constituye condición
+necesaria para la interpretación defendible de cualquier resultado
+zero-shot sobre estos datasets.
+
+\paragraph{Datasets dermatológicos en español.}
+Los datasets disponibles para preentrenamiento o adaptación de
+modelos vision-lenguaje son mayoritariamente angloparlantes
+(Derm1M, MONET, MM-Skin). La disponibilidad de material clínico en
+español con calidad docente verificada (imagen, metadatos clínicos
+y texto narrativo asociado) es marginal.
+
+\paragraph{Reproducibilidad sobre hardware no estándar.}
+La práctica totalidad de la literatura experimental se ejecuta
+sobre GPU NVIDIA A100 o H100 en plataformas x86\_64. La aparición
+de plataformas alternativas basadas en arquitectura aarch64 (ARM de
+64 bits), como la familia NVIDIA DGX Spark con chip Grace Hopper,
+introduce una variable no evaluada sobre la viabilidad de
+reproducción y el comportamiento numérico de los pipelines en BF16.
+
+\section{Marco operativo previo del autor}
+\label{sec:trabajo-previo}
+
+El presente trabajo se desarrolla en el marco de dos colaboraciones
+preexistentes con la Dra.~R.~Taberner, dermatóloga del HUSLL. La
+primera es la modernización tecnológica del archivo Dermapixel,
+blog mantenido por la Dra.~Taberner desde 2010 que reúne más de
+$700$ casos clínicos comentados con imagen clínica y
+dermatoscópica, historia abreviada, diagnóstico y razonamiento
+diferencial; el autor trabaja en su migración a una pila
+tecnológica propia. La segunda es un proyecto institucional del
+Servei de Salut de les Illes Balears (IB-Salut) sobre
+teledermatología hospitalaria, en el que se desarrolla una
+herramienta de apoyo a la primera valoración dermatológica en el
+circuito de derivación desde atención primaria. Ambas líneas
+orientan la decisión de priorizar modelos con código y pesos
+públicos por su viabilidad de integración.
+
+\section{Pregunta de investigación}
+\label{sec:pregunta}
+
+El estudio se articula en torno a una pregunta única: \emph{¿cuál
+es el rendimiento y la capacidad de generalización de los modelos
+fundacionales para imagen dermatológica disponibles, en función del
+volumen de datos etiquetados y del tipo de supervisión, y con qué
+robustez frente a la heterogeneidad taxonómica entre datasets y la
+disparidad por fototipo cutáneo?}
+
+La respuesta empírica exige dos condiciones operativas: un
+protocolo de evaluación homogéneo aplicable a familias de modelos
+heterogéneas y un esquema explícito de armonización taxonómica
+entre datasets. El diseño descrito en el
+capítulo \emph{Materiales y métodos} (en preparación) satisface ambas.
+
+\section{Objetivos del trabajo}
+\label{sec:objetivos}
+
+El trabajo se articula en torno a dos objetivos formales,
+verificables sobre los resultados experimentales del
+capítulo \emph{Resultados} (en preparación).
+
+\paragraph{O1. Evaluación experimental sistemática de los modelos
+fundacionales dermatológicos sobre conjuntos de datos externos.}
+Sobre el hardware del proyecto (NVIDIA DGX Spark, chip Grace Hopper
+GB10, arquitectura aarch64, $128$\,GB memoria unificada,
+CUDA~13.0, BF16) se implementa el conjunto de modelos fundacionales
+con código y pesos públicos a la fecha de inicio. Se evalúa su
+comportamiento sobre doce datasets externos
+públicos\footnote{HAM10000~\cite{ham10000},
+BCN20000~\cite{bcn20000}, PAD-UFES-20~\cite{padufes},
+DDI~\cite{ddi}, Dermnet~\cite{dermnet}, Derm7pt
+(clínica y dermatoscópica)~\cite{kawahara2019}, HIBA, MSKCC, WSI
+patches, Fitzpatrick17k~\cite{fitzpatrick17k},
+SkinCon~\cite{skincon} e ISIC2018~\cite{isic2018}.} mediante cuatro
+protocolos principales (sondeo lineal, ajuste fino supervisado,
+segmentación binaria con LoRA~\cite{lora} sobre SAM2.1~\cite{sam2},
+clasificación zero-shot multimodal) y tres protocolos
+complementarios (comparación con modelos de lenguaje multimodales,
+análisis de equidad por fototipo Fitzpatrick, auditoría de
+solapamiento con Derm1M mediante hash MD5).
+
+\paragraph{O2. Construcción del dataset DermapixelAI 1.0.}
+Se extrae, depura y estructura el material del archivo Dermapixel
+para conformar un dataset que vincula, para cada caso, imagen y
+modalidad, metadatos clínicos y texto narrativo en español. El
+dataset se publica bajo licencia CC-BY-NC-SA~4.0 con datasheet
+formal~\cite{datasheets2018}, particiones documentadas y mecanismo
+de cita recomendada. La explotación experimental sistemática sobre
+el dataset se inicia hacia el cierre del periodo cubierto por este
+documento y se desarrolla principalmente con posterioridad;
+la apartado \emph{Líneas de investigación abiertas} (en preparación) del capítulo \emph{Conclusiones} (en preparación)
+recoge el estado del dataset.
+
+Los bloques derivados emergidos durante el desarrollo del proyecto
+(armonización ontológica jerárquica L1/L2/L3, ensemble de seguridad
+para detección de melanoma, análisis de equidad por fototipo,
+interpretabilidad mediante Sparse Autoencoders~\cite{templeton2024},
+recuperación visual densa basada en FAISS~\cite{faiss2019},
+integración en el prototipo DermApIxel) no constituyen objetivos
+formales y se documentan en los anexos correspondientes con su
+estado, prerrequisitos y líneas futuras.
+
+\section{Contribuciones}
+\label{sec:contribuciones}
+
+Las contribuciones se enumeran a continuación. Las cuatro primeras
+sostienen la respuesta a la pregunta de investigación y se
+desarrollan en el cuerpo principal; las cinco siguientes constituyen
+material complementario y se documentan en los
+Anexos F--H (en preparación).
+
+\begin{enumerate}
+\item Reproducción experimental del modelo PanDerm sobre
+arquitectura aarch64 (GB10/Grace Hopper) con verificación numérica
+respecto a los valores reportados en la publicación original.
+
+\item Benchmark comparativo homogéneo de catorce modelos (PanDerm
+Base y Large, DINOv2, ConvNeXt-Large, EfficientNetV2-Large, tres
+variantes de DermLIP, BiomedCLIP, SigLIP-Large, SAM2.1+LoRA, GPT-4o,
+Gemini~2.5~Pro, MedGemma~4B Vision y~27B Text, BLIP-2) bajo cuatro
+protocolos sobre doce datasets externos.
+
+\item Ontología jerárquica L1/L2/L3 para armonización taxonómica
+entre datasets heterogéneos: cuatro categorías etiológicas,
+$43$ subcategorías clínicas y $367$ diagnósticos
+individuales, codificados en SNOMED~CT y CIE-10 y validados por
+revisión experta.
+
+\item Auditoría sistemática de solapamiento entre los doce
+conjuntos de evaluación y el dataset Derm1M mediante hash MD5
+exhaustivo, con identificación de tres datasets afectados
+(Dermnet, HIBA, MSKCC) y cuantificación del impacto sobre las
+cifras zero-shot.
+
+\item Dataset DermapixelAI~1.0, primer dataset dermatológico
+verificado en español con imagen, metadatos y texto narrativo
+asociado ($1\,089$ imágenes vinculadas a $672$ casos clínicos,
+mediana de $223$ palabras por caso), distribuido bajo licencia
+CC-BY-NC-SA~4.0 con datasheet, particiones \emph{case-aware}
+($891 / 157 / 41$) y mecanismo de cita
+(Anexo \emph{Entrega del dataset} (en preparación)).
+
+\item Análisis empírico de equidad por fototipo Fitzpatrick sobre
+Fitzpatrick17k, comparando cinco arquitecturas y reportando la
+brecha de rendimiento entre fototipos extremos.
+
+\item Caracterización de la sensibilidad de DermLIP al tokenizador
+y al diseño del \emph{prompt} en clasificación zero-shot, con
+identificación del factor crítico (compatibilidad del tokenizador
+con el espacio de \emph{embeddings} del modelo)~(Anexo \emph{Comparación LLM extendida} (en preparación)).
+
+\item Replicación parcial del mecanismo de interpretabilidad
+basado en Sparse Autoencoders sobre las representaciones de PanDerm
+Large, validado mediante Concept Bottleneck Model sobre
+SkinCon~\cite{skincon} (Anexo \emph{SAE y conceptos clínicos} (en preparación)).
+
+\item Prototipo funcional DermApIxel como entorno integrado de
+despliegue de los módulos derivados del trabajo
+(Anexo \emph{Prototipo DermApIxel} (en preparación)).
+\end{enumerate}
+
+\section{Restricciones del estudio}
+\label{sec:alcance}
+
+Tres restricciones explícitas condicionan el diseño experimental y
+la interpretación de los resultados. \textbf{Hardware:} todas las
+ejecuciones se realizan sobre NVIDIA DGX Spark con chip Grace
+Hopper GB10 y arquitectura aarch64, no coincidente con el hardware
+x86\_64 dominante en la literatura. \textbf{Acceso a datos:} los
+conjuntos internos del grupo de Monash empleados en el
+preentrenamiento de PanDerm no son accesibles para terceros, lo que
+limita el trabajo a los pesos liberados y a la evaluación sobre
+datasets externos públicos. \textbf{Acceso a modelos:} los pesos
+de DermFM-Zero no son públicos en la fecha de cierre, lo que impide
+su evaluación empírica directa y restringe su tratamiento a la
+discusión conceptual.
+
+El trabajo no aborda, por decisión de alcance, los siguientes
+elementos: preentrenamiento desde cero de un modelo fundacional
+propio; validación clínica prospectiva sobre cohorte hospitalaria
+real con protocolo aprobado por Comité Ético de Investigación
+Clínica; integración operativa con el sistema PACS del HUSLL;
+reentrenamiento multilingüe de la rama lingüística sobre datasets en
+español de gran escala. Estos elementos se identifican como líneas
+futuras en la apartado \emph{Líneas de investigación abiertas} (en preparación) del
+capítulo \emph{Conclusiones} (en preparación).
+
+\section{Estructura del documento}
+\label{sec:estructura}
+
+El documento se compone de siete capítulos en el cuerpo principal,
+una bibliografía y diez anexos. El capítulo 2 sintetiza
+el estado del arte en cuatro bloques. El
+capítulo \emph{Materiales y métodos} (en preparación) describe materiales y métodos: los doce
+datasets externos, la ontología jerárquica L1/L2/L3, el dataset
+DermapixelAI~1.0 (resumido; pipeline detallado en el
+Anexo \emph{Pipeline DermapixelAI} (en preparación)), los catorce modelos evaluados, la
+infraestructura, los protocolos, las métricas y la trazabilidad. El
+capítulo \emph{Resultados} (en preparación) reúne los resultados experimentales
+organizados por bloque. El capítulo \emph{Discusión} (en preparación) interpreta
+los resultados en clave de hallazgos, comparación con la literatura
+e implicaciones operativas. El capítulo \emph{Limitaciones} (en preparación)
+declara las limitaciones del estudio en seis dimensiones. El
+capítulo \emph{Conclusiones} (en preparación) responde de forma compacta a la
+pregunta de investigación y enumera las contribuciones
+reproducibles.
+
+Los anexos contienen, respectivamente, el mapa de tareas
+experimentales y la estructura del repositorio
+(Anexo \emph{Tareas y reproducibilidad} (en preparación)), las tablas detalladas de resultados por
+dataset (Anexo \emph{Tablas extendidas} (en preparación)), el pipeline de construcción y
+caracterización del dataset DermapixelAI~1.0
+(Anexo \emph{Pipeline DermapixelAI} (en preparación)), la declaración sobre el uso de
+herramientas de inteligencia artificial durante la elaboración del
+documento (Anexo \emph{Declaración uso IA} (en preparación)), el documento de entrega formal
+del dataset con licencia, datasheet y consideraciones de privacidad
+(Anexo \emph{Entrega del dataset} (en preparación)), la documentación de los Sparse
+Autoencoders y el diccionario de conceptos
+(Anexo \emph{SAE y conceptos clínicos} (en preparación)), la comparación extendida con modelos
+de lenguaje multimodales generalistas (Anexo \emph{Comparación LLM extendida} (en preparación)) y
+el prototipo DermApIxel (Anexo \emph{Prototipo DermApIxel} (en preparación)).
