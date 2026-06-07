@@ -1,0 +1,75 @@
+.claude/
+CLAUDE.md
+claude_code_context_prompt.md
+
+# LaTeX intermedios
+tfg_memoria_v3/*.aux
+tfg_memoria_v3/*.log
+tfg_memoria_v3/*.toc
+tfg_memoria_v3/*.lof
+tfg_memoria_v3/*.lot
+tfg_memoria_v3/*.out
+tfg_memoria_v3/*.synctex.gz
+tfg_memoria_v3/*.bbl
+tfg_memoria_v3/*.blg
+tfg_memoria_v3/*.fls
+tfg_memoria_v3/*.fdb_latexmk
+tfg_memoria_v3/*.aux
+tfg_memoria_v3/auto/
+tfg_memoria_v3/_minted-*/
+tfg_memoria_v3/*.brf
+tfg_memoria_v3/*.nav
+tfg_memoria_v3/*.snm
+tfg_memoria_v3/*.vrb
+
+# LaTeX intermedios en otras carpetas TFG (por si se compila ahí)
+*.aux
+*.toc
+*.lof
+*.lot
+*.out
+*.synctex.gz
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
+texput.log
+
+# Python intermedios
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+.vscode/
+.idea/
+
+# Versiones antiguas del TFG (mantener en disco, no versionar)
+tfg_definitivo*
+tfg_uib/
+tfg_uib_70p/
+tfg_uib_70pv2/
+tfg_uib_75p/
+tfg_memoria_v3seg/
+Plantilla_Treball_Final_de_Grau*/
+
+# Outputs de experimentos y datos pesados
+output/
+weights/
+datasets/
+data/
+results/
+figures_derm1m/
+_pdf_check/
+_prototype_raw/
+_sprint97_raw/
+
+# Backups
+*.bak
+*.old_local
+*.before_*
+
+# OS files
+Thumbs.db
+.DS_Store
