@@ -1,0 +1,128 @@
+{
+  "design": "full_ft x5-fold CV + LoRA r4/8/16/32 x1-fold",
+  "runs": {
+    "fullft_fold0": {
+      "bucketA_dice": 0.9548682193253798,
+      "bucketB_dice": 0.959570985658011,
+      "best_val_dice": 0.9569006010348317,
+      "best_epoch": 6,
+      "latency_ms": 25.91121196746826
+    },
+    "fullft_fold1": {
+      "bucketA_dice": 0.9542190044504598,
+      "bucketB_dice": 0.9547358157012658,
+      "best_val_dice": 0.9529012435322523,
+      "best_epoch": 2,
+      "latency_ms": 26.196837425231934
+    },
+    "fullft_fold2": {
+      "bucketA_dice": 0.9556131620420563,
+      "bucketB_dice": 0.9601401572083694,
+      "best_val_dice": 0.9591081543223864,
+      "best_epoch": 6,
+      "latency_ms": 25.902509689331055
+    },
+    "fullft_fold3": {
+      "bucketA_dice": 0.9563432696573974,
+      "bucketB_dice": 0.9567719307302837,
+      "best_val_dice": 0.9555463521774554,
+      "best_epoch": 8,
+      "latency_ms": 25.695085525512695
+    },
+    "fullft_fold4": {
+      "bucketA_dice": 0.955768175674501,
+      "bucketB_dice": 0.9575795724897948,
+      "best_val_dice": 0.9569047130480739,
+      "best_epoch": 12,
+      "latency_ms": 26.249289512634277
+    },
+    "lora_r4_fold0": {
+      "bucketA_dice": 0.954141760399281,
+      "bucketB_dice": 0.9518407491876815,
+      "best_val_dice": 0.9501120640958601,
+      "best_epoch": 5,
+      "trainable_params": 7575357,
+      "latency_ms": 27.16970443725586
+    },
+    "lora_r8_fold0": {
+      "bucketA_dice": 0.9527157819351744,
+      "bucketB_dice": 0.9520774108117546,
+      "best_val_dice": 0.95031767456526,
+      "best_epoch": 10,
+      "trainable_params": 7622461,
+      "latency_ms": 26.725411415100098
+    },
+    "lora_r16_fold0": {
+      "bucketA_dice": 0.9538915809865048,
+      "bucketB_dice": 0.9543666301799542,
+      "best_val_dice": 0.9525360445892449,
+      "best_epoch": 11,
+      "trainable_params": 7716669,
+      "latency_ms": 26.68631076812744
+    },
+    "lora_r32_fold0": {
+      "bucketA_dice": 0.9551247148238738,
+      "bucketB_dice": 0.9548485758937332,
+      "best_val_dice": 0.9531758328782999,
+      "best_epoch": 8,
+      "trainable_params": 7905085,
+      "latency_ms": 26.879191398620605
+    }
+  },
+  "fullft_5fold_CV": {
+    "bucketA": {
+      "mean": 0.9553623662299587,
+      "std": 0.0008278297984383739,
+      "sem": 0.00037021674062163063,
+      "ci95_low": 0.9543344798115435,
+      "ci95_high": 0.956390252648374,
+      "n": 5,
+      "values": [
+        0.9548682193253798,
+        0.9542190044504598,
+        0.9556131620420563,
+        0.9563432696573974,
+        0.955768175674501
+      ]
+    },
+    "bucketB": {
+      "mean": 0.9577596923575451,
+      "std": 0.0021851397299579344,
+      "sem": 0.000977224195304295,
+      "ci95_low": 0.9550464831266134,
+      "ci95_high": 0.9604729015884768,
+      "n": 5,
+      "values": [
+        0.959570985658011,
+        0.9547358157012658,
+        0.9601401572083694,
+        0.9567719307302837,
+        0.9575795724897948
+      ]
+    },
+    "headline_0.9556_in_CI": true
+  },
+  "lora_ablation_fold0": {
+    "r4": {
+      "bucketA_dice": 0.954141760399281,
+      "delta_vs_fullft_pp": -0.073,
+      "trainable_params": 7575357
+    },
+    "r8": {
+      "bucketA_dice": 0.9527157819351744,
+      "delta_vs_fullft_pp": -0.215,
+      "trainable_params": 7622461
+    },
+    "r16": {
+      "bucketA_dice": 0.9538915809865048,
+      "delta_vs_fullft_pp": -0.098,
+      "trainable_params": 7716669
+    },
+    "r32": {
+      "bucketA_dice": 0.9551247148238738,
+      "delta_vs_fullft_pp": 0.026,
+      "trainable_params": 7905085
+    },
+    "fullft_fold0_ref": 0.9548682193253798
+  }
+}

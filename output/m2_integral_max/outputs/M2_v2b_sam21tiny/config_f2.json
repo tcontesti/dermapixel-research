@@ -1,0 +1,20 @@
+{
+  "mode": "full_ft",
+  "manifest": "manifests/m2_integral_max_v1c_local.parquet",
+  "out": "outputs/M2_v2b_sam21tiny",
+  "model_id": "facebook/sam2.1-hiera-tiny",
+  "init_ckpt": "",
+  "init_ckpt_key": "model",
+  "epochs": 30,
+  "lr": 0.0001,
+  "batch_size": 4,
+  "grad_accum": 4,
+  "img_size": 1024,
+  "warmup": 200,
+  "patience": 5,
+  "lora_r": 8,
+  "lora_alpha": 16,
+  "lora_dropout": 0.1,
+  "seed": 42,
+  "smoke": false
+}

@@ -1,0 +1,103 @@
+{
+  "model_name": "MedSAM2-tiny (M2-INTEGRAL-MAX winner)",
+  "task": "dermoscopic lesion segmentation, box-prompted (interactive) / detector-box (automatic)",
+  "produced_by": "Sprint M2-INTEGRAL-MAX (panderm research), 2026-06-08..12",
+  "charter_rule10_reproducible": true,
+  "architecture": {
+    "backbone": "SAM2.1 Hiera-tiny",
+    "hf_model_id": "facebook/sam2.1-hiera-tiny",
+    "encoder_init": "MedSAM2_latest.pt (medical pretraining)",
+    "encoder_init_source": "huggingface_hub.hf_hub_download('wanglab/MedSAM2', 'MedSAM2_latest.pt')",
+    "encoder_init_snapshot": "e4a6f35edd7e091619cbc0750f462f1574e23955",
+    "encoder_init_size_mb": 156.04,
+    "finetune": "full_ft of sam_mask_decoder + sam_prompt_encoder; image_encoder FROZEN",
+    "params_trainable_M": 11.74,
+    "params_total_M": 39.0,
+    "input": "1024x1024 RGB, ImageNet norm (mean .485/.456/.406 std .229/.224/.225)",
+    "prompt": "single bounding box (x1,y1,x2,y2) in 1024 coords",
+    "output": "single-channel logits -> sigmoid -> threshold 0.5"
+  },
+  "weights": {
+    "file": "best.pt",
+    "content": "SLIM state_dict: sam_mask_decoder (131 tensors) + sam_prompt_encoder (17 tensors) ONLY",
+    "note": "encoder weights NOT included; loaded from MedSAM2_latest.pt at build time",
+    "size_mb": 16.93,
+    "sha256_prefix": "972131ac1d97e241",
+    "best_val_dice": 0.9556502367962102,
+    "best_epoch": 12,
+    "mode": "full_ft"
+  },
+  "train_recipe": {
+    "optimizer": "AdamW lr 1e-4 wd 0.01",
+    "schedule": "warmup 200 + cosine",
+    "epochs": 30, "patience": 5, "batch_size": 4, "grad_accum": 4,
+    "precision": "bf16 autocast", "img_size": 1024,
+    "loss": "0.5*BCEWithLogits + 0.5*Dice",
+    "aug": "HFlip/VFlip/Rot90/mild ColorJitter; train box jitter +/-20px",
+    "seed": 42,
+    "data_manifest": "m2_integral_max_v1c_local.parquet (14201 imgs: ISIC2017+ISIC2018+HAM10000-seg+PH2, MD5-pixel dedup)",
+    "reproduce_command": "python src/train_f2_sam2.py --mode full_ft --manifest manifests/m2_integral_max_v1c_local.parquet --out outputs/M2_v2_medsam2 --model_id facebook/sam2.1-hiera-tiny --init_ckpt <MedSAM2_latest.pt> --init_ckpt_key model --epochs 30 --batch_size 4 --grad_accum 4 --lr 1e-4 --patience 5 --img_size 1024 --seed 42"
+  },
+  "evaluation": {
+    "bucket_A": "ISIC2018 test canonical, n=1000, LOCKED (comparable vs production baseline 0.9473)",
+    "bucket_B": "combined holdout, n=660",
+    "bucketA_dice": 0.9562,
+    "bucketA_dice_paired_compare": 0.9556,
+    "bucketB_dice": 0.9570,
+    "latency_ms_1024": 25.6,
+    "vs_baseline_M2_v0_pp": 0.83,
+    "cross_validation_5fold_F7": {
+      "bucketA_dice_mean": 0.9554,
+      "bucketA_dice_ci95": [0.9543, 0.9564],
+      "bucketA_dice_std": 0.0008,
+      "headline_0.9556_in_CI": true
+    },
+    "vs_other_SAM_bucketA_wilcoxon_all_p_lt_0.001": {
+      "F3_MedSAM2tiny_WINNER": 0.9562,
+      "F3b_SAM2.1tiny_general": 0.9517,
+      "F2_SAM2.1Large_general": 0.9503,
+      "F4_SAMMed2D": 0.9465,
+      "F5_MedSAMv1": 0.9458
+    },
+    "lora_ablation_F7": "r=4/8/16/32 not significantly different from full_ft (delta < 0.25pp, within fold noise); full_ft chosen",
+    "automatic_baseline_F6_unet_resnet101": 0.8811
+  },
+  "deployment_modes": {
+    "1_interactive": {
+      "description": "clinician draws the box; box ~= GT",
+      "expected_dice": 0.956,
+      "ci95": [0.9543, 0.9564],
+      "box_jitter_robustness": "+/-20px corner jitter -> only -0.86pp (corner precision NOT critical)"
+    },
+    "2_automatic": {
+      "description": "lesion detector -> box -> MedSAM2-tiny",
+      "expected_dice_good_detector": 0.93,
+      "DETECTOR_SPEC": "box must COVER the whole lesion + ~10% padding; bias LOOSE, NEVER tight",
+      "box_scale_robustness_curve": {
+        "scale_+10pct_loose": 0.9274,
+        "scale_-10pct_tight": 0.8877,
+        "scale_+20pct": 0.8679,
+        "scale_-20pct_tight": 0.8020,
+        "asymmetry": "tight (under-cover) much worse than loose (over-cover) at equal box-IoU"
+      }
+    }
+  },
+  "robustness_fairness_calibration_F8": {
+    "fairness_ITA_pseudo_fitzpatrick_gap_pp": 1.1,
+    "fairness_note": "equitable across skin tones (0.950-0.961); ITA on peri-lesional dermoscopic skin = proxy",
+    "cross_dataset_bucketB": {"HAM10000": 0.9597, "ISIC2018": 0.9459, "ISIC2017": 0.9413, "PH2": 0.9621},
+    "calibration_pixel_ECE_vs_GT": 0.0082,
+    "calibration_brier_vs_GT": 0.0187,
+    "TTA_4view_delta_pp": 0.13,
+    "ensemble_5fold_delta_pp": 0.14,
+    "tta_ensemble_note": "marginal in box-prompted high-ceiling regime; single model recommended"
+  },
+  "supra_annotator_IMApp": {
+    "subset": "bucketA images with >=2 human annotators (IMA++), n=312, 2.3 annotators/img",
+    "human_inter_annotator_agreement_pairwise_dice": 0.728,
+    "model_dice_vs_majority_vote_consensus": 0.915,
+    "within_human_envelope_rate": 0.978,
+    "interpretation": "model agrees with human consensus (0.915) FAR better than humans agree with each other (0.728); intrinsic label noise ~0.73 is the real task ceiling; model is supra-annotator and inside the human envelope 97.8% of the time",
+    "caveat": "model is over-confident at ambiguous boundaries (ECE vs soft human label 0.094 > ECE vs hard GT 0.0082)"
+  }
+}

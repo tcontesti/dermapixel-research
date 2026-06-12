@@ -1,0 +1,38 @@
+{
+  "n": 1000,
+  "baseline_M2_v0": 0.9473,
+  "models": {
+    "F2_SAM2.1-L_SA1B": {
+      "dice_mean": 0.9504802327211577,
+      "dice_std": 0.03902366529593016,
+      "latency_ms": 95.87705135345459
+    },
+    "F3_MedSAM2-T_med": {
+      "dice_mean": 0.9557966163015112,
+      "dice_std": 0.03671519596072484,
+      "latency_ms": 25.621414184570312
+    },
+    "F3b_SAM2.1-T_SA1B": {
+      "dice_mean": 0.9518580204230965,
+      "dice_std": 0.038330523694153934,
+      "latency_ms": 25.888919830322266
+    }
+  },
+  "pairwise": {
+    "F2_SAM2.1-L_SA1B_vs_F3_MedSAM2-T_med": {
+      "delta_pp_y_minus_x": 0.5316383580353579,
+      "wilcoxon_stat": 142942.0,
+      "wilcoxon_p": 7.387242957102798e-32
+    },
+    "F2_SAM2.1-L_SA1B_vs_F3b_SAM2.1-T_SA1B": {
+      "delta_pp_y_minus_x": 0.13777877019388596,
+      "wilcoxon_stat": 203136.0,
+      "wilcoxon_p": 2.5065346574492366e-07
+    },
+    "F3_MedSAM2-T_med_vs_F3b_SAM2.1-T_SA1B": {
+      "delta_pp_y_minus_x": -0.3938595878414719,
+      "wilcoxon_stat": 158670.0,
+      "wilcoxon_p": 1.1887801953136816e-23
+    }
+  }
+}

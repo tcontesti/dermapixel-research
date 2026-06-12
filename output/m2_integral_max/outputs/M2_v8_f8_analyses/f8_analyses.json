@@ -1,0 +1,68 @@
+{
+  "model": "MedSAM2-tiny",
+  "bucketA_n": 1000,
+  "E_calibration_bucketA": {
+    "ece_15bin": 0.008242621985278292,
+    "brier": 0.018650209758925486
+  },
+  "base_bucketA_dice": 0.9557966163015112,
+  "C_fairness_ITA_bucketA": {
+    "I_verylight": {
+      "n": 574,
+      "dice_mean": 0.9564537386492971,
+      "dice_std": 0.03651725108405138
+    },
+    "II_light": {
+      "n": 126,
+      "dice_mean": 0.9605521668026321,
+      "dice_std": 0.027416922642691268
+    },
+    "III_intermediate": {
+      "n": 122,
+      "dice_mean": 0.9564225779633488,
+      "dice_std": 0.02738934243438684
+    },
+    "IV_tan": {
+      "n": 100,
+      "dice_mean": 0.9501511930431896,
+      "dice_std": 0.05246097221778408
+    },
+    "V-VI_brown_dark": {
+      "n": 78,
+      "dice_mean": 0.9495374805619932,
+      "dice_std": 0.03784813598486979
+    },
+    "_gap_pp": 1.1
+  },
+  "D_cross_dataset_bucketB": {
+    "HAM10000": {
+      "n": 501,
+      "dice_mean": 0.959669347284318
+    },
+    "ISIC2017": {
+      "n": 15,
+      "dice_mean": 0.9413286282953758
+    },
+    "ISIC2018": {
+      "n": 135,
+      "dice_mean": 0.9459473071869579
+    },
+    "PH2": {
+      "n": 9,
+      "dice_mean": 0.9620831980049507
+    }
+  },
+  "A_tta_bucketA": {
+    "dice_mean": 0.9570924797719667,
+    "dice_std": 0.03614083843578003,
+    "hd95_mean": 22.38014110825087,
+    "delta_vs_base_pp": 0.13
+  },
+  "B_ensemble5fold_bucketA": {
+    "n_models": 5,
+    "dice_mean": 0.957208308950283,
+    "dice_std": 0.036886606518512936,
+    "hd95_mean": 23.07367664864246,
+    "delta_vs_base_pp": 0.14
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "manifest": "/home/husll-spark-01/panderm/output/m2_integral_max/manifests/m2_integral_max_v1c_local.parquet",
+  "out": "outputs/M2_v6_f7_cv",
+  "model_id": "facebook/sam2.1-hiera-tiny",
+  "init_ckpt": "/home/husll-spark-01/.cache/huggingface/hub/models--wanglab--MedSAM2/snapshots/e4a6f35edd7e091619cbc0750f462f1574e23955/MedSAM2_latest.pt",
+  "init_ckpt_key": "model",
+  "epochs": 30,
+  "lr": 0.0001,
+  "batch_size": 4,
+  "grad_accum": 4,
+  "img_size": 1024,
+  "warmup": 200,
+  "patience": 5,
+  "n_folds": 5,
+  "seed": 42,
+  "smoke": false
+}
