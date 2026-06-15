@@ -1,0 +1,158 @@
+%!TeX root=MemoriaTFG.tex
+
+\chapter{Declaración sobre el uso de herramientas de inteligencia artificial}
+\label{anexo:declaracion-ia}
+\label{cap:anexod}
+
+Este anexo documenta el uso de herramientas de inteligencia
+artificial durante la elaboración del presente Trabajo de Fin de
+Grado, en cumplimiento de las directrices institucionales de la
+Universitat de les Illes Balears sobre transparencia académica en
+el uso de tecnologías generativas.
+
+\section{Alcance de la declaración}
+\label{sec:anexod-alcance}
+
+La declaración cubre la totalidad del periodo de redacción y
+desarrollo del presente trabajo (curso académico 2025-2026). Se
+distinguen tres ámbitos de uso, cuya descripción detallada se
+desarrolla en las secciones siguientes: uso académico (redacción
+del documento), uso técnico (desarrollo del código y de los
+experimentos) y uso documental (organización de notas y
+trazabilidad).
+
+\section{Herramientas empleadas}
+\label{sec:anexod-herramientas}
+
+La tabla~\ref{tab:anexod-herramientas} enumera las herramientas
+de inteligencia artificial empleadas durante el desarrollo del
+trabajo, su modalidad de uso y el ámbito al que se aplican.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Herramientas de IA empleadas durante la elaboración del
+TFG.}
+\label{tab:anexod-herramientas}
+\begin{tabular}{llll}
+\hline
+Herramienta              & Proveedor   & Modalidad           & Ámbito \\
+\hline
+Claude (Sonnet, Opus)    & Anthropic   & Asistente conversacional & Redacción, código, organización \\
+GPT-4o, GPT-4o-mini      & OpenAI      & API programática      & Evaluación experimental (objeto del trabajo) \\
+GPT-5 (familia)          & OpenAI      & API programática      & Razonamiento clínico del prototipo \\
+Gemini~2.5 Pro/Flash     & Google      & API programática      & Evaluación experimental (objeto del trabajo) \\
+MedGemma~4B y~27B        & Google      & Modelos locales       & Evaluación + razonamiento del prototipo \\
+GitHub Copilot           & GitHub      & Asistencia en IDE     & Sugerencias de código \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Uso académico: redacción del documento}
+\label{sec:anexod-academico}
+
+Las herramientas conversacionales (Claude Sonnet y Opus) se han
+utilizado durante la redacción del presente documento en cuatro
+modalidades: (i)~revisión estilística y de coherencia narrativa
+sobre el texto producido por el autor;
+(ii)~reformulación de párrafos con tono no académico hacia un
+tono paper estricto, conforme a las indicaciones explícitas del
+director del trabajo;
+(iii)~verificación cruzada entre afirmaciones cuantitativas del
+texto y los reportes técnicos en el repositorio (auditoría
+descrita en sección~\ref{sec:anexod-verificacion});
+(iv)~asistencia en la generación de tablas LaTeX a partir de
+datos preexistentes en formato Markdown.
+
+En ningún caso se ha utilizado la herramienta para generar
+contenido original sobre los resultados experimentales, la
+interpretación de los hallazgos o la formulación de las
+conclusiones. Las cifras reportadas en el
+capítulo~\ref{cap:resultados} y discutidas en el
+capítulo~\ref{cap:discusion} provienen exclusivamente de los
+experimentos ejecutados por el autor, documentados en los
+reportes técnicos del repositorio
+(sección~\ref{sec:anexoa-tareas}) y verificables de forma
+independiente.
+
+\section{Uso técnico: desarrollo del código}
+\label{sec:anexod-tecnico}
+
+Las herramientas de asistencia en IDE (GitHub Copilot) se han
+utilizado durante el desarrollo del código en dos modalidades:
+(i)~autocompletado de sentencias rutinarias (carga de datasets,
+formateo de salidas, configuración de \emph{loggers});
+(ii)~generación inicial de plantillas de \emph{tests} unitarios y
+de \emph{wrappers} de modelos a partir de la documentación
+oficial de las bibliotecas empleadas.
+
+El código de los protocolos experimentales centrales
+(sondeo lineal, ajuste fino, segmentación, evaluación zero-shot,
+auditoría de leakage) ha sido desarrollado por el autor con
+referencia explícita a la implementación original publicada por
+los autores de PanDerm~\cite{panderm2025} y de
+DermLIP~\cite{derm1m}. La revisión de la corrección de los
+algoritmos y la validación de los resultados se ha realizado por
+el autor mediante reproducción cruzada de cifras de referencia
+(p.~ej.~ajustar los hiperparámetros hasta reproducir el rango de
+AUROC reportado por los autores sobre los datasets compartidos).
+
+\section{Uso documental: organización y trazabilidad}
+\label{sec:anexod-documental}
+
+Las herramientas conversacionales se han utilizado adicionalmente
+para tareas de organización documental que no afectan al contenido
+del trabajo: redacción de notas internas, estructuración del
+índice del repositorio, formateo de documentación auxiliar
+(no incluida en el documento final) y generación de informes de
+estado del proyecto durante el desarrollo.
+
+\section{Modelos como objeto de evaluación}
+\label{sec:anexod-objeto}
+
+GPT-4o, GPT-4o-mini, Gemini~2.5~Pro, Gemini~2.5~Flash,
+MedGemma~4B Vision y MedGemma~27B Text constituyen
+\emph{objetos de evaluación} del presente trabajo
+(capítulo~\ref{cap:resultados}, sección~\ref{sec:llm-results}), no
+herramientas auxiliares de redacción. Su uso se documenta en los
+protocolos experimentales correspondientes
+(sección~\ref{sec:llm}). La declaración del presente anexo se refiere
+exclusivamente al uso de inteligencia artificial como
+\emph{instrumento de apoyo} a la elaboración del documento, no
+como objeto experimental.
+
+\section{Verificación cruzada de cifras y citas}
+\label{sec:anexod-verificacion}
+
+Durante la fase final de redacción se ha aplicado un protocolo
+sistemático de verificación cruzada entre las afirmaciones
+cuantitativas del texto y los reportes técnicos del repositorio.
+El procedimiento, descrito en el documento interno
+\texttt{PRECAUCIONES\_ANEXOS.md}, consiste en: (i)~identificación
+de cada cifra cuantitativa del documento;
+(ii)~localización de la fuente verificable
+(\texttt{RESULTADOS\_TFG.md}, archivos en \texttt{results/} o
+\texttt{output/}); (iii)~clasificación del estado en cuatro
+categorías: \textsc{ok} (cifra verificada), \textsc{parcial}
+(existe el mecanismo pero falta la ejecución reportada),
+\textsc{falta} (sin evidencia) y \textsc{contradicción}
+(divergencia entre texto y fuente). Las inconsistencias detectadas
+se han corregido antes del depósito o documentado explícitamente
+como \textsc{[no especificado]} cuando la cifra exacta requería
+ejecución pendiente.
+
+\section{Responsabilidad sobre el contenido}
+\label{sec:anexod-responsabilidad}
+
+La autoría intelectual del trabajo, la formulación de la pregunta
+de investigación, el diseño experimental, la ejecución de los
+experimentos, la interpretación de los resultados, la redacción
+final del documento y la responsabilidad sobre las afirmaciones
+contenidas corresponden íntegramente al autor del presente
+Trabajo de Fin de Grado, bajo la supervisión académica del
+director Dr.~Javier Varona Gómez y con la colaboración clínica de
+la Dra.~Rosa Taberner Ferrer. Las herramientas de inteligencia
+artificial empleadas constituyen instrumentos de apoyo cuya
+contribución se enmarca en los términos descritos en este anexo.

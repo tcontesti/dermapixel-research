@@ -1,0 +1,332 @@
+%!TeX root=MemoriaTFG.tex
+
+\chapter{Modelos de lenguaje multimodales: comparación extendida}
+\label{cap:anexog}
+
+Este anexo amplía la comparación entre modelos de lenguaje
+multimodales generalistas presentada en sección~\ref{sec:llm-results} del
+capítulo~\ref{cap:resultados}. Contiene el \emph{prompt} clínico
+empleado en la evaluación, el análisis detallado de patrones de
+error sobre HAM10000, la caracterización de la sensibilidad al
+\emph{prompt} en DermLIP v2 (que motiva el \emph{wrapping}
+automático del prototipo) y la comparación de costes operativos
+agregados.
+
+\section{Modelos evaluados}
+\label{sec:anexoh-modelos}
+
+La tabla~\ref{tab:anexoh-modelos} enumera los modelos evaluados y
+sus condiciones de acceso. Los modelos accesibles vía API se han
+evaluado con la versión disponible en marzo de 2026; los modelos
+locales se han ejecutado sobre la DGX Spark con chip Grace Hopper
+GB10 en precisión BF16 sin cuantización adicional.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Modelos de lenguaje multimodales generalistas evaluados.}
+\label{tab:anexoh-modelos}
+\begin{tabular}{llrl}
+\hline
+Modelo                     & Proveedor   & Parámetros & Acceso \\
+\hline
+GPT-4o                     & OpenAI      & No público  & API REST \\
+GPT-4o-mini                & OpenAI      & No público  & API REST \\
+Gemini~2.5~Pro             & Google      & No público  & API REST \\
+Gemini~2.5~Flash           & Google      & No público  & API REST \\
+MedGemma~4B Vision         & Google      & $\sim 4$\,B & Local (Ollama) \\
+MedGemma~27B Text          & Google      & $\sim 27$\,B & Local (DGX Spark, BF16) \\
+MedGemma~27B + LoRA        & Google      & $\sim 27$\,B + $41$\,M LoRA & Local (DGX Spark, BF16) \\
+BLIP-2 Flan-T5-XL          & Salesforce  & ---         & Local (HuggingFace) \\
+InstructBLIP Flan-T5-XL    & Salesforce  & ---         & Local (HuggingFace) \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Prompt clínico estandarizado}
+\label{sec:anexoh-prompt}
+
+El \emph{prompt} clínico empleado en la evaluación tiene
+aproximadamente $300$ palabras y describe la tarea, presenta
+las clases candidatas y solicita el diagnóstico estructurado. La
+formulación se mantiene constante entre los nueve proveedores
+evaluados, lo que elimina la formulación del \emph{prompt} como
+variable confusoria. La estructura es la siguiente:
+
+\begin{quote}
+\textit{You are assisting in a dermatology research study. This is
+a dermoscopic image of a skin lesion taken during clinical practice.
+Your task is to classify the lesion as exactly one of the following
+seven categories used in the HAM10000 dataset: melanoma (mel),
+melanocytic nevus (nv), basal cell carcinoma (bcc), actinic
+keratosis (akiec), seborrheic keratosis (bkl), dermatofibroma (df)
+or vascular lesion (vasc). Provide your answer as a single
+diagnostic label followed by a brief clinical justification (1--2
+sentences). The justification should mention the morphological
+features that support the diagnosis (e.g., asymmetry, border
+regularity, color pattern, vascular structures). Avoid hedging
+language; commit to the most likely diagnosis based on the visible
+features. Do not refuse to answer. Respond only with the category
+name and the justification.}
+\end{quote}
+
+Para Gemini~2.5~Pro y Gemini~2.5~Flash, el \emph{prompt} se ajusta
+levemente para evitar la activación de filtros de seguridad
+(refusal rate documentado: $\sim 22\%$ en Gemini~2.5~Pro sobre
+HAM10000 frente a $<1\%$ en GPT-4o). La etiqueta predicha se
+extrae mediante \emph{parsing} determinista que mapea sinónimos
+admitidos al código canónico de HAM10000.
+
+\section{Comparativa completa sobre HAM10000, PAD-UFES-20 y DDI}
+\label{sec:anexoh-comparativa}
+
+La tabla~\ref{tab:anexoh-completa} reproduce la comparativa de la
+tabla~\ref{tab:llm-comparativa} del cuerpo, ampliada con las
+variantes Gemini Flash y BLIP-2 + InstructBLIP para incluir el
+espectro completo de modelos evaluados.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Comparativa completa de modelos de lenguaje multimodales
+sobre HAM10000 ($N = 1\,232$), PAD-UFES-20 ($N = 461$) y
+DDI ($N = 137$).}
+\label{tab:anexoh-completa}
+\begin{tabular}{llrrrrrr}
+\hline
+Modelo                     & Modo  & HAM Acc       & HAM BAcc      & PAD Acc       & PAD BAcc      & DDI Acc       & DDI BAcc \\
+\hline
+MedGemma~27B + LoRA        & FT    & $0{,}802$     & $0{,}270$     & $0{,}430$     & $0{,}347$     & $0{,}657$     & $0{,}618$ \\
+MedGemma~27B               & ZS    & $0{,}665$     & $0{,}243$     & $0{,}447$     & $0{,}342$     & $0{,}474$     & $0{,}566$ \\
+GPT-4o                     & ZS    & $0{,}485$     & $0{,}465$     & $0{,}553$     & $0{,}523$     & $0{,}723$     & $0{,}648$ \\
+Gemini~2.5~Pro             & ZS    & $0{,}403$     & ---           & $0{,}477$     & ---           & $0{,}441$     & --- \\
+Gemini~2.5~Flash           & ZS    & $0{,}380$     & ---           & $0{,}486$     & ---           & $0{,}555$     & --- \\
+GPT-4o-mini                & ZS    & $0{,}256$     & $0{,}319$     & $0{,}390$     & $0{,}435$     & $0{,}737$     & $0{,}556$ \\
+BLIP-2 (Flan-T5-XL)        & ZS    & $0{,}015$     & $0{,}145$     & $0{,}017$     & $0{,}167$     & $0{,}796$     & $0{,}542$ \\
+InstructBLIP (Flan-T5-XL)  & ZS    & $0{,}024$     & $0{,}123$     & $0{,}171$     & $0{,}224$     & $0{,}788$     & $0{,}500$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Latencias, refusal rates y costes operativos}
+\label{sec:anexoh-coste}
+
+La tabla~\ref{tab:anexoh-coste} reporta las características
+operativas de la evaluación: latencia media por imagen, tasa de
+respuestas no clasificables (\emph{refusal rate}) y coste agregado
+sobre los tres datasets evaluados.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Características operativas de la evaluación de LLMs
+multimodales. \emph{Refusal} sobre Gemini~2.5~Pro corresponde a
+respuestas bloqueadas por filtros de seguridad. ``Coste'' agrega
+HAM10000 + PAD-UFES-20 + DDI.}
+\label{tab:anexoh-coste}
+\begin{tabular}{lrrrrr}
+\hline
+Modelo               & Latencia/imagen & Refusal HAM & Refusal PAD & Refusal DDI & Coste total \\
+\hline
+GPT-4o               & $\sim 4$\,s     & $<1\%$       & $<1\%$       & $<1\%$       & $\sim$\$2{,}71 \\
+GPT-4o-mini          & $\sim 3$\,s     & $<1\%$       & $<1\%$       & $<1\%$       & $\sim$\$1{,}36 \\
+Gemini~2.5~Pro       & $\sim 8$\,s     & $21{,}5\%$   & $15{,}0\%$   & $18{,}2\%$   & --- \\
+Gemini~2.5~Flash     & $\sim 2$\,s     & $0{,}3\%$    & $2{,}4\%$    & $2{,}7\%$    & --- \\
+MedGemma~27B         & $1{,}76$\,s     & $0\%$        & $0\%$        & $0\%$        & $0$\,EUR \\
+MedGemma~27B + LoRA  & $1{,}82$\,s     & $0\%$        & $0\%$        & $0\%$        & $0$\,EUR (entrenam.) \\
+\hline
+\end{tabular}
+\end{table}
+
+Tres observaciones operativas: (i)~Gemini~2.5~Pro presenta
+\emph{refusal rate} elevado sobre HAM10000 ($21{,}5\%$),
+comportamiento atribuible a la activación de filtros de seguridad
+sobre imagen clínica. (ii)~MedGemma~27B y su variante con LoRA
+operan localmente sin coste recurrente, con latencias medidas
+sobre la DGX Spark de $\sim 1{,}8$ segundos por imagen,
+inferiores a las de los proveedores comerciales. (iii)~El coste
+agregado de GPT-4o-mini ($\sim \$1{,}36$ sobre $1\,830$
+imágenes) es de aproximadamente $\$0{,}001$ por imagen, lo que
+hace operativamente viable la evaluación a escala
+moderada; el coste de GPT-4o ($\sim \$2{,}71$) duplica esta
+cifra.
+
+\section{Patrones de error sobre HAM10000}
+\label{sec:anexoh-errores}
+
+La tabla~\ref{tab:anexoh-confusion-gpt4o} reporta la matriz de
+predicciones de GPT-4o sobre HAM10000. La fila ``\emph{Predicciones
+totales}'' indica el número de imágenes asignadas a cada clase por
+el modelo; la comparación con la fila ``$N_{\mathrm{test}}$''
+revela los sesgos sistemáticos.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Distribución de predicciones de GPT-4o sobre HAM10000.}
+\label{tab:anexoh-confusion-gpt4o}
+\begin{tabular}{lrrr}
+\hline
+Clase                       & $N_{\mathrm{test}}$ & Predicciones GPT-4o & Factor \\
+\hline
+actinic keratosis           & $35$    & $2$    & $0{,}06\times$ \\
+basal cell carcinoma        & $44$    & ---    & --- \\
+seborrheic keratosis        & $107$   & ---    & --- \\
+dermatofibroma              & $8$     & $284$  & $35{,}5\times$ \\
+melanoma                    & $70$    & $299$  & $4{,}3\times$ \\
+melanocytic nevus           & $951$   & ---    & --- \\
+vascular lesion             & $17$    & ---    & --- \\
+\hline
+\end{tabular}
+\end{table}
+
+El sesgo más acusado es la sobreasignación de \emph{dermatofibroma}
+(predicciones $284$ frente a $8$ muestras reales, factor
+$35{,}5\times$). La hipótesis sobre el mecanismo es que el modelo
+responde al espacio léxico del \emph{prompt}: la enumeración
+explícita de \emph{dermatofibroma} entre las clases candidatas
+activa preferentemente esta categoría como respuesta cuando la
+evidencia visual no es saliente. Un patrón análogo, aunque de
+menor magnitud, se observa con melanoma (factor $4{,}3\times$),
+clase clínicamente prioritaria que el modelo podría sobreasignar
+por reflejar un sesgo precautorio aprendido durante el
+entrenamiento.
+
+GPT-4o-mini presenta un patrón distinto: sesgo masivo hacia
+\emph{seborrheic keratosis} ($528$ predicciones frente a
+$107$ muestras reales) y melanoma ($359$ predicciones frente
+a $70$). Sólo $196$ de los $951$ casos de
+\emph{melanocytic nevus} se clasifican correctamente
+(\emph{recall} $0{,}196$), mientras GPT-4o alcanza
+\emph{recall} de $0{,}505$ sobre la misma clase.
+
+\section{MedGemma~27B con LoRA: análisis por dataset}
+\label{sec:anexoh-medgemma}
+
+La adaptación con LoRA sobre MedGemma~27B
+(\emph{rank} $r = 16$, $\alpha = 32$, dropout $0{,}05$,
+$1$ época, $\eta = 2\times 10^{-5}$, \emph{effective batch}
+$8$, $\sim 41$\,M parámetros entrenables sobre el
+\emph{split} de entrenamiento de HAM10000) produce las mejoras
+asimétricas reportadas en sección~\ref{sec:disc-llm}. La
+tabla~\ref{tab:anexoh-medgemma-perclass} reporta el desglose por
+clase sobre HAM10000 con la variante adaptada.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Desglose por clase de MedGemma~27B + LoRA sobre HAM10000
+(\emph{precision}, \emph{recall}, F1).}
+\label{tab:anexoh-medgemma-perclass}
+\begin{tabular}{lrrrr}
+\hline
+Clase                       & $N_{\mathrm{test}}$ & Precision & Recall    & F1 \\
+\hline
+actinic keratosis           & $35$    & $0{,}32$  & $0{,}26$  & $0{,}29$ \\
+basal cell carcinoma        & $44$    & $0{,}34$  & $0{,}25$  & $0{,}29$ \\
+dermatofibroma              & $8$     & $0{,}00$  & $0{,}00$  & $0{,}00$ \\
+melanocytic nevus           & $951$   & $0{,}85$  & $0{,}99$  & $0{,}92$ \\
+melanoma                    & $70$    & $0{,}38$  & $0{,}36$  & $0{,}37$ \\
+seborrheic keratosis        & $107$   & $0{,}67$  & $0{,}04$  & $0{,}07$ \\
+vascular lesion             & $17$    & $0{,}00$  & $0{,}00$  & $0{,}00$ \\
+\hline
+\end{tabular}
+\end{table}
+
+La concentración del rendimiento sobre la clase mayoritaria
+(nevus melanocítico: \emph{recall} $0{,}99$) a costa de las
+minoritarias (dermatofibroma y vascular lesion: F1 $0{,}00$)
+contrasta con el comportamiento de PanDerm Base con ajuste fino y TTA
+sobre el mismo dataset, que mantiene \emph{recall} superior a
+$0{,}65$ sobre todas las clases minoritarias gracias al
+\emph{weighted random sampler} de la receta original
+(sección~\ref{sec:ft}). La diferencia metodológica sugiere que el
+\emph{fine-tuning} de LLMs multimodales sobre datasets
+desbalanceados requiere estrategias específicas de balanceo no
+contempladas en la configuración estándar de LoRA.
+
+\section{Sensibilidad al prompt en DermLIP v2}
+\label{sec:anexoh-prompt-derm}
+
+El módulo M6 del prototipo DermApIxel
+(sección~\ref{sec:dermapixel-m6}) opera sobre DermLIP v2 con
+envoltorio automático del \emph{prompt}. Esta sección documenta
+cuantitativamente el fenómeno que motiva el envoltorio, resumido en
+la tabla~\ref{tab:anexoh-prompt-curva}.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Sensibilidad al \emph{prompt} de DermLIP v2 sobre
+HAM10000: curva de AUROC observada en función de la longitud
+del \emph{prompt}.}
+\label{tab:anexoh-prompt-curva}
+\begin{tabular}{lll}
+\hline
+Longitud del \emph{prompt}              & Estrategia                                         & AUROC HAM10000 \\
+\hline
+$1$ palabra                             & Etiqueta desnuda                                    & $\approx$ aleatorio \\
+$\sim 5$ palabras                       & Envoltorio clínico ($``dermoscopy image of \{X\}''$) & $\sim 0{,}72$ \\
+$8$--$15$ palabras                      & Envoltorio + $1$ rasgo clínico                      & $\mathbf{0{,}854}$ \\
+$\sim 20$ palabras                      & Envoltorio + $3$ conceptos Derm1M                   & $0{,}842$ \\
+$> 25$ palabras                         & Envoltorio + $5$ conceptos Derm1M                   & $0{,}826$ \\
+\hline
+\end{tabular}
+\end{table}
+
+La curva presenta un punto óptimo en $8$--$15$ palabras con
+un único rasgo clínico añadido (AUROC $0{,}854$). El
+rendimiento decae tanto en el régimen de \emph{prompt} muy corto
+(etiqueta desnuda: AUROC aleatorio) como en el régimen de
+\emph{prompt} muy largo ($>25$ palabras: AUROC $0{,}826$).
+
+La causa propuesta sobre el régimen de \emph{prompt} muy corto es
+que PubMedBERT (encoder textual de DermLIP v2) está preentrenado
+sobre \emph{captions} del dataset Derm1M con estructura
+``dermoscopy image of $[\text{clase}]$, $[\text{descripción}]$''.
+Una palabra aislada se proyecta sobre regiones del espacio de
+\emph{embedding} muy poco pobladas, lo que produce similitudes
+coseno arbitrarias frente al \emph{embedding} visual. Sobre el
+régimen de \emph{prompt} muy largo, la hipótesis es que la
+acumulación de conceptos clínicos introduce ruido semántico que
+diluye la señal de la clase principal.
+
+El \emph{wrapping} automático del prototipo implementa esta curva
+en tres capas: presets predefinidos con \emph{prompts} ya en el
+punto óptimo, composable \texttt{useZeroShot.js} que aplica el
+envoltorio \emph{``dermoscopy image of \{term\}''} cuando la entrada
+del usuario contiene cinco o menos palabras, y conmutador en la
+interfaz que permite al dermatólogo desactivar el envoltorio si
+escribe descripciones completas propias. La extensión de este barrido sistemático de
+longitud de \emph{prompt} a los demás datasets de evaluación
+constituye una línea de continuación inmediata.
+
+\section{Síntesis}
+\label{sec:anexoh-sintesis}
+
+La evaluación extendida documentada en este anexo confirma los
+patrones cualitativos identificados en sección~\ref{sec:disc-llm} del
+capítulo~\ref{cap:discusion}: brecha de $43{,}5$\,pp accuracy
+entre el mejor especialista ajustado (PanDerm Base FT con TTA) y el
+mejor LLM multimodal generalista \emph{zero-shot} (GPT-4o); sesgo
+léxico sistemático en los modelos cerrados; \emph{refusal rates}
+elevados en Gemini~2.5~Pro que limitan su utilidad clínica; y
+asimetría en la adaptación con LoRA sobre MedGemma~27B. Las
+cifras detalladas refuerzan la conclusión de que los LLMs
+multimodales generalistas no constituyen sustitutos defendibles
+de los encoders fundacionales específicos del dominio en el
+régimen clínico evaluado, pero pueden complementarlos como
+generadores de razonamiento textual estructurado bajo el
+\emph{prompt} clínico descrito en sección~\ref{sec:anexoh-prompt}.

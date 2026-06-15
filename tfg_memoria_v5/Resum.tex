@@ -1,0 +1,129 @@
+%!TeX root=MemoriaTFG.tex
+
+\chapter*{Resumen}
+\addcontentsline{toc}{chapter}{Resumen}
+\markboth{RESUMEN}{RESUMEN}
+\vspace*{-1.5cm}
+
+Este trabajo evalúa el rendimiento y la capacidad de generalización
+de los modelos fundacionales dermatológicos disponibles, en función
+del volumen de datos etiquetados, del tipo de supervisión, de la
+heterogeneidad taxonómica entre conjuntos de datos y de la
+disparidad entre fototipos cutáneos. Su respuesta condiciona la
+viabilidad de integrarlos en teledermatología hospitalaria con
+cohortes mediterráneas en español, escenario donde las referencias
+recientes del grupo de la Universidad Monash ---PanDerm, la familia
+DermLIP sobre Derm1M y DermFM-Zero--- carecen de evaluación
+independiente comparable a la fecha de cierre.
+
+Para responderla, se evalúan catorce modelos fundacionales sobre
+doce conjuntos de datos externos públicos, armonizados mediante una
+ontología jerárquica de tres niveles ($4$ categorías etiológicas,
+$43$ subcategorías clínicas y $367$ diagnósticos) codificada en
+SNOMED~CT y CIE-10. La evaluación combina cuatro protocolos
+---sondeo lineal, ajuste fino supervisado, segmentación binaria
+promptable y clasificación zero-shot multimodal--- ejecutados sobre
+una NVIDIA DGX Spark (chip Grace Hopper GB10, $128$\,GB unificados,
+BF16), plataforma aarch64 no habitual en la literatura.
+
+PanDerm Large se confirma como el codificador congelado más fiable,
+con una mejora media de $+9{,}0$\,pp en exactitud balanceada
+respecto a PanDerm Base, y satura con un volumen reducido de datos
+etiquetados: el $1\%$ del conjunto de entrenamiento de HAM10000
+recupera el $96{,}2\%$ del AUROC obtenido con el conjunto completo.
+La evaluación zero-shot multimodal queda $29{,}4$\,pp por debajo del
+sondeo lineal supervisado en exactitud balanceada de nivel~L1 sobre
+el dataset DermapixelAI~1.0 (PanDerm Large $0{,}735$ frente a
+$0{,}441$ de la mejor configuración zero-shot), lo que acota el
+coste de prescindir de adaptación supervisada. La auditoría por hash
+MD5 detecta que uno de los doce datasets de evaluación, Dermnet,
+está íntegramente contenido ($100\%$) en el preentrenamiento de
+Derm1M, por lo que sus cifras zero-shot previas deben interpretarse
+con \emph{caveat}. La validación sobre DermapixelAI~1.0 confirma la
+transferencia a material clínico no anglosajón sin reentrenar la
+rama lingüística. Leído en conjunto, el estudio no identifica un
+único modelo óptimo, sino una especialización por tarea y nivel
+ontológico ---la ventaja de PanDerm Large no se extiende
+uniformemente a la subcategoría clínica L2 ni a la cola larga
+L3---, lo que desplaza el cuello de botella del avance desde el
+codificador hacia la taxonomía, las etiquetas, el alineamiento
+texto-imagen, los \emph{prompts} y la equidad.
+
+El trabajo aporta tres contribuciones reproducibles principales: un
+benchmark comparativo homogéneo de catorce modelos fundacionales
+bajo un mismo protocolo, el dataset DermapixelAI~1.0 ---$1\,089$ imágenes y $669$
+casos clínicos con texto narrativo en castellano, bajo licencia
+CC-BY-NC-SA~4.0--- y la auditoría de solapamiento sobre los doce
+datasets. Sobre esta base se introduce Dermapixel R0, el
+primer modelo fundacional dermatológico en español, inicializado
+desde PanDerm y adaptado con DermapixelAI~1.0 como versión base; su
+escalado completo queda como línea futura.
+
+\vspace*{-0.4cm}
+\section*{Palabras clave}
+modelos fundacionales, dermatología clínica, PanDerm, DermLIP,
+evaluación empírica, ontología, equidad, heterogeneidad taxonómica.
+
+% ----------------------------------------------------------------------
+
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+\markboth{ABSTRACT}{ABSTRACT}
+\vspace*{-1.5cm}
+
+This work evaluates the performance and generalisation capacity of
+the available dermatology foundation models, as a function of the
+labelled data budget, the supervision regime, taxonomic
+heterogeneity across datasets and skin phototype disparity. Its
+answer conditions the
+viability of integrating these models into hospital teledermatology
+workflows on Spanish-speaking Mediterranean cohorts, a scenario in
+which the recent references from the Monash group ---PanDerm, the
+DermLIP family over Derm1M and DermFM-Zero--- lack an independent
+comparable evaluation at the time of writing.
+
+To answer it, fourteen foundation models are evaluated over twelve
+public external datasets, harmonised through a three-level
+hierarchical ontology ($4$ aetiological families, $43$ clinical
+subcategories and $367$ diagnoses) encoded in SNOMED~CT and ICD-10.
+The evaluation combines four protocols ---linear probing, supervised
+fine-tuning, promptable binary lesion segmentation and multimodal
+zero-shot classification--- executed on a NVIDIA DGX Spark with a
+Grace Hopper GB10 chip ($128$\,GB unified, BF16 precision), an
+aarch64 platform uncommon in the experimental literature.
+
+PanDerm Large stands out as the most reliable frozen encoder, with a
+mean improvement of $+9{,}0$\,pp in balanced accuracy over PanDerm
+Base, and saturates with a small labelled budget: $1\%$ of the
+HAM10000 training set recovers $96{,}2\%$ of the AUROC obtained with
+the full set. Multimodal zero-shot evaluation falls $29{,}4$\,pp
+below supervised linear probing in L1 balanced accuracy on the
+DermapixelAI~1.0 dataset (PanDerm Large $0{,}735$ versus $0{,}441$
+for the best zero-shot configuration), bounding the cost of forgoing
+supervised adaptation. The MD5-based overlap audit detects that one
+of the twelve evaluation datasets, Dermnet, is fully contained
+($100\%$) in the Derm1M pretraining set, so its prior zero-shot
+figures must be read with this \emph{caveat}. Validation on
+DermapixelAI~1.0 confirms model transfer to non-Anglophone clinical
+material without retraining the language branch. Taken together, the
+study does not identify a single optimal model but a specialisation
+by task and ontological level ---PanDerm Large's advantage does not
+extend uniformly to the intermediate L2 subcategory or the L3 long
+tail---, shifting the bottleneck of progress from the encoder towards
+taxonomy, labels, text-image alignment, \emph{prompts} and fairness.
+
+The work contributes three reproducible items: a homogeneous
+comparative benchmark of the fourteen families under a common
+protocol, the DermapixelAI~1.0 dataset ---$1\,089$ images linked to
+$669$ clinical cases with narrative text and synthetic captions in
+Spanish, under a CC-BY-NC-SA~4.0 licence--- and the overlap audit
+across the twelve evaluation sets. Building on this basis,
+Dermapixel R0 is introduced: a Spanish dermatology foundation model
+initialised from PanDerm and subsequently adapted using the
+DermapixelAI~1.0 dataset as an initial base, whose full scaling is
+left as future work.
+
+\vspace*{-0.4cm}
+\section*{Keywords}
+foundation models, clinical dermatology, PanDerm, DermLIP, empirical
+evaluation, ontology, fairness, taxonomic heterogeneity.

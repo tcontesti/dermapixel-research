@@ -1,0 +1,713 @@
+%!TeX root=MemoriaTFG.tex
+
+\chapter{Prototipo DermApIxel}
+\label{cap:anexoh}
+
+Este anexo describe el prototipo \emph{DermApIxel}, sistema
+integrado de apoyo al diagnóstico dermatológico construido como
+entorno operativo de los módulos derivados del trabajo
+experimental. La versión inicial documentada en las
+secciones~\ref{sec:dermapixel-motivacion}--\ref{sec:dermapixel-discusion}
+opera con seis módulos de inteligencia artificial
+(M1--M6), estado correspondiente al despliegue \emph{end-to-end}
+de 2026-04-05. La evolución posterior incorpora tres módulos
+castellanos adicionales (M7, M9, M10) más un módulo de
+recuperación sobre DermapixelAI~1.0 (M4-bis) y un ensemble
+ponderado (M11), descritos en la
+sección~\ref{sec:dermapixel-m11}. El prototipo no constituye
+objeto experimental del estudio principal del documento
+(sección~\ref{sec:alcance}), pero materializa la integración
+técnica entre los modelos evaluados en el
+capítulo~\ref{cap:resultados} y un sistema operativo accesible
+desde navegador.
+
+\section{Motivación arquitectónica}
+\label{sec:dermapixel-motivacion}
+
+La traslación de los hallazgos cuantitativos del benchmark a un
+entorno operativo plantea requisitos no satisfechos por las
+herramientas estándar de evaluación (notebooks de investigación,
+scripts CLI). Cuatro requisitos vertebran el diseño del prototipo:
+(i)~separación física entre el equipo cliente (PC del clínico, sin
+GPU) y el servidor de inferencia (DGX Spark, con GPU);
+(ii)~comunicación asíncrona entre ambos para evitar bloqueos en la
+interfaz durante inferencias de varios segundos; (iii)~persistencia
+estructurada de imagen original, máscara, conceptos, casos
+similares, razonamiento textual y validación posterior por
+dermatólogo; y (iv)~interfaz web multilingüe (catalán, español,
+inglés) compatible con flujos de teledermatología.
+
+La arquitectura resultante (sección~\ref{sec:dermapixel-arq}) implementa
+una separación cliente-servidor con bus de mensajería intermedio
+sobre AMQP. El cliente expone una API REST sobre FastAPI que
+encapsula la lógica de persistencia y la sincronización
+asíncrona; el servidor de inferencia opera sobre la DGX Spark con
+todos los modelos cargados en VRAM unificada y consume mensajes
+del bus.
+
+\section{Arquitectura}
+\label{sec:dermapixel-arq}
+
+\subsection{Topología cliente-servidor}
+\label{sec:dermapixel-topologia}
+
+El sistema se distribuye en dos nodos físicos sobre una red local
+(LAN). El primer nodo, equipo Windows del usuario clínico,
+aloja la API REST, la base de datos, el
+proxy inverso y la interfaz web. El segundo nodo, servidor GPU
+on-prem NVIDIA DGX Spark con chip Grace Hopper GB10, aloja el
+servidor de inferencia con los seis modelos cargados, el
+servidor del modelo de lenguaje multimodal de gran tamaño y los
+modelos de razonamiento auxiliares servidos vía Ollama. La
+comunicación entre ambos nodos se realiza exclusivamente vía AMQP
+sobre RabbitMQ, sin tráfico HTTP directo, lo que aísla
+operativamente el servidor de inferencia tras el firewall del
+proveedor de cómputo.
+
+\subsection{Componentes del backend}
+\label{sec:dermapixel-backend}
+
+El backend (FastAPI $0.115$ asíncrono) se despliega como
+contenedores Docker Compose con cinco servicios. La
+tabla~\ref{tab:dermapixel-services} sintetiza puertos y
+responsabilidades.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Servicios del backend DermApIxel.}
+\label{tab:dermapixel-services}
+\begin{tabular}{llrl}
+\hline
+Servicio                & Imagen               & Puerto host & Función \\
+\hline
+\texttt{derm-svc}       & FastAPI $0{,}115$ + Uvicorn  & $9030$ & API REST principal \\
+\texttt{derm-mysql}     & MySQL $8.0$          & (interno) & Persistencia estructurada \\
+\texttt{derm-rabbitmq}  & RabbitMQ $3.13$      & $5673 / 15675$ & Bus AMQP y panel de gestión \\
+\texttt{derm-nginx}     & Nginx $1.25$         & $8091$ & Proxy inverso y archivos estáticos \\
+\texttt{result-consumer}& Python asyncio       & ---          & Worker asíncrono que recibe resultados \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Persistencia: esquema de base de datos}
+\label{sec:dermapixel-db}
+
+La base de datos contiene once tablas relacionales que documentan
+cada estudio dermatológico, sus resultados parciales por módulo y
+las validaciones posteriores. La tabla raíz \texttt{derm\_studies}
+contiene el identificador único, el estado del estudio
+($\texttt{pending}$, $\texttt{processing}$, $\texttt{done}$,
+$\texttt{error}$), los \emph{timings} por etapa y la imagen
+original almacenada como \texttt{LONGBLOB}. Las diez tablas
+restantes contienen los resultados de cada módulo y se enlazan a
+\texttt{derm\_studies} mediante clave foránea con borrado en
+cascada. La separación por tabla, en lugar de un único documento
+JSON, facilita las consultas analíticas posteriores (estadísticas
+por clase, validación selectiva, exportación a CSV para
+reentrenamiento) y mantiene la integridad referencial bajo cargas
+concurrentes.
+
+\subsection{Bus de mensajería AMQP}
+\label{sec:dermapixel-amqp}
+
+La comunicación entre backend e inferencia se realiza mediante dos
+colas RabbitMQ con semántica distinta. La cola
+\texttt{derm.inference} es \emph{work queue}: el backend publica
+una tarea por estudio (imagen + identificador único) y el servidor
+de inferencia la consume con confirmación explícita
+(\emph{manual ack}) tras producir el resultado. La cola
+\texttt{derm.results} es \emph{publish-subscribe} (configurada
+como \emph{topic exchange}): el servidor de inferencia publica un
+mensaje por estudio completado, y el worker \texttt{result-consumer}
+del backend lo consume para actualizar la base de datos y notificar
+al frontend. El módulo M6 (clasificación zero-shot) utiliza una
+tercera vía RPC sobre AMQP para invocaciones síncronas de baja
+latencia ($\sim 20$\,ms), apropiada para consultas
+interactivas del clínico.
+
+La elección de AMQP sobre HTTP directo aporta tres ventajas
+operativas: tolerancia a fallos del servidor de inferencia (los
+mensajes quedan en cola), desacoplamiento temporal entre cliente y
+servidor (no se requiere conexión persistente), y trazabilidad
+auditable de cada mensaje a través del panel de gestión de
+RabbitMQ.
+
+\section{Módulos de inteligencia artificial}
+\label{sec:dermapixel-modulos}
+
+El servidor de inferencia tiene seis módulos cargados
+simultáneamente sobre la VRAM unificada de la DGX Spark. La
+tabla~\ref{tab:dermapixel-modulos} sintetiza su correspondencia
+con los modelos evaluados en el capítulo~\ref{cap:resultados}.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Módulos del prototipo DermApIxel.}
+\label{tab:dermapixel-modulos}
+\begin{tabular}{llrl}
+\hline
+Módulo & Modelo subyacente                       & Latencia & Función \\
+\hline
+M1     & PanDerm Large FT (HAM10000, TTA)         & $\sim 315$\,ms & Clasificación cerrada $7$ clases \\
+M2     & SAM2.1-Large (decoder FT, ISIC2018)      & ---            & Segmentación binaria de lesión \\
+M3     & SAE $1\,024 \to 16\,384$ + SkinCon       & ---            & $32$ conceptos clínicos por imagen \\
+M4     & FAISS sobre Derm1M ($421\,327$ vec.)     & $\sim 150$\,ms & Recuperación visual densa \emph{top-5} \\
+M5     & MedGemma~27B / GPT-4o / GPT-5 (9 prov.)  & $6$--$300$\,s  & Razonamiento clínico estructurado \\
+M6     & DermLIP v2 (PubMedBERT)                  & $\sim 20$\,ms  & Clasificación abierta zero-shot \\
+\hline
+\end{tabular}
+\end{table}
+
+El módulo M7 (clasificador unificado L1/L2/L3 sobre el dataset
+armonizado de $43$ clases L3 y M8 (SigLIP-Large SO400M
+con sondeo lineal sobre HAM10000) están integrados en el pipeline
+de evaluación pero no se exponen como pestañas independientes de
+la interfaz clínica.
+
+\subsection{M1 -- Clasificador cerrado}
+\label{sec:dermapixel-m1}
+
+M1 es PanDerm Large \emph{fine-tuned} sobre HAM10000 con la receta
+descrita en sección~\ref{sec:ft}. La inferencia emplea \emph{test-time
+augmentation} con cinco augmentaciones deterministas, lo que
+incrementa la latencia respecto a la inferencia simple
+(\emph{recall} de melanoma sobre HAM10000:
+$+4{,}3$\,pp con TTA, según se documenta en la
+sección~\ref{sec:ensemble-results}). La salida es un vector de siete
+probabilidades softmax sobre las clases HAM10000, persistido en la
+tabla \texttt{derm\_classifications}.
+
+\subsection{M2 -- Segmentación binaria}
+\label{sec:dermapixel-m2}
+
+M2 es SAM2.1-Large adaptado mediante \emph{fine-tuning} de su
+decodificador conforme a la
+configuración descrita en sección~\ref{sec:segmentacion}. La inferencia
+recibe la imagen y, en el modo interactivo, un \emph{prompt}
+espacial (punto o caja delimitadora). La salida es una máscara
+binaria almacenada como \texttt{LONGBLOB} en la tabla
+\texttt{derm\_segmentations}, junto con métricas derivadas
+(asimetría, área estimada en píxeles, perímetro). La interfaz
+superpone la máscara sobre la imagen original como overlay
+semitransparente.
+
+\subsection{M3 -- Conceptos clínicos}
+\label{sec:dermapixel-m3}
+
+M3 es el módulo de interpretabilidad conceptual basado en Sparse
+Autoencoders. El procedimiento es el siguiente: la imagen se
+codifica mediante PanDerm Large, el \emph{embedding} de
+$1\,024$ dimensiones se proyecta al espacio disperso de
+$16\,384$ \emph{features} mediante el SAE entrenado sobre
+$50\,454$ imágenes de siete datasets (sección~\ref{sec:disc-equidad}
+para más detalle), y las activaciones se mapean a los $32$
+conceptos clínicos de SkinCon~\cite{skincon} mediante regresión
+logística por concepto. La salida es un vector de $32$
+activaciones interpretables (\emph{pedunculado}, \emph{ulcerado},
+\emph{eritematoso}, \emph{escamoso}, etc.) que se muestra al
+clínico como apoyo visual al diagnóstico.
+
+\subsection{M4 -- Recuperación visual densa}
+\label{sec:dermapixel-m4}
+
+M4 indexa los $421\,327$ \emph{embeddings} DermLIP de las
+imágenes de Derm1M mediante FAISS~\cite{faiss2019} con índice HNSW
+(\emph{Hierarchical Navigable Small Worlds}). La consulta produce
+las cinco imágenes más similares en el espacio de
+\emph{embeddings}, junto con su diagnóstico asignado y la distancia
+coseno. La latencia media es de $\sim 150$ milisegundos por
+consulta sobre el equipo descrito en sección~\ref{sec:infraestructura}.
+La salida se persiste en \texttt{derm\_similar\_cases} y se
+presenta como galería navegable de casos comparables.
+
+La distinción operativa entre M4 y un sistema RAG completo es
+relevante: M4 devuelve los casos análogos como referencia para
+inspección humana, sin alimentar un modelo generativo posterior
+con esos casos como contexto. La integración del retrieval con
+generación se materializa parcialmente en M5
+(sección~\ref{sec:dermapixel-m5}), donde los hallazgos de M1--M4 se
+inyectan como contexto del prompt clínico.
+
+\subsection{M5 -- Razonamiento clínico estructurado}
+\label{sec:dermapixel-m5}
+
+M5 genera una explicación textual en español que integra los
+hallazgos de M1--M4 (y opcionalmente M6) en un razonamiento
+clínico estructurado. La arquitectura soporta nueve proveedores
+intercambiables mediante el parámetro \texttt{provider} del
+endpoint correspondiente, cuyo perfil de coste y latencia se
+sintetiza en la tabla~\ref{tab:dermapixel-llm}.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Proveedores LLM soportados por M5. Latencias medidas
+sobre prompt clínico real ($\sim 1\,500$ tokens entrada,
+$\sim 500$ tokens salida).}
+\label{tab:dermapixel-llm}
+\begin{tabular}{llrll}
+\hline
+\texttt{provider}        & Modelo                   & Latencia      & Coste/llamada & Infraestructura \\
+\hline
+\texttt{gpt-4o-mini}     & GPT-4o-mini               & $\sim 6$\,s  & $\sim$\$0{,}001 & API OpenAI \\
+\texttt{gpt-4o}          & GPT-4o                    & $\sim 10$\,s & $\sim$\$0{,}01  & API OpenAI \\
+\texttt{gpt-5-mini}      & GPT-5 mini                & $\sim 15$\,s & $\sim$\$0{,}001 & API OpenAI \\
+\texttt{gpt-5-nano}      & GPT-5 nano                & $\sim 25$\,s & $\sim$\$0{,}0003 & API OpenAI \\
+\texttt{gpt-5}           & GPT-5                     & $\sim 30$\,s & $\sim$\$0{,}01  & API OpenAI \\
+\texttt{medgemma-4b}     & MedGemma~4B Vision        & $\sim 40$\,s & $0$\,EUR (local) & Ollama, $\sim 4$\,GB VRAM \\
+\texttt{medgemma-vision} & MedGemma~27B Vision (BF16)& $3$--$5$\,min& $0$\,EUR (local) & DGX Spark, $54{,}9$\,GB VRAM \\
+\hline
+\end{tabular}
+\end{table}
+
+El \texttt{provider} por defecto para la interfaz interactiva es
+\texttt{gpt-4o-mini} por su compromiso latencia-calidad. Los
+proveedores locales (\texttt{medgemma-4b} y
+\texttt{medgemma-vision}) se reservan para escenarios de
+cumplimiento estricto sobre datos sanitarios donde la
+exfiltración hacia APIs externas no es aceptable. La latencia de
+los proveedores locales es superior a la de los proveedores
+comerciales pese al tamaño nominalmente reducido, comportamiento
+documentado en sección~\ref{sec:disc-llm} y atribuible a la diferencia
+de optimización entre infraestructuras dedicadas y hardware
+genérico.
+
+Los nueve proveedores comparten el mismo \emph{system prompt} de
+$\geq 300$ palabras estructurado en cinco secciones obligatorias
+(morfología, dermatoscopia, criterios ABCDE con valores concretos
+por letra, integración con resultados de M1--M4, juicio clínico),
+y el mismo contexto enriquecido generado por la función
+\texttt{\_build\_context()} que inyecta las cifras del pipeline al
+\emph{prompt}. La salida es un JSON con tres campos:
+\texttt{reasoning} (texto estructurado), \texttt{differential\_diagnosis}
+(tres a cinco objetos con diagnóstico, nivel de confianza y
+justificación) y \texttt{recommendation} (urgencia, acción
+concreta, signos de alarma).
+
+\subsection{M6 -- Clasificación zero-shot abierta}
+\label{sec:dermapixel-m6}
+
+M6 implementa la clasificación zero-shot multimodal descrita en
+sección~\ref{sec:zs} usando DermLIP v2 (ViT-B/16 + PubMedBERT) con los
+\emph{prompts} A3 derivados de Derm1M. A diferencia de M1
+(clasificador cerrado sobre siete clases HAM10000), M6 acepta una
+lista arbitraria de descripciones textuales y devuelve la similitud
+coseno softmax sobre cada una. La latencia es de
+$\sim 20$ milisegundos en \emph{warm} sobre los embeddings
+precomputados.
+
+El módulo expone cuatro \emph{presets} clínicos predefinidos
+(tabla~\ref{tab:dermapixel-presets}) que cubren el espectro habitual
+de las consultas dermatológicas, con un total de $31$ clases
+únicas. La opción por defecto en la interfaz es el preset más
+amplio (\texttt{all\_dermatology}), elegido para mitigar el sesgo
+de selección documentado en la literatura sobre CLIP cuando se
+restringe artificialmente el espacio de clases.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Presets clínicos del módulo M6.}
+\label{tab:dermapixel-presets}
+\begin{tabular}{lrl}
+\hline
+\texttt{preset}            & Clases & Uso clínico \\
+\hline
+\texttt{all\_dermatology}  & $31$   & Default: el clínico no precategoriza \\
+\texttt{common\_dermatoses}& $8$    & Dirigido a sospecha de patología inflamatoria \\
+\texttt{infections}        & $9$    & Dirigido a sospecha de infección \\
+\texttt{tumors\_extended}  & $14$   & Dirigido a sospecha de tumor o lesión pigmentada \\
+\hline
+\end{tabular}
+\end{table}
+
+Un hallazgo operativo documentado durante el despliegue
+(sección~\ref{sec:disc-zs}) es la sensibilidad extrema de DermLIP v2 a
+la formulación del \emph{prompt}: el uso de etiquetas
+desnudas (e.g.\ \texttt{["melanoma", "nevus", "eczema"]}) produce
+predicciones efectivamente aleatorias, mientras que el envoltorio
+clínico estandarizado (e.g.~\emph{``dermoscopy image of melanoma,
+malignant skin cancer with irregular borders and asymmetry''}) lo
+restaura al rendimiento esperado. La curva de degradación
+observada sobre HAM10000 sitúa el punto óptimo en
+$8$--$15$ palabras por \emph{prompt} con un rasgo clínico
+añadido (AUROC $0{,}854$); fuera de este rango el rendimiento
+decae. El prototipo implementa \emph{wrapping} automático en tres
+capas: presets predefinidos con descripciones ya envueltas,
+composable \texttt{useZeroShot.js} que aplica la plantilla
+\emph{``dermoscopy image of \{term\}''} cuando la entrada del
+usuario contiene cinco o menos palabras, y conmutador en la
+interfaz que permite al dermatólogo desactivar el envoltorio
+cuando escribe descripciones completas propias.
+
+\section{Frontend e interfaz clínica}
+\label{sec:dermapixel-frontend}
+
+El frontend está implementado en Vue~$3.5$ con Tailwind
+CSS~$4.2$ y Vite~$7$, en tres idiomas (catalán, español,
+inglés) y con tema claro/oscuro conmutable. La vista principal
+\texttt{AnalyzeView} expone los resultados del pipeline en seis
+pestañas: \texttt{CLASS} (clasificación cerrada M1),
+\texttt{SEG} (segmentación M2 con overlay), \texttt{CONC}
+(conceptos M3), \texttt{RAG} (casos similares M4),
+\texttt{REASON} (razonamiento M5) y \texttt{Z-SHOT}
+(clasificación abierta M6). Vistas complementarias
+(\texttt{HistoryView}, \texttt{ValidationView},
+\texttt{StatsView}) cubren la consulta del histórico paginado, la
+validación posterior por el dermatólogo y las estadísticas
+agregadas del sistema.
+
+La interacción con el visor de lesiones
+(\texttt{LesionViewer}) permite zoom real sobre la imagen,
+superposición de la máscara con opacidad ajustable, y deslizador
+de umbral dinámico que recalcula la predicción de M1 sobre la
+marcha sin nuevas inferencias en el servidor. El módulo
+\texttt{ValidationPanel} expone tres opciones de validación
+(\emph{correcto}, \emph{parcial}, \emph{incorrecto}) y permite el
+dibujo manual de \emph{bounding boxes} alternativas como mecanismo
+de corrección, con persistencia en la tabla
+\texttt{derm\_manual\_annotations} para realimentar el
+reentrenamiento posterior.
+
+\section{Rendimiento operativo}
+\label{sec:dermapixel-rendimiento}
+
+La tabla~\ref{tab:dermapixel-rendimiento} sintetiza los tiempos
+medios medidos sobre el sistema desplegado.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Rendimiento operativo del prototipo DermApIxel (medidas
+del 2026-04-05).}
+\label{tab:dermapixel-rendimiento}
+\begin{tabular}{lrl}
+\hline
+Métrica                                          & Valor               & Notas \\
+\hline
+Pipeline M1--M4 \emph{end-to-end}                 & $\sim 315$\,ms (warm) & Tras carga inicial \\
+Pipeline M1--M4 \emph{cold}                       & $\sim 450$\,ms        & Primera inferencia tras reinicio \\
+M6 Zero-shot ($3$ clases) \emph{warm}             & $\sim 20$\,ms server  & $\sim 25$\,ms incluyendo red \\
+M6 Zero-shot ($3$ clases) \emph{cold}             & $\sim 25{,}5$\,ms     & $\sim 46{,}9$\,ms incluyendo red \\
+M6 \emph{warmup} kernel PubMedBERT ($7$ clases)   & $614$\,ms             & Una vez tras reinicio \\
+VRAM total app M1--M4 + M6                        & $4{,}40$\,GB         & Sin cuantización ni \emph{offloading} \\
+VRAM MedGemma~27B Vision                          & $54{,}9$\,GB         & Coexiste con app principal \\
+VRAM total ocupada                                & $\sim 59$\,GB        & Sobre $128$\,GB disponibles \\
+Speedup M6 frente a M1--M4                        & $\sim 30\times$       & Por arquitectura ligera y \emph{embeddings} cacheados \\
+\hline
+\end{tabular}
+\end{table}
+
+La latencia agregada de un análisis completo
+(M1--M4 + M5 con \texttt{gpt-4o-mini}) sobre una imagen de
+prueba es del orden de $6$--$8$ segundos, dominada por el
+componente generativo del razonamiento clínico. La latencia
+percibida por el usuario es inferior gracias al patrón asíncrono:
+los resultados de M1--M4 aparecen en la interfaz antes que el
+razonamiento de M5, lo que permite al clínico revisar el
+diagnóstico cerrado mientras el LLM produce la justificación
+textual.
+
+\section{Estado de despliegue}
+\label{sec:dermapixel-estado}
+
+A fecha de cierre del documento, el sistema se encuentra en
+producción \emph{end-to-end} sobre el entorno de desarrollo
+(Windows local + DGX Spark sobre red LAN), con seis módulos
+operativos (M1--M6) y validación funcional sobre casos de prueba
+controlados. El sistema no se ha desplegado sobre la
+infraestructura sanitaria del HUSLL y no ha sido validado sobre
+cohorte prospectiva real, lo que se identifica como línea de
+continuación inmediata en sección~\ref{sec:linea-prospectivo}. Los
+elementos identificados como condiciones operativas para el
+despliegue hospitalario son: integración con el sistema PACS
+mediante DICOM C-STORE, autenticación con Keycloak OIDC, HTTPS
+con certificado institucional, servicio \texttt{systemd} para
+arranque automático del servidor de inferencia, y trazabilidad
+auditable conforme al Esquema Nacional de Seguridad (ENS) con
+logs encadenados con SHA-256. Ninguno de estos elementos forma
+parte del alcance del Trabajo de Fin de Grado declarado en
+sección~\ref{sec:alcance}.
+
+\section{Discusión: rol del prototipo en el trabajo}
+\label{sec:dermapixel-discusion}
+
+La construcción del prototipo no constituye objeto experimental
+del trabajo. Las cifras de rendimiento sobre las que descansa la
+defensa empírica del documento se obtienen directamente de los
+modelos descritos en el capítulo~\ref{cap:metodos} mediante
+protocolos estándar (sección~\ref{sec:protocolos}). El prototipo
+materializa la integración técnica entre esos modelos, valida la
+viabilidad operativa de su despliegue conjunto sobre hardware
+accesible, y constituye el entorno previsto para la validación
+clínica prospectiva descrita en sección~\ref{sec:linea-prospectivo}.
+
+Tres aportaciones técnicas merecen mención específica. Primero,
+la verificación de que seis modelos heterogéneos
+(PanDerm Large FT, SAM2.1-Large decoder FT, SAE, FAISS sobre Derm1M,
+DermLIP v2, MedGemma~27B) coexisten en la VRAM unificada de la
+DGX Spark con consumo agregado de $\sim 59$\,GB sobre los
+$128$\,GB disponibles, sin cuantización ni \emph{offloading}.
+Segundo, la cuantificación del coste operativo por proveedor LLM
+en M5, que sostiene la afirmación de sección~\ref{sec:disc-llm} sobre la
+brecha entre encoders específicos y LLMs multimodales generalistas
+en términos económicos además de en términos de rendimiento.
+Tercero, la documentación operativa del hallazgo sobre
+sensibilidad al \emph{prompt} en DermLIP v2
+(sección~\ref{sec:disc-zs}), cuya mitigación mediante \emph{wrapping}
+automático en tres capas (presets, composable, conmutador UI)
+constituye una práctica de ingeniería transferible a otros
+despliegues de modelos vision-lenguaje contrastivos en producción
+clínica.
+
+El despliegue hospitalario completo, la validación prospectiva
+sobre cohorte real y la certificación CE como producto sanitario
+quedan fuera del alcance declarado y se identifican como líneas
+de continuación inmediatas en la sección~\ref{sec:lineas-abiertas} del
+capítulo~\ref{cap:conclusiones}.
+
+\section{Evolución a M1--M11: módulos castellanos del prototipo}
+\label{sec:dermapixel-m11}
+
+En los meses posteriores a la integración M1--M6 (estado
+documentado en las secciones previas con fecha de cierre
+2026-04-05), el prototipo incorporó tres módulos castellanos
+adicionales (M9, M10, M4-bis) más un ensemble ponderado (M11)
+sobre la ontología jerárquica de la Dra.~R.~Taberner descrita en
+el Anexo~\ref{cap:anexoc}. La motivación se alinea con la
+limitación operativa identificada en
+sección~\ref{sec:dermapixel-discusion}: el clasificador cerrado
+M1 sobre HAM10000 no cubre la \emph{fingerprint} clínica del
+archivo de la Dra.~R.~Taberner, basada en un vocabulario de
+$4$ categorías L1, $43$ subcategorías L2 y $367$ subcategorías
+L3, mayoritariamente disjunto del de HAM10000. Los nombres M1b,
+M7, M9, M10, M4-bis y M11 se conservan tal como aparecen en
+\texttt{pipeline.py} para preservar la trazabilidad
+código-documento.
+
+\subsection{M7 -- Clasificador unificado jerárquico
+\emph{merged43}+TTA}
+\label{sec:dermapixel-m7}
+
+M7 es PanDerm Large \emph{fine-tuned} sobre las $43$ clases L3 de
+la ontología unificada multi-dataset, entrenado con
+\emph{weighted sampling} sobre los siete datasets viables del
+\emph{mapping} ontológico. La inferencia aplica \emph{Test-Time
+Augmentation} (TTA) con cinco augmentaciones (original, simetría
+horizontal, simetría vertical, rotación $90^\circ$ y rotación
+$270^\circ$) promediando probabilidades \emph{softmax}, no
+logits, por estabilidad numérica. La salida se proyecta
+jerárquicamente a L1 y L2 garantizando consistencia top-down.
+Sobre el conjunto de test fijo de DermapixelAI~1.0 alcanza
+L1 \emph{accuracy} $0{,}947$, L2 \emph{accuracy} $0{,}819$,
+L3 \emph{accuracy} $0{,}797$ y BAcc L3 $0{,}818$
+($+4{,}72$\,pp BAcc con TTA respecto a la inferencia simple).
+La latencia \emph{warm} es de $\sim 80$\,ms. Tab \texttt{UNIF}
+del frontend, con vista jerárquica L1/L2/L3 y \emph{badge}
+melanoma.
+
+\subsection{M9 -- Dermapixel R0 (cabeza L2), clasificador L2
+castellano supervisado}
+\label{sec:dermapixel-m9}
+
+M9 es la implementación operativa de la cabeza supervisada L2 de
+Dermapixel R0
+descrita en sección~\ref{sec:dermapixel-spanderm-v0}. Cabeza
+\emph{fully-connected} $1\,024 \to 38$ sobre PanDerm Large con
+LoRA $r = 16$ insertado en los dos últimos bloques transformer
+(\texttt{attn.qkv}, \texttt{attn.proj}, \texttt{mlp.fc1},
+\texttt{mlp.fc2}), entrenada sobre las $874$ imágenes \emph{train}
+del manifiesto filtrado de DermapixelAI~1.0 ($1\,062$ imágenes;
+Anexo~\ref{cap:anexoc}). Las $38$ clases L2
+efectivas resultan de consolidar las dos variantes ortográficas
+L2 \emph{queratinización} detectadas en el análisis exploratorio
+del dataset. El \emph{checkpoint} \emph{slim} conserva únicamente
+los pesos LoRA y la cabeza FC ($\sim 2{,}3$\,MB); el encoder
+PanDerm Large permanece congelado y se reutiliza del módulo M1.
+La inferencia aplica TTA con cinco augmentaciones y latencia
+$\sim 91$\,ms. Tab \texttt{SPAN} del frontend. La diferencia
+respecto a la rama contrastiva de Dermapixel R0 descrita en
+sección~\ref{sec:spanderm-clip} es operacional: aquí la cabeza
+es supervisada con clases L2 fijas; allí es \emph{zero-shot
+open-class} por alineamiento texto-imagen.
+
+\subsection{M10 -- \emph{Seven-Point Checklist} multitarea}
+\label{sec:dermapixel-m10}
+
+M10 implementa el protocolo multitarea de
+sección~\ref{sec:sae-d7pt-e4} sobre el dataset
+Derm7pt~\cite{kawahara2019}: \texttt{MultitaskDerm7} con siete
+cabezas conceptuales (una por criterio dermatoscópico del
+\emph{Seven-Point Checklist}: \emph{pigment network}, \emph{streaks},
+\emph{pigmentation}, \emph{regression structures},
+\emph{dots and globules}, \emph{blue whitish veil},
+\emph{vascular structures}) más una cabeza binaria
+melanoma/no-melanoma, montadas sobre el mismo encoder PanDerm
+Large $+$ LoRA $r = 16$. La inferencia aplica TTA promediando
+\emph{softmax} de las ocho cabezas y latencia $\sim 90$\,ms.
+Tab \texttt{7-POI} del frontend, con los siete criterios
+traducidos al castellano y el riesgo melanoma global. El módulo
+explota explícitamente las anotaciones conceptuales por imagen
+de Derm7pt, no aprovechadas en M1--M6 ni en otros experimentos
+del trabajo.
+
+\subsection{M4-bis -- RAG castellano sobre DermapixelAI 1.0}
+\label{sec:dermapixel-m4bis}
+
+M4-bis es un índice FAISS~\cite{faiss2019} \texttt{IndexFlatIP}
+sobre $874$ \emph{embeddings} PanDerm Large de $1\,024$
+dimensiones L2-normalizados, correspondientes al \emph{split}
+\emph{train}$+$\emph{val} de DermapixelAI~1.0 (Anexo~\ref{cap:anexoc}).
+Para una imagen de consulta el módulo devuelve los $k$ vecinos
+más similares por coseno con sus metadatos clínicos castellanos
+(\texttt{ontology\_l1}, \texttt{ontology\_l2}, \texttt{ontology\_l3},
+\texttt{case\_id}, \texttt{case\_title}, \texttt{case\_text\_preview},
+\texttt{rosa\_verified}, \texttt{year}) y el voto mayoritario por
+nivel jerárquico. M4-bis complementa al módulo M4
+(sección~\ref{sec:dermapixel-m4}) sobre Derm1M en inglés: donde
+M4 recupera patrones visuales sobre un atlas masivo no etiquetado
+en castellano, M4-bis devuelve casos del propio archivo de la
+Dra.~R.~Taberner con su clasificación L1/L2/L3 verificada y el
+extracto del texto clínico original. La latencia \emph{warm} es
+de $\sim 0{,}5$\,ms (FAISS sobre $874$ vectores). Tab
+\texttt{RAG-I} del frontend con barras de similitud y voto
+mayoritario por nivel.
+
+\subsection{M11 -- Ensemble ponderado por AUROC y coherencia
+jerárquica}
+\label{sec:dermapixel-m11sub}
+
+M11 es la combinación ponderada (\emph{weighted}) de M1, M7, M9
+y M4-bis por niveles L1/L2/L3. Los pesos se derivaron en dos
+pasos: en primer lugar, lectura directa de las AUROC reportadas
+en el capítulo~\ref{cap:resultados} (M7 \emph{merged43}+TTA es
+el clasificador más fiable global, con AUROC L1 $= 0{,}873$,
+L2 $= 0{,}860$, L3 $= 0{,}813$); en segundo lugar, ajuste empírico
+por coherencia jerárquica top-down sobre casos clínicos
+representativos. La iteración estable es la versión \texttt{v1.7},
+cuyos pesos se reportan en la tabla~\ref{tab:m11-weights}.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Pesos del ensemble M11 \texttt{v1.7} por nivel jerárquico.
+La entrada \emph{(no aplica)} indica que el módulo correspondiente
+no emite predicción al nivel ontológico de la fila.}
+\label{tab:m11-weights}
+\begin{tabular}{lrrrr}
+\hline
+Nivel & M1 (HAM FT) & M7 (\emph{merged43}+TTA) & M9 (Dermapixel R0) & M4-bis (RAG ES) \\
+\hline
+L1   & $1{,}0$           & $1{,}0$           & $0{,}5$           & $0{,}3$           \\
+L2   & \emph{(no aplica)}& $1{,}5$           & $1{,}0$           & $0{,}5$           \\
+L3   & \emph{(no aplica)}& $1{,}5$           & \emph{(no aplica)}& $0{,}5$           \\
+\hline
+\end{tabular}
+\end{table}
+
+El \emph{mapping} castellano-inglés exhaustivo ($4$ L1
+$+$ $26$ L2 $+$ $33$ L3) colapsa las duplicaciones que aparecen
+cuando M7 emite la ontología en inglés (\emph{merged43}) mientras
+que M9 y M4-bis lo hacen en castellano. Sin este \emph{mapping},
+el ensemble contaría dos veces la misma clase con cadenas
+distintas. La coherencia jerárquica queda garantizada: para una
+imagen donde L1 indica \emph{Patología tumoral} con probabilidad
+elevada y L3 indica \emph{Melanoma} con probabilidad relevante,
+L2 debe indicar \emph{Tumores malignos} y no \emph{Neoplasias
+melanocíticas benignas} (este último era el comportamiento del
+ensemble cuando los pesos eran M7 $= 1{,}0$ y M9 $= 1{,}5$ en L2,
+antes del ajuste \texttt{v1.7}). M11 se expone en el tab
+\texttt{M11} del frontend como vista de consenso, posicionada en
+primer lugar.
+
+\subsection{Sistema de consenso de cinco módulos y \emph{warning}
+de derivación urgente}
+\label{sec:dermapixel-consenso}
+
+El frontend incorpora un \emph{banner} superior con cinco
+\emph{chips} que resumen la lectura de malignidad de cinco
+módulos independientes (M1, M7, M9, SigLIP-LP y M10) más un sexto
+\emph{chip} M4-bis con la ontología del vecino \emph{top-1}
+castellano. Cada \emph{chip} muestra una etiqueta \emph{BEN}
+/ \emph{MAL} / \emph{?} y un \emph{badge} global \emph{Consenso
+parcial (X/5)} o \emph{Consenso fuerte}. Cuando $\geq 2$
+módulos votan melanoma con probabilidad alta, el sistema emite
+un \emph{warning} explícito (``X clasificadores detectan
+melanoma -- derivación urgente -- derivar a especialista''). El
+diseño replica el patrón clínico de segunda opinión entre
+dermatólogos: no se confía en un único clasificador, se busca
+convergencia entre criterios independientes (cabeza supervisada
+HAM, cabeza supervisada L3 multidataset, cabeza supervisada L2
+castellana, sondeo lineal SigLIP, multitarea Derm7pt). Un
+\emph{caveat} metodológico explícito acompaña la formulación: el
+voto actual es por mayoría sin ponderación clínica, lo que no
+captura el caso en el que un módulo emite una señal dominante
+(\emph{p.\,ej.} M10 con probabilidad $0{,}95$ de melanoma) frente
+a otros con confianza baja. Una iteración futura debería
+ponderar por confianza per-módulo o exponer un \emph{score} de
+melanoma agregado calibrado con datos prospectivos.
+
+\subsection{Migración a AMQP (2026-04-13)}
+\label{sec:dermapixel-amqp-migracion}
+
+Desde el 13 de abril de 2026 toda comunicación entre el backend
+Docker (PC Windows) y el servidor de inferencia (DGX Spark)
+circula por RabbitMQ (cola \texttt{derm.inference} para
+\emph{requests}, \texttt{derm.results} para \emph{replies}).
+Anteriormente coexistían HTTP directo y AMQP; tras la migración,
+HTTP queda reservado a \texttt{/health} y depuración. La
+configuración mantiene abierto el puerto $5673$ en dirección
+backend $\to$ Spark. Los beneficios operativos son tres:
+resiliencia (los mensajes persisten ante caída transitoria del
+servidor de inferencia con reintento automático), trazabilidad
+auditable de cada \emph{request} a través del panel de gestión
+de RabbitMQ, y desacoplamiento temporal entre frontend y GPU. La
+lección operacional documentada es que tras cualquier cambio
+del backend Docker es obligatorio reconstruir sin caché
+(\texttt{docker compose build --no-cache \&\& docker compose up
+-d}) para que los nuevos \emph{consumers} AMQP se registren
+correctamente.
+
+\subsection{Evaluación end-to-end del prototipo extendido}
+\label{sec:dermapixel-batch-test}
+
+Para validar el comportamiento integrado de los módulos M1--M11
+se ejecutó un \emph{batch test} sobre $454$ imágenes del
+conjunto de test de HAM10000 no vistas previamente por el
+prototipo. Los hallazgos cuantitativos justifican operacionalmente
+los pesos del ensemble M11 \texttt{v1.7} y la presencia de
+SigLIP-LP como red de seguridad. M7 supera a M1 sobre HAM10000
+con BAcc $0{,}886$ frente a BAcc $0{,}743$, lo que justifica el
+peso M7 $= 1{,}5$ en L2/L3 del ensemble a pesar de que M1 está
+\emph{fine-tuned} específicamente sobre HAM. El \emph{recall} de
+melanoma por módulo es de $40\%$ para M1, $60\%$ para M7 y
+$80\%$ para el OR \emph{top-3} entre M1, M7 y SigLIP-LP, lo que
+justifica directamente el patrón de consenso de cinco módulos
+como red de seguridad clínica. El primer nivel jerárquico
+(Tumoral / Inflamatoria / Infecciosa / Genodermatosis) alcanza
+\emph{accuracy} en el intervalo $[0{,}80,\,1{,}00]$ sobre las
+cuatro categorías, mientras que los errores \emph{fine-grained}
+se concentran en L2 y L3, comportamiento coherente con la
+naturaleza progresivamente más específica de la jerarquía
+ontológica. TTA añade $+74$\,ms de latencia por imagen y
+$+4{,}72$\,pp de BAcc L3, compromiso latencia-rendimiento
+replicado además en M9 y M10. La evidencia operacional cierra
+el ciclo entre las métricas del capítulo~\ref{cap:resultados} y
+el comportamiento del sistema integrado: los módulos castellanos
+M7--M11 mejoran las métricas críticas (\emph{recall} de melanoma,
+BAcc sobre L2/L3) en el escenario clínico final sin sustituir
+a M1--M6.

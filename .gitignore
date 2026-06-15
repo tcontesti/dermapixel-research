@@ -82,6 +82,20 @@ tfg_memoria_v4/Memoria_EPSU1985.pdf
 tfg_memoria_v4/MemoriaTFG - copia.pdf
 tfg_memoria_v4/MemoriaTFG_Cap12.pdf
 
+# TFG v5 (iteración de trabajo) — intermedios y material no versionable
+tfg_memoria_v5/*.log
+tfg_memoria_v5/*.brf
+tfg_memoria_v5/*.nav
+tfg_memoria_v5/*.snm
+tfg_memoria_v5/*.vrb
+tfg_memoria_v5/*.idx
+tfg_memoria_v5/*.ilg
+tfg_memoria_v5/*.ind
+tfg_memoria_v5/auto/
+tfg_memoria_v5/_minted-*/
+tfg_memoria_v5/_backup_*/
+tfg_memoria_v5/_legacy/
+
 # Backups
 *.bak
 *.old_local
