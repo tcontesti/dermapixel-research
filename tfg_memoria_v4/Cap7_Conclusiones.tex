@@ -109,6 +109,21 @@ por tanto, condicional: el modelo y el protocolo adecuados se
 seleccionan en función del objetivo clínico y de las restricciones
 de cómputo, datos y supervisión, no en abstracto.
 
+\paragraph{Corolario: la palanca de mejora son los datos.}
+Si el cuello de botella ya no reside únicamente en la capacidad
+representacional del codificador, el corolario transversal del trabajo
+es que la palanca dominante de mejora son los datos. La evidencia lo
+sugiere de forma recurrente: la ventaja de PanDerm y de DermLIP
+procede de la escala y el dominio de su preentrenamiento; la
+adaptación eficiente de Dermapixel R0 sólo es viable porque dispone de
+datos clínicos en castellano; el nivel L3 fracasa por falta de
+muestras en la cola larga; y la línea de mayor impacto potencial es la
+ampliación del dataset con el banco hospitalario del HUSLL. El
+siguiente salto en rendimiento clínico no se espera, por tanto, de
+sustituir el codificador, sino de ampliar y mejorar los datos ---en
+cobertura diagnóstica, representación de fototipos y registro
+lingüístico--- sobre los que se adapta y evalúa.
+
 \section{Contribuciones reproducibles}
 \label{sec:contribuciones}
 
@@ -165,6 +180,17 @@ externos contrastados, con identificación de Dermnet como único
 conjunto con solapamiento exacto ($100\%$ contenido en Derm1M) y
 declaración de \emph{caveat} explícito sobre las cifras zero-shot de
 la familia DermLIP en ese dataset.
+
+\item \textbf{Marco metodológico reproducible de evaluación.} Más allá
+de las contribuciones anteriores tomadas por separado, su articulación
+bajo un protocolo común ---benchmark homogéneo, ontología jerárquica,
+auditoría de \emph{leakage}, análisis de equidad por fototipo,
+interpretabilidad mediante Sparse Autoencoders, segmentación
+promptable y clasificación zero-shot multimodal--- constituye en sí
+misma un marco de evaluación reproducible y transferible a futuros
+modelos fundacionales dermatológicos, con código, \emph{splits}
+canónicos y \emph{outputs} documentados en el
+Anexo~\ref{cap:anexoa}.
 \end{enumerate}
 
 \subsection{Contribuciones complementarias}
@@ -605,85 +631,29 @@ replicar sobre la misma receta de adaptación eficiente.
 para interpretabilidad}
 \label{sec:linea-derm7pt-sae}
 
-Las anotaciones \emph{Seven-Point Checklist} de Derm7pt
-(siete criterios diagnósticos estructurados por imagen) constituyen
-ground-truth conceptual no explotada por la literatura previa sobre
-Sparse Autoencoders aplicados a dermatología. La propuesta de
-investigación contempla cuatro experimentos. Los tres primeros se
-han ejecutado y se reportan en la
-sección~\ref{sec:sae-derm7pt}; el cuarto se ha ejecutado y se
-reporta en la sección~\ref{sec:sae-d7pt-e4} dentro de la misma
-sección de resultados.
+Las anotaciones \emph{Seven-Point Checklist} de Derm7pt (siete
+criterios diagnósticos por imagen) constituyen ground-truth conceptual
+no explotada por la literatura previa sobre Sparse Autoencoders en
+dermatología. Los cuatro experimentos previstos sobre este eje (E1,
+correlación SAE-Derm7pt; E2, \emph{Concept Bottleneck Model}; E3,
+cruce con los conceptos del Grupo~A; E4, \emph{fine-tuning} multitarea
+\emph{concept-aware}) se han \emph{ejecutado} y se reportan en la
+sección~\ref{sec:sae-derm7pt} y en el Anexo~\ref{cap:anexof}; no
+constituyen, por tanto, trabajo pendiente, sino contribución ya
+realizada. Su resultado principal es que la base \emph{sparse}
+aprendida sobre Derm1M alinea \emph{features} individuales con la
+taxonomía dermatoscópica sin entrenamiento específico (AUROC efectivo
+hasta $0{,}926$ sobre vasos en horquilla), y que el \emph{fine-tuning}
+multitarea con LoRA produce inferencia simultánea de melanoma y los
+siete criterios en una sola pasada (cabeza melanoma AUROC $0{,}891$),
+consolidando el módulo de interpretabilidad del prototipo
+(Anexo~\ref{cap:anexoh}) sin pipelines en cascada.
 
-\paragraph{E1. Correlación SAE-Derm7pt. \emph{Ejecutado}.}
-Cálculo de la AUROC efectiva de cada \emph{feature} del SAE Large
-($16\,384$ \emph{features}) como predictor binario de cada uno
-de los siete criterios Derm7pt sobre las anotaciones de la variante
-dermatoscópica ($N = 1\,011$). El resultado, reportado en
-la tabla~\ref{tab:sae-d7pt-e1} de la
-sección~\ref{sec:sae-derm7pt}, identifica AUROC efectivo
-\emph{top-1} hasta $0{,}823$ sobre \emph{vascular structures}
-y entre $0{,}681$ y $0{,}754$ sobre los seis criterios
-restantes.
-
-\paragraph{E2. \emph{Concept Bottleneck Model} sobre Derm7pt.
-\emph{Ejecutado}.}
-Construcción de un CBM jerárquico análogo al utilizado sobre
-SkinCon~\cite{skincon}, con los siete criterios Derm7pt como
-cuello de botella conceptual entre encoder y clasificador binario
-melanoma/no-melanoma sobre los \emph{splits} oficiales
-(\emph{train}~$=413$, \emph{val}~$=203$, \emph{test}~$=395$). La
-comparativa con el sondeo lineal directo
-(tabla~\ref{tab:sae-d7pt-cbm} de la
-sección~\ref{sec:sae-derm7pt}) cuantifica el compromiso
-interpretabilidad-precisión en $-5{,}8$\,pp AUROC
-($0{,}890 \to 0{,}832$) sobre el conjunto de test. Los pesos del
-meta-clasificador (tabla~\ref{tab:sae-d7pt-cbm-coefs})
-priorizan \emph{blue whitish veil} y \emph{regression structures}
-de forma coherente con la escala clínica.
-
-\paragraph{E3. Cruce con conceptos del Grupo~A. \emph{Ejecutado}.}
-Mapeo operativo de los $16$ conceptos dermatoscópicos
-propuestos a la Dra.~R.~Taberner sobre los siete criterios del
-\emph{Seven-Point Checklist} y validación de la cobertura del
-SAE Large sobre cada concepto mapeado. La
-tabla~\ref{tab:sae-d7pt-cross-rosa} de la
-sección~\ref{sec:sae-derm7pt} documenta que $11$ de
-$16$ conceptos admiten \emph{mapping} y $7$ de los $11$
-quedan cubiertos por al menos una \emph{feature} SAE con AUROC
-$\geq 0{,}70$. El pico observado sobre vasos en horquilla
-($0{,}926$, $N_{+} = 15$) sostiene la línea de
-interpretabilidad sin entrenamiento específico sobre el dataset en
-castellano. Los $5$ conceptos sin \emph{mapping} (empedrado,
-paralelos surcos/crestas, lagunas vasculares, vasos en corona) son
-estructuras no contempladas en la escala original y constituyen
-precisamente el contenido específico de la anotación clínica
-colaborativa con la Dra.~R.~Taberner.
-
-\paragraph{E4. \emph{Fine-tuning} multitarea \emph{concept-aware}
-sobre Derm7pt. \emph{Ejecutado}.}
-Ajuste fino supervisado de PanDerm Large con adaptación de bajo
-rango (LoRA, $r = 16$) sobre los dos últimos bloques del
-codificador y ocho cabezas paralelas: una multi-clase por cada
-criterio del \emph{Seven-Point Checklist} y una binaria para
-melanoma/no-melanoma. La pérdida es la suma equiponderada de
-entropías cruzadas sobre las ocho cabezas. La configuración,
-los hiperparámetros y los resultados se reportan en la
-sección~\ref{sec:sae-d7pt-e4}: con sólo $0{,}56$\,M de
-parámetros entrenables ($0{,}18\%$ del total) la cabeza
-melanoma alcanza AUROC test $= 0{,}891$ (IC95\%
-$[0{,}856,\,0{,}927]$), superando marginalmente al sondeo lineal
-directo sobre el SAE ($0{,}890$) y mejorando el CBM jerárquico
-en $+5{,}9$\,pp AUROC. Las siete cabezas conceptuales pierden
-entre $1$ y $3$\,pp de AUROC respecto al sondeo lineal separado
-por concepto, coste compatible con el comportamiento típico del
-aprendizaje multitarea y aceptado a cambio de inferencia
-simultánea melanoma + siete criterios en una sola pasada. Este
-resultado consolida la integración del módulo M7 de
-interpretabilidad del prototipo DermApIxel
-(Anexo~\ref{cap:anexoh}) sobre una única arquitectura adaptada y
-elimina la dependencia de pipelines en cascada para producir
-inferencia conceptual.
+La línea genuinamente abierta es la extensión del diccionario
+conceptual a los $15$ conceptos clínicos adicionales propuestos por la
+Dra.~R.~Taberner (Anexo~\ref{cap:anexof}) ---no contemplados por
+SkinCon ni por el \emph{Seven-Point Checklist}---, condicionada al
+muestreo y anotación de aproximadamente $200$ imágenes por concepto.
 
 \subsection{Aprendizaje activo \emph{in-domain} sobre clases L3
 con peor cobertura}
@@ -745,33 +715,17 @@ experta \emph{in-domain} sobre las clases L3 con peor cobertura.
 \label{sec:linea-seg-arquitectura}
 
 La comparativa pareada de arquitecturas promptables
-(sección~\ref{sec:seg-arquitecturas}) extiende el resultado de
-segmentación de la sección~\ref{sec:seg-results} sobre el mismo
-test canónico de ISIC2018 y delimita una pauta de selección. La
-generación de arquitectura SAM2 domina sobre SAM v1 con
-independencia del preentrenamiento de dominio, el preentrenamiento
-médico aporta una mejora consistente solo dentro de la misma
-generación, y el tamaño de \emph{backbone} no aporta ventaja en el
-régimen \emph{box-prompted}. La configuración con mejor Dice
-($0{,}9556$) y latencia próxima a la mínima ($26$\,ms) es
-MedSAM2-tiny, que se identifica como candidata de referencia para
-la segmentación de lesión en despliegues con restricciones de
-cómputo. Esta selección se acompaña de tres comprobaciones que
-consolidan la recomendación
-(secciones~\ref{sec:seg-control-automatico}--\ref{sec:seg-techo-anotador}):
-el factor dominante del rendimiento es la caja-\emph{prompt} y no el
-segmentador ---retirarla cuesta $7{,}5$\,pp frente a los $\sim 1$\,pp
-que separan a las arquitecturas---; la cifra es estable bajo
-validación cruzada de cinco pliegues
-($0{,}9554\pm 0{,}0010$) y la adaptación de bajo rango
-(LoRA~\cite{lora}) iguala al ajuste denso sin ventaja; y el resultado
-se sitúa cerca del techo de acuerdo inter-anotador ($0{,}728$ de Dice
-entre humanos frente a $0{,}915$ del modelo contra el consenso). La
-asimetría de la robustez a la caja ---apretarla degrada mucho más que
-aflojarla--- fija además la especificación del detector para el modo
-automático. Quedan abiertas la evaluación con detector de lesión
-extremo a extremo y la validación prospectiva sobre adquisición
-clínica no dermatoscópica.
+(sección~\ref{sec:seg-arquitecturas}) ya está ejecutada y delimita una
+pauta de selección reproducible: la generación SAM2 domina sobre SAM
+v1 con independencia del preentrenamiento de dominio, el factor
+determinante del rendimiento es la caja-\emph{prompt} y no el
+segmentador, y MedSAM2-tiny (Dice $0{,}9556$, $26$\,ms) se identifica
+como candidata de referencia para despliegues con restricciones de
+cómputo, con la cifra estable bajo validación cruzada y próxima al
+techo de acuerdo inter-anotador. La línea abierta se reduce, por
+tanto, a dos elementos no resueltos en este trabajo: la evaluación con
+un detector de lesión extremo a extremo que sustituya la caja manual y
+la validación prospectiva sobre adquisición clínica no dermatoscópica.
 
 \subsection{Escalado del dataset con el banco hospitalario HUSLL}
 \label{sec:linea-husll}
@@ -826,33 +780,26 @@ cualquier despliegue operativo más allá del prototipo.
 
 La auditoría por hash MD5 desarrollada para Derm1M
 (sección~\ref{sec:auditoria}) es directamente extensible a los demás
-corpora de preentrenamiento del ecosistema dermatológico actual:
-SkinGPT-4, MONET, MM-Skin, MedSAM y SkinFM, entre otros. La
-propuesta consiste en aplicar el mismo procedimiento sobre los
-splits de evaluación canónicos contrastados en este trabajo y
-publicar las cardinalidades de intersección como recurso de
-referencia para la comunidad. El producto previsto es un reporte
-técnico con la tabla completa de solapamientos por (dataset de
-evaluación, dataset de preentrenamiento), acompañado del script
-auditable. El \emph{caveat} cuantificado por dataset permitiría
-recalibrar las cifras zero-shot publicadas sobre estos corpora.
+datasets de preentrenamiento del ecosistema dermatológico (SkinGPT-4,
+MONET, MM-Skin, SkinFM, entre otros). La línea abierta consiste en
+aplicar el mismo procedimiento sobre los \emph{splits} de evaluación
+canónicos y publicar las cardinalidades de intersección, con su
+script auditable, como recurso de referencia que permita recalibrar
+las cifras zero-shot publicadas sobre esos datasets.
 
 \subsection{Recuperación visual densa como sistema de apoyo}
 \label{sec:linea-rag}
 
 La recuperación visual densa basada en FAISS sobre los
-\emph{embeddings} de Derm1M ($\sim 421\,000$ imágenes
-preindexadas) constituye un componente del prototipo DermApIxel
+\emph{embeddings} de Derm1M ($\sim 421\,000$ imágenes preindexadas)
+ya opera como componente del prototipo DermApIxel
 (sección~\ref{sec:dermapixel-m4} del Anexo~\ref{cap:anexoh}) con
-latencia inferior a $150$
-milisegundos por consulta. La propuesta consiste en evaluar el
-valor clínico del módulo mediante un estudio mixto sobre cohorte
-HUSLL: cuantitativo (concordancia diagnóstico-recuperación,
-\emph{precision@k} sobre L1 y L2 de la ontología) y cualitativo
-(valoración subjetiva del clínico sobre la utilidad de los casos
-recuperados como referencia diferencial). La integración con la
-historia clínica electrónica del HUSLL queda como prerrequisito
-técnico no abordado en el presente trabajo.
+latencia inferior a $150$\,ms por consulta. La línea abierta es
+evaluar su valor clínico mediante un estudio mixto sobre cohorte
+HUSLL ---\emph{precision@k} sobre L1/L2 y valoración subjetiva de la
+utilidad de los casos recuperados como referencia diferencial---, con
+la integración en la historia clínica electrónica como prerrequisito
+técnico pendiente.
 
 \subsection{IA agéntica para razonamiento clínico estructurado}
 \label{sec:linea-agentica}
