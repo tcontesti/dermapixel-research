@@ -151,6 +151,18 @@ sobre la ventaja del preentrenamiento de dominio
 (tabla~\ref{tab:gap-cnn}) permanecen defendibles incluso bajo el
 peor escenario de la auditoría.
 
+La auditoría acota, no obstante, su propio alcance epistemológico. El
+hash MD5 detecta coincidencias \emph{exactas} a nivel de bytes, pero
+no identifica \emph{near-duplicates}: recortes, reescalados,
+recompresiones o alteraciones leves de una misma imagen. Lo que la
+auditoría sostiene es, por tanto, la ausencia de duplicación
+\emph{exacta} entre los datasets de evaluación y Derm1M, no la
+ausencia completa de contaminación visual. Las cifras declaradas
+libres de solapamiento deben leerse en sentido estricto como libres de
+\emph{solapamiento exacto}; la extensión natural ---\emph{perceptual
+hashing} o comparación por \emph{embeddings} visuales--- se identifica
+como refinamiento metodológico de la auditoría.
+
 \subsection{Tamaños muestrales por subgrupo en el experimento de equidad}
 \label{sec:lim-muestrales}
 
@@ -334,7 +346,13 @@ imágenes del mismo caso clínico, pero produce un conjunto de test
 reducido ($41$ imágenes) que limita la potencia estadística de
 los contrastes realizados sobre él. La explotación experimental
 sistemática sobre DermapixelAI~1.0 se ha pospuesto al periodo
-posterior al cierre de este documento por esta razón.
+posterior al cierre de este documento por esta razón. En consecuencia,
+las conclusiones comparativas sobre el dataset ---en particular la
+jerarquía entre métodos en L2 y L3 y la narrativa de Dermapixel R0---
+se anclan en la validación cruzada agrupada por caso
+(sección~\ref{sec:disc-cv-robustez}, tabla~\ref{tab:dermapixel-cv}) y
+no en la cifra puntual del \emph{split} fijo, que sobrestima la BAcc
+sobre este \emph{test} reducido.
 
 \section{Limitaciones de generalización clínica}
 \label{sec:lim-clinica}
