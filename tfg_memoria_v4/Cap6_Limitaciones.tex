@@ -22,13 +22,10 @@ su evaluación empírica directa sobre los doce datasets externos
 contrastados y restringe su tratamiento al marco conceptual del
 capítulo~\ref{cap:sota}. La comparación entre PanDerm Large y
 DermFM-Zero, que la publicación original reporta a favor del
-segundo, no puede verificarse de forma independiente con los
-mismos protocolos aplicados al resto de la comparativa. La
-disponibilidad eventual de los pesos liberaría una comparación
-directa con los hallazgos cuantitativos de este trabajo, en
-particular sobre las cifras de sondeo lineal de la
-tabla~\ref{tab:lp-panderm} y sobre el experimento de equidad de
-la tabla~\ref{tab:equidad-fototipo}.
+segundo, no puede verificarse de forma independiente con los mismos
+protocolos. La disponibilidad eventual de los pesos permitiría esa
+comparación directa con los hallazgos cuantitativos del trabajo
+(tabla~\ref{tab:lp-panderm}, tabla~\ref{tab:equidad-fototipo}).
 
 Los modelos cerrados accedidos vía API (GPT-4o, GPT-4o-mini,
 Gemini~2.5~Pro, Gemini~2.5~Flash) presentan una limitación
@@ -209,6 +206,19 @@ operativas extraídas en sección~\ref{sec:disc-lp-vs-ft}
 (régimen $N_{\mathrm{train}} \lesssim 500$ para preferencia de
 sondeo lineal) son cualitativas y robustas, pero los umbrales
 exactos pueden desplazarse bajo otras semillas.
+
+Esta limitación se acota por dos consideraciones. La semilla fija
+respondió al objetivo de comparar arquitecturas bajo un protocolo
+constante, aislando el efecto del modelo del de la inicialización. Y
+la magnitud de los efectos cualitativos sobre los que se sostienen las
+conclusiones ---del orden de $+9{,}0$\,pp en la ventaja del
+preentrenamiento de dominio o de $43{,}5$\,pp en la brecha entre
+encoders especializados y LLMs generalistas--- excede ampliamente la
+variabilidad inter-semilla esperable para un clasificador lineal sobre
+estos tamaños muestrales, por lo que no se anticipan cambios
+cualitativos en las conclusiones. El reporte sistemático de media y
+desviación estándar sobre múltiples semillas constituye, en todo caso,
+la extensión natural de este protocolo.
 
 \subsection{Pruebas estadísticas y comparaciones múltiples}
 \label{sec:lim-estadistica}

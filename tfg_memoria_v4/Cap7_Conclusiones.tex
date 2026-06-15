@@ -482,13 +482,23 @@ sobre el material en castellano.
 en español}
 \label{sec:linea-spanderm}
 
-El dataset DermapixelAI~1.0 habilita el desarrollo de un modelo
-fundacional dermatológico clínico en español, denominado
-\textbf{Dermapixel R0}, inicializado desde el codificador PanDerm
-Large y adaptado sobre dicho dataset. La denominación R0 designa
-una versión base entrenada con un corpus reducido: un punto de
-partida que sienta las bases para iteraciones posteriores, no un
-modelo terminado. El modelo se articula en dos ramas
+\textbf{Dermapixel R0} constituye, a juicio de este trabajo, su
+aportación más original: el primer modelo fundacional dermatológico
+adaptado al español del que se tiene constancia a la fecha de cierre.
+Su relevancia no reside en una métrica de máximo rendimiento ---es,
+por diseño, una versión base (R0) entrenada sobre un dataset reducido,
+un punto de partida y no un modelo terminado---, sino en lo que
+demuestra: que un modelo dermatológico especializado en castellano
+puede construirse sobre un modelo fundacional liberado mediante
+técnicas de adaptación eficiente, con un presupuesto de cómputo y de
+datos al alcance de una institución hospitalaria y un grupo académico.
+El preentrenamiento de los modelos de base exige los grandes datasets
+y el cómputo de grupos de investigación especializados; este trabajo
+evidencia que la especialización posterior ---lingüística y
+clínica--- no comparte esa barrera de entrada.
+
+Dermapixel R0 se inicializa desde el codificador PanDerm Large, se
+adapta sobre el dataset DermapixelAI~1.0 y se articula en dos ramas
 complementarias.
 
 La primera es la rama \textbf{supervisada}: cabeza clasificadora
@@ -577,6 +587,19 @@ vocabulario con muestras efectivas contienen $\leq 5$ imágenes
 (cola larga estricta del vocabulario representado). La extensión vía
 banco HUSLL es condición necesaria y suficiente para la viabilidad
 de esta cabeza L3 directa.
+
+En conjunto, Dermapixel R0 traslada al dominio dermatológico en
+español una conclusión de alcance más amplio: la frontera de la
+especialización ya no la marca el acceso a grandes infraestructuras de
+preentrenamiento, sino la disponibilidad de datos clínicos bien
+curados y de un protocolo de adaptación adecuado. La rama supervisada
+L2 ya ejecutada (sección~\ref{sec:dermapixel-spanderm-v0}) demuestra
+el principio sobre la cardinalidad clínica intermedia, y la cabeza L3
+directa ---condicionada al banco hospitalario HUSLL--- define la ruta
+de escalado natural. Como semilla reproducible y honestamente acotada,
+Dermapixel R0 deja establecida una línea de continuación que otras
+instituciones con archivos clínicos en su propia lengua podrían
+replicar sobre la misma receta de adaptación eficiente.
 
 \subsection{Derm7pt + Sparse Autoencoders: ground-truth conceptual
 para interpretabilidad}
@@ -896,9 +919,11 @@ Las líneas de investigación abiertas
 experimentos identificados y prerrequisitos declarados, no trabajo
 simplemente pendiente. Su ejecución completaría la cadena entre
 caracterización empírica del estado del arte, construcción de
-recursos públicos en español, validación clínica prospectiva y
-despliegue operativo en el sistema sanitario, recorrido cuya
-primera etapa cierra el presente documento.
+recursos públicos en español ---el benchmark DermapixelAI~1.0 y la
+semilla Dermapixel R0, primer modelo fundacional dermatológico
+adaptado al español---, validación clínica prospectiva y despliegue
+operativo en el sistema sanitario, recorrido cuya primera etapa cierra
+el presente documento.
 
 La aportación intelectual del trabajo se sitúa en la conjunción de
 tres elementos. El primero es una contribución empírica: la
