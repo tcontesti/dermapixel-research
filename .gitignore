@@ -65,6 +65,23 @@ _pdf_check/
 _prototype_raw/
 _sprint97_raw/
 
+# TFG v4 (memoria canónica) — intermedios y material no versionable
+tfg_memoria_v4/*.log
+tfg_memoria_v4/*.brf
+tfg_memoria_v4/*.nav
+tfg_memoria_v4/*.snm
+tfg_memoria_v4/*.vrb
+tfg_memoria_v4/*.idx
+tfg_memoria_v4/*.ilg
+tfg_memoria_v4/*.ind
+tfg_memoria_v4/auto/
+tfg_memoria_v4/_minted-*/
+tfg_memoria_v4/_backup_*/
+tfg_memoria_v4/_legacy/
+tfg_memoria_v4/Memoria_EPSU1985.pdf
+tfg_memoria_v4/MemoriaTFG - copia.pdf
+tfg_memoria_v4/MemoriaTFG_Cap12.pdf
+
 # Backups
 *.bak
 *.old_local

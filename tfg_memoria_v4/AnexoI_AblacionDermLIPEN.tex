@@ -1,0 +1,209 @@
+%!TeX root=MemoriaTFG.tex
+
+\chapter{Ablación: modelo fundacional inglés (DermLIP) con
+traducción ES--EN}
+\label{cap:anexoi}
+
+Este anexo documenta una ablación independiente que cuantifica el
+\emph{trade-off} entre la rama contrastiva de Dermapixel R0
+defendida en la
+sección~\ref{sec:spanderm-clip} y un \emph{wrapper} alternativo
+basado en un modelo fundacional dermatológico inglés (DermLIP v2)
+con traducción de etiquetas ES--EN, sobre el mismo conjunto de test
+\emph{holdout} de DermapixelAI~1.0.
+
+\section{Motivación}
+\label{sec:anexoi-motivacion}
+
+Una pregunta legítima planteada durante la revisión paper-grade
+de la rama contrastiva de Dermapixel R0 es si el esfuerzo experimental
+documentado en la sección~\ref{sec:spanderm-clip} (cinco
+iteraciones de entrenamiento cross-modal castellano) se justifica
+frente a una alternativa pragmática: emplear un modelo fundacional
+dermatológico inglés ya alineado imagen-texto, sin entrenar ningún
+modelo adicional, sobre las etiquetas castellanas traducidas al
+inglés. Esta ablación cuantifica el \emph{trade-off} entre ambas
+estrategias sobre el mismo conjunto de test \emph{holdout} de
+DermapixelAI~1.0.
+
+\section{Protocolo experimental}
+\label{sec:anexoi-protocolo}
+
+El modelo fundacional inglés evaluado es DermLIP v2
+(\texttt{PanDerm-base-w-PubMed-256}), un sistema CLIP-style con
+codificador visual PanDerm-Base y codificador textual PubMedBERT,
+preentrenado contrastivamente sobre el dataset
+Derm1M~\cite{derm1m} ($\approx 403\,000$ pares imagen-texto).
+Ambas torres permanecen congeladas; no se entrena ningún
+parámetro. Las $54$ clases L3 representadas en el test se
+tradujeron al inglés clínico mediante un glosario estándar
+(Bolognia/Rook) con verificación cruzada de unicidad, y por cada
+clase se generó un \emph{rich prompt} clínico en inglés ($\sim 37$
+palabras, longitud equiparable a los \emph{prompts} castellanos
+de Dermapixel R0). La inferencia replica el protocolo híbrido de
+la sección~\ref{sec:spanderm-clip} (prototipos visuales sobre
+\emph{train} más texto rico, régimen \emph{H6} $w_v = 0{,}3$,
+$w_t = 0{,}7$) sobre las mismas $101$ imágenes de test y $54$
+clases.
+
+Adicionalmente, se midió el \emph{eje idioma puro} sobre el propio
+\emph{checkpoint} v4 de Dermapixel R0: el mismo modelo evaluado con
+los \emph{prompts} castellanos originales frente a los mismos
+\emph{prompts} traducidos al inglés, aislando el efecto del idioma
+de consulta sobre una alineación cross-modal fija.
+
+\section{Resultados}
+\label{sec:anexoi-resultados}
+
+La tabla~\ref{tab:ablation_panderm_en} reúne las seis
+configuraciones evaluadas sobre el mismo conjunto de test.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Comparativa cuantitativa de Dermapixel R0 v4 (\emph{headline})
+frente a la ablación con modelo fundacional inglés DermLIP v2 más
+traducción ES--EN. Test \emph{holdout} DermapixelAI~1.0,
+$N = 101$, $54$ clases L3 representadas; régimen \emph{H6 hybrid}
+$v30\_r70$ salvo donde se indica.}
+\label{tab:ablation_panderm_en}
+\begin{tabular}{llrrr}
+\hline
+Sistema & Régimen & acc@1 L3 & BAcc L3 & acc@5 L3 \\
+\hline
+Dermapixel R0 v4    & H6 hybrid (castellano)            & $0{,}2475$          & $0{,}2685$ & $0{,}4455$ \\
+Dermapixel R0 v5    & H6 hybrid (castellano)            & $0{,}2079$          & $0{,}2185$ & $0{,}4158$ \\
+Dermapixel R0 v4    & H6 hybrid (inglés)              & $0{,}2277$          & $0{,}2556$ & $0{,}4554$ \\
+DermLIP v2          & H6 hybrid (inglés)              & $0{,}2871$          & $0{,}3667$ & $0{,}6436$ \\
+\textbf{DermLIP v2} & \textbf{templates+rich (inglés)} & $\mathbf{0{,}3861}$ & $0{,}4099$ & $0{,}6931$ \\
+DermLIP v2          & visual-only                     & $0{,}2178$          & $0{,}2278$ & $0{,}4851$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Interpretación}
+\label{sec:anexoi-interpretacion}
+
+DermLIP v2 inglés supera a Dermapixel R0 v4 en el régimen
+comparable \emph{H6} ($0{,}2871$ frente a $0{,}2475$,
+$+3{,}96$\,pp) y lo supera con mayor margen en su mejor régimen
+de plantillas más texto rico ($0{,}3861$, $+13{,}86$\,pp),
+confirmando la hipótesis de partida de que el cuello de botella de
+Dermapixel R0 residía en la \emph{escala} de la alineación
+cross-modal y no en la formulación textual. Un modelo fundacional
+preentrenado sobre $\approx 403\,000$ pares supera a un CLIP
+castellano dedicado entrenado sobre $854$ pares, incluso pagando el
+ruido de la traducción de etiquetas.
+
+El eje idioma matiza esta lectura: sobre el mismo \emph{checkpoint}
+v4, la consulta en castellano supera a la consulta en inglés
+($0{,}2475$ frente a $0{,}2277$ en \emph{H6}, $+1{,}98$\,pp;
+y $0{,}1287$ frente a $0{,}0891$ en \emph{rich-only},
+$+3{,}96$\,pp), mientras que el régimen visual-only permanece
+idéntico ($0{,}1683$). Dermapixel R0 sí captura un componente
+específico del registro clínico castellano, si bien de segundo orden
+frente a la ventaja de escala del modelo fundacional inglés.
+
+El \emph{trade-off} entre los dos enfoques es, por tanto,
+explícito:
+
+\begin{itemize}
+  \item \textbf{DermLIP inglés más traducción}: rendimiento bruto
+        superior, cero entrenamiento, pero dependencia de
+        traducción de etiquetas y de un dataset de preentrenamiento
+        externo (Derm1M~\cite{derm1m}), con la consiguiente
+        pérdida potencial de matices clínicos castellanos no
+        traducibles uno a uno.
+  \item \textbf{Dermapixel R0 (rama contrastiva)}: entrenamiento dedicado sobre $854$
+        pares reales castellanos, preservación de la
+        \emph{fingerprint} clínica del archivo de la
+        Dra.~R.~Taberner, inferencia sin traducción en
+        \emph{runtime} y operación \emph{on-prem} compatible con la
+        ruta de extensión al banco hospitalario HUSLL
+        (sección~\ref{sec:linea-active-learning}).
+\end{itemize}
+
+La conclusión es que la rama contrastiva de Dermapixel R0 no se
+justifica como sistema de
+mayor rendimiento bruto en \emph{zero-shot} L3, sino por sus
+propiedades operativas de privacidad, especificidad lingüística y
+autonomía de despliegue. La superioridad de DermLIP refuerza,
+además, el diseño de la línea de continuación documentada en la
+sección~\ref{sec:linea-active-learning}: la palanca pendiente
+para Dermapixel R0 es la anotación experta dirigida
+\emph{in-domain} sobre las clases L3 con peor cobertura, no la
+escala genérica.
+
+\section{Limitaciones de la ablación}
+\label{sec:anexoi-limitaciones}
+
+La comparación no está equiparada en datos: DermLIP v2 se
+preentrena sobre $\approx 403\,000$ pares frente a los $854$ pares
+castellanos de Dermapixel R0, y los \emph{backbones} visuales
+difieren (PanDerm-Base contrastivo frente a PanDerm-Large
+congelado con LoRA). El resultado debe leerse como ``modelo
+fundacional inglés grande más traducción'' frente a ``CLIP
+castellano dedicado pequeño'', no como un contraste de igual
+presupuesto de datos.
+
+La carga de DermLIP v2 requiere el \emph{fork} de
+\texttt{open\_clip} del proyecto Derm1M: la implementación estándar
+instancia un \emph{Vision Transformer} genérico e ignora
+silenciosamente la torre visual PanDerm-Base ($152$ claves
+ausentes, codificador visual aleatorio), un modo de fallo
+verificado y evitado en esta ablación empleando el mismo
+\emph{loader} que el módulo de producción
+(Anexo~\ref{cap:anexoh}).
+
+La verificación de solapamiento con Derm1M se realizó a nivel de
+fuente: las fuentes constituyentes de Derm1M (vídeo, foros,
+literatura biomédica y libros de texto en inglés y chino) no
+incluyen ningún blog dermatológico español, y no se hallaron
+coincidencias para \emph{dermapixel} ni \emph{taberner} en las
+$417\,257$ filas del \emph{manifest}. El archivo Dermapixel es
+privado y no figura como fuente, lo que sustenta razonablemente la
+asunción de ausencia de \emph{leakage}; no se ejecutó una
+comparación perceptual exhaustiva imagen a imagen. La traducción
+ES--EN introduce, finalmente, un ruido no cuantificado en las
+etiquetas.
+
+\section{Detalles de reproducibilidad de la rama contrastiva}
+\label{sec:anexoi-repro-contrastiva}
+
+Este apartado recoge los detalles de procedencia y reproducibilidad
+de la rama contrastiva de Dermapixel R0
+(sección~\ref{sec:spanderm-clip}), separados del cuerpo por no
+afectar a las conclusiones científicas.
+
+\paragraph{Generación de \emph{captions} sintéticas.}
+Las ocho perspectivas clínicas por imagen se generan mediante un
+modelo de lenguaje grande a partir del texto original de cada caso
+del blog y de sus metadatos. El total alcanza $7\,680$
+\emph{captions} sobre $960$ imágenes (fase v1--v4); $102$ imágenes
+fallan la generación automática y conservan únicamente el texto
+base. El coste real de generación es de $32{,}54$ USD ($0{,}030$ USD
+por imagen completa) y la longitud media es de $87{,}5$ palabras por
+\emph{caption}. Combinadas con las nueve variantes textuales base
+(plantillas L1/L2/L3, jerárquicas \texttt{L1L2L3}, título de blog,
+tres \emph{chunks} de \texttt{case\_text} y \texttt{diagnosis\_raw}),
+el dataset de entrenamiento alcanza del orden de $22\,000$ pares
+(imagen, texto), muestreados por hash determinista
+\texttt{(seed, epoch, image\_id)}.
+
+\paragraph{Tiempos de entrenamiento.}
+Sobre NVIDIA DGX Spark GB10: $\sim 18$\,min (v1), $\sim 3$\,min
+(v2), $\sim 5$\,min (v3), $\sim 9$\,min (v4) y $\sim 54$\,min (v5).
+
+\paragraph{Lección metodológica: longitud de las \emph{captions}.}
+La generación de \emph{captions} sintéticas del dataset externo de
+v5 (coste $42{,}33$ USD) reveló la importancia de calibrar la
+longitud objetivo respecto al umbral del verificador automático
+posterior. Un primer intento con rango $30$--$40$ palabras produjo
+una tasa de rechazo del $54\%$ ---las \emph{captions} se agrupaban
+en el suelo del rango y el verificador descartaba las más cortas---;
+recalibrar el objetivo a $40$--$55$ palabras redujo el rechazo a
+cero. La regla operativa derivada es dimensionar la longitud
+objetivo con margen explícito sobre el umbral mínimo aceptable, no
+sobre la media deseada.

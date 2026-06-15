@@ -1,0 +1,240 @@
+%!TeX root=MemoriaTFG.tex
+
+\chapter{Introducción}
+\label{cap:intro}
+
+En el presente Trabajo Final de Grado (TFG) se evalúa de forma
+sistemática el rendimiento de los modelos fundacionales disponibles
+para imagen dermatológica clínica, sobre un conjunto homogéneo de
+protocolos experimentales y datasets externos públicos. El trabajo
+se desarrolla en el marco de dos colaboraciones preexistentes con
+la Dra.~R.~Taberner del Hospital Universitario Son Llàtzer (HUSLL)
+y se acompaña de la construcción de un dataset propio en español,
+DermapixelAI~1.0, que se entrega como contribución independiente.
+
+En este capítulo se presenta el contexto clínico del problema, el
+marco operativo en el que se inscribe el trabajo, la pregunta de
+investigación que articula el estudio, los objetivos formales, las
+restricciones explícitas del diseño y la estructura del resto del
+documento. El estado del arte específico ---modelos fundacionales
+para imagen médica y dermatológica, métodos de adaptación y
+evaluación zero-shot--- se desarrolla en el
+capítulo~\ref{cap:sota}.
+
+
+\section{Contexto clínico}
+\label{sec:contexto}
+
+La dermatología clínica atiende un espectro amplio de entidades con
+distribución concentrada en un número reducido de motivos de
+consulta. El estudio observacional DIADERM, sobre $10\,999$
+diagnósticos en $8\,953$ pacientes en territorio español,
+ordena los diez diagnósticos más prevalentes como queratosis
+actínica, carcinoma basocelular, nevus melanocítico, queratosis
+seborreica, otras neoplasias benignas, psoriasis, acné, verrugas
+víricas, otros trastornos de la pigmentación y otras
+dermatitis~\cite{diaderm2018}. El trabajo local de Taberner et~al.\
+sobre el servicio dermatológico del HUSLL documenta $213$
+diagnósticos diferentes en un único año
+asistencial~\cite{taberner2010_motivos}. Ambos coinciden en un peso
+elevado de dermatosis benignas, inflamatorias e infecciosas
+habituales.
+
+La sensibilidad temporal del proceso diagnóstico resulta crítica en
+el melanoma cutáneo. La supervivencia específica a cinco años
+desciende desde aproximadamente $99\%$ en estadio~I hasta
+$25\%$ en estadio~IV según la octava edición de la American
+Joint Committee on Cancer~\cite{ajcc8}. El acceso al especialista
+se realiza mediante derivación desde atención primaria. La
+capacidad asistencial del circuito presencial es limitada frente a
+una demanda creciente, lo que justifica el interés por sistemas de
+apoyo al diagnóstico basados en imagen.
+
+El sustrato visual del diagnóstico dermatológico se articula en tres
+modalidades: fotografía clínica (presentación general y contexto
+anatómico), dermatoscopia (patrones pigmentarios y estructurales no
+visibles a simple vista) e histopatología (confirmación
+tisular). Sobre esta tríada operan los sistemas de apoyo basados en
+aprendizaje automático.
+
+
+\section{Marco operativo previo}
+\label{sec:trabajo-previo}
+
+El presente trabajo se desarrolla en el marco de dos colaboraciones
+preexistentes con la Dra.~R.~Taberner, dermatóloga del HUSLL. La
+primera es la modernización tecnológica del archivo Dermapixel,
+blog mantenido por la Dra.~Taberner desde 2010. El archivo reúne
+más de $700$ casos clínicos comentados con imagen clínica y
+dermatoscópica, historia abreviada, diagnóstico y razonamiento
+diferencial. En paralelo a este TFG se ha desarrollado su migración
+a una pila tecnológica propia. La segunda es un proyecto
+institucional del Servei de Salut de les Illes Balears (IB-Salut)
+sobre teledermatología hospitalaria. En él se desarrolla una
+herramienta de apoyo a la primera valoración dermatológica en el
+circuito de derivación desde atención primaria. Ambas líneas
+orientan la decisión de priorizar modelos con código y pesos
+públicos por su viabilidad de integración.
+
+
+\section{Pregunta de investigación}
+\label{sec:pregunta}
+
+El estado del arte en modelos fundacionales para imagen
+dermatológica (capítulo~\ref{cap:sota}) ha avanzado con rapidez; a
+pesar de ello, persisten varias cuestiones abiertas. En primer
+lugar, la mayoría de trabajos evalúan los modelos sobre un número
+limitado de datasets y bajo protocolos heterogéneos, lo que dificulta
+la comparación directa entre arquitecturas. En segundo lugar, existe
+escasa evidencia sobre la transferencia de estos modelos a idiomas
+distintos del inglés y a escenarios multimodales que integren texto
+clínico narrativo. Por último, aspectos como la eficiencia en
+etiquetas, la equidad entre fototipos y la posible contaminación
+entre los datasets de preentrenamiento y los de evaluación continúan
+insuficientemente caracterizados. Estas brechas motivan el presente
+trabajo.
+
+El estudio se articula en torno a una pregunta única: \emph{¿cuál
+es el rendimiento y la capacidad de generalización de los modelos
+fundacionales para imagen dermatológica disponibles, en función del
+volumen de datos etiquetados y del tipo de supervisión, y con qué
+robustez frente a la heterogeneidad taxonómica entre datasets y la
+disparidad por fototipo cutáneo?}
+
+La respuesta empírica exige dos condiciones operativas: un
+protocolo de evaluación homogéneo aplicable a familias de modelos
+heterogéneas y un esquema explícito de armonización taxonómica
+entre datasets. El diseño descrito en el
+capítulo~\ref{cap:metodos} satisface ambas.
+
+
+\section{Objetivos del trabajo}
+\label{sec:objetivos}
+
+El trabajo se articula en torno a tres objetivos formales,
+verificables sobre los resultados experimentales del
+capítulo~\ref{cap:resultados}.
+
+\paragraph{O1. Evaluación experimental sistemática de los modelos
+fundacionales dermatológicos sobre conjuntos de datos externos.}
+Sobre el hardware del proyecto (NVIDIA DGX Spark, chip Grace Hopper
+GB10, arquitectura aarch64, $128$\,GB memoria unificada,
+CUDA~13.0, BF16) se implementa el conjunto de modelos fundacionales
+con código y pesos públicos a la fecha de inicio. Se evalúa su
+comportamiento sobre doce datasets externos
+públicos\footnote{HAM10000~\cite{ham10000},
+BCN20000~\cite{bcn20000}, PAD-UFES-20~\cite{padufes},
+DDI~\cite{ddi}, Dermnet~\cite{dermnet}, Derm7pt
+(clínica y dermatoscópica)~\cite{kawahara2019}, HIBA, MSKCC, WSI
+patches, Fitzpatrick17k~\cite{fitzpatrick17k},
+SkinCon~\cite{skincon} e ISIC2018~\cite{isic2018}.} mediante cuatro
+protocolos principales (sondeo lineal, ajuste fino supervisado,
+segmentación binaria promptable sobre SAM2.1~\cite{sam2},
+clasificación zero-shot multimodal) y tres protocolos
+complementarios (comparación con modelos de lenguaje multimodales,
+análisis de equidad por fototipo Fitzpatrick, auditoría de
+solapamiento con Derm1M mediante hash MD5).
+
+\paragraph{O2. Construcción del dataset DermapixelAI 1.0.}
+Se extrae, depura y estructura el material del archivo Dermapixel
+para conformar un dataset que vincula, para cada caso, imagen y
+modalidad, metadatos clínicos y texto narrativo en español. El
+dataset se publica bajo licencia CC-BY-NC-SA~4.0 con datasheet
+formal~\cite{datasheets2018}, particiones documentadas y mecanismo
+de cita recomendada. Sobre él se ejecuta además parte de la
+evaluación experimental del capítulo~\ref{cap:resultados}, que
+contrasta el sondeo lineal supervisado frente a la clasificación
+zero-shot multimodal en los tres niveles ontológicos
+(secciones~\ref{sec:dermapixel-results} y~\ref{sec:dermapixel-zs}).
+
+\paragraph{O3. Inicialización y caracterización de Dermapixel R0,
+primera línea base de modelo fundacional dermatológico en español.}
+Partiendo del codificador PanDerm Large y del dataset
+DermapixelAI~1.0, se obtiene una versión base (R0) mediante
+adaptación supervisada de bajo rango y se caracteriza su
+comportamiento sobre los niveles ontológicos L2 y L3
+(sección~\ref{sec:dermapixel-spanderm-v0}), junto con una rama
+contrastiva multimodal en español (sección~\ref{sec:spanderm-clip}).
+El objetivo no persigue un rendimiento de referencia, sino establecer
+una semilla reproducible y honestamente acotada que habilite el
+escalado documentado en la sección~\ref{sec:linea-spanderm}.
+
+Los bloques derivados emergidos durante el desarrollo del proyecto
+(armonización ontológica jerárquica L1/L2/L3, ensemble de seguridad
+para detección de melanoma, análisis de equidad por fototipo,
+interpretabilidad mediante Sparse Autoencoders~\cite{templeton2024},
+recuperación visual densa basada en FAISS~\cite{faiss2019},
+integración en el prototipo DermApIxel) no constituyen objetivos
+formales y se documentan en los anexos y secciones correspondientes
+con su estado, prerrequisitos y líneas futuras.
+
+
+\section{Restricciones del estudio}
+\label{sec:alcance}
+
+Tres restricciones explícitas condicionan el diseño experimental y
+la interpretación de los resultados. \textbf{Hardware:} todas las
+ejecuciones se realizan sobre el hardware descrito en el
+objetivo~O1 (sección~\ref{sec:objetivos}), cuya arquitectura
+aarch64 no coincide con el hardware x86\_64 dominante en la
+literatura. \textbf{Acceso a datos:} los
+conjuntos internos del grupo de Monash empleados en el
+preentrenamiento de PanDerm no son accesibles para terceros, lo que
+limita el trabajo a los pesos liberados y a la evaluación sobre
+datasets externos públicos. \textbf{Acceso a modelos:} los pesos
+de DermFM-Zero no son públicos en la fecha de cierre, lo que impide
+su evaluación empírica directa y restringe su tratamiento a la
+discusión conceptual.
+
+El trabajo no aborda, por decisión de alcance, los siguientes
+elementos: preentrenamiento desde cero de un modelo fundacional
+propio; validación clínica prospectiva sobre cohorte hospitalaria
+real con protocolo aprobado por Comité Ético de Investigación
+Clínica; reentrenamiento multilingüe de la rama lingüística sobre
+datasets en español de gran escala. Estos elementos se identifican como líneas
+futuras en la sección~\ref{sec:lineas-abiertas} del
+capítulo~\ref{cap:conclusiones}.
+
+
+\section{Estructura del documento}
+\label{sec:estructura}
+
+El documento se compone de siete capítulos en el cuerpo principal,
+una bibliografía y diez anexos. El capítulo~\ref{cap:sota} sintetiza
+el estado del arte en cuatro bloques: aprendizaje profundo aplicado
+a dermatología, modelos fundacionales en imagen médica, modelos
+específicos para dermatología y brechas operativas no resueltas por
+la literatura. El capítulo~\ref{cap:metodos} describe materiales y
+métodos: los doce datasets externos, la ontología jerárquica
+L1/L2/L3, el dataset DermapixelAI~1.0 (resumido; pipeline detallado
+en el Anexo~\ref{cap:anexoc}), los catorce modelos fundacionales
+evaluados, la infraestructura, los protocolos, las métricas y la
+trazabilidad. El
+capítulo~\ref{cap:resultados} reúne los resultados experimentales
+organizados por bloque. El capítulo~\ref{cap:discusion} interpreta
+los resultados en clave de hallazgos, comparación con la literatura
+e implicaciones operativas. El capítulo~\ref{cap:limitaciones}
+declara las limitaciones del estudio en seis dimensiones. El
+capítulo~\ref{cap:conclusiones} responde de forma compacta a la
+pregunta de investigación y enumera las contribuciones
+reproducibles.
+
+Los anexos contienen, respectivamente, el mapa de tareas
+experimentales y la estructura del repositorio
+(Anexo~\ref{cap:anexoa}), las tablas detalladas de resultados por
+dataset (Anexo~\ref{cap:anexob}), el pipeline de construcción y
+caracterización del dataset DermapixelAI~1.0
+(Anexo~\ref{cap:anexoc}), la declaración sobre el uso de
+herramientas de inteligencia artificial durante la elaboración del
+documento (Anexo~\ref{cap:anexod}), el documento de entrega formal
+del dataset con licencia, datasheet y consideraciones de privacidad
+(Anexo~\ref{cap:anexoe}), la documentación de los Sparse
+Autoencoders y el diccionario de conceptos
+(Anexo~\ref{cap:anexof}), la comparación extendida con modelos
+de lenguaje multimodales generalistas (Anexo~\ref{cap:anexog}),
+el prototipo DermApIxel (Anexo~\ref{cap:anexoh}), la ablación del
+modelo fundacional inglés con traducción ES-EN
+(Anexo~\ref{cap:anexoi}) y las ablaciones complementarias sobre
+DermapixelAI~1.0 ---cabezas alternativas, función de pérdida,
+\emph{Test-Time Augmentation}, codificadores generalistas y
+arquitecturas de inferencia alternativas--- (Anexo~\ref{cap:anexoj}).

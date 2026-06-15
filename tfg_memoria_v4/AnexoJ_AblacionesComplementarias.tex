@@ -1,0 +1,538 @@
+\chapter{Ablaciones complementarias sobre DermapixelAI 1.0}
+\label{cap:anexoj}
+
+Este anexo recoge varios estudios complementarios sobre
+DermapixelAI~1.0 que confirman, sin desplazarla, la línea
+experimental principal del capítulo~\ref{cap:resultados}
+(secciones~\ref{sec:dermapixel-results} y~\ref{sec:dermapixel-zs}):
+la validación del procedimiento de etiquetado del dataset, tres
+variantes de clasificación sobre \emph{embeddings} congelados
+---cabezas alternativas, función de pérdida y \emph{Test-Time
+Augmentation}--- y dos extensiones con codificadores generalistas y
+arquitecturas de inferencia alternativas. Ninguno modifica las
+conclusiones del cuerpo principal; se documentan aquí por
+completitud y trazabilidad.
+
+
+\section{Validación del procedimiento de etiquetado: subestudio
+\emph{rosa\_verified}}
+\label{sec:anexoj-rosa}
+
+La sección~\ref{sec:dermapixel-results} resume el subestudio que
+cuantifica si las etiquetas etiológicas derivadas de la ontología,
+no revisadas individualmente por la dermatóloga, degradan el
+rendimiento. La tabla~\ref{tab:dermapixel-rosa} reporta la
+comparación completa, por sondeo lineal, entre el subconjunto
+verificado caso a caso (\texttt{rosa\_verified=True}, $N = 919$;
+train $= 744$, test $= 32$) y el dataset completo
+(\texttt{all\_verified}, $N = 1\,062$; train $= 874$, test $= 36$),
+sobre los tres niveles ontológicos.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Subestudio \emph{rosa\_verified}: comparación entre el
+subconjunto verificado caso a caso por la dermatóloga
+($N_{\mathrm{train}} = 744$, $N_{\mathrm{test}} = 32$) y el dataset
+completo ($N_{\mathrm{train}} = 874$, $N_{\mathrm{test}} = 36$).
+Entre corchetes, IC95\% por \emph{bootstrap} estratificado.}
+\label{tab:dermapixel-rosa}
+\begin{tabular}{lllrrr}
+\hline
+Modelo & Subconjunto & Nivel & Acc & BAcc & W-F1 \\
+\hline
+PanDerm Large & \emph{rosa\_true\_only} & L1
+  & $0{,}719$ [$0{,}594$--$0{,}844$]
+  & $0{,}747$ [$0{,}646$--$0{,}865$]
+  & $0{,}700$ [$0{,}550$--$0{,}841$] \\
+PanDerm Large & \emph{all\_verified}    & L1
+  & $0{,}750$ [$0{,}639$--$0{,}861$]
+  & $0{,}735$ [$0{,}637$--$0{,}835$]
+  & $0{,}722$ [$0{,}596$--$0{,}845$] \\
+PanDerm Large & \emph{rosa\_true\_only} & L2
+  & $0{,}250$ [$0{,}188$--$0{,}344$]
+  & $0{,}250$ [$0{,}203$--$0{,}313$]
+  & $0{,}227$ [$0{,}150$--$0{,}304$] \\
+PanDerm Large & \emph{all\_verified}    & L2
+  & $0{,}250$ [$0{,}167$--$0{,}333$]
+  & $0{,}265$ [$0{,}206$--$0{,}338$]
+  & $0{,}223$ [$0{,}139$--$0{,}291$] \\
+PanDerm Large & \emph{rosa\_true\_only} & L3
+  & $0{,}167$ [$0{,}167$--$0{,}167$]
+  & $0{,}176$ [$0{,}176$--$0{,}176$]
+  & $0{,}125$ [$0{,}117$--$0{,}139$] \\
+PanDerm Large & \emph{all\_verified}    & L3
+  & $0{,}179$ [$0{,}143$--$0{,}214$]
+  & $0{,}184$ [$0{,}158$--$0{,}211$]
+  & $0{,}143$ [$0{,}100$--$0{,}184$] \\
+PanDerm Base  & \emph{rosa\_true\_only} & L1
+  & $0{,}625$ [$0{,}469$--$0{,}781$]
+  & $0{,}523$ [$0{,}326$--$0{,}735$]
+  & $0{,}618$ [$0{,}451$--$0{,}773$] \\
+PanDerm Base  & \emph{all\_verified}    & L1
+  & $0{,}639$ [$0{,}472$--$0{,}778$]
+  & $0{,}570$ [$0{,}371$--$0{,}751$]
+  & $0{,}624$ [$0{,}457$--$0{,}760$] \\
+\hline
+\end{tabular}
+\end{table}
+
+
+\section{Ranking L3 por prototipos coseno de Dermapixel R0}
+\label{sec:anexoj-l3-prototipos}
+
+La sección~\ref{sec:dermapixel-spanderm-v0} resume el ranking del
+nivel L3 de Dermapixel R0 por prototipos coseno (media de las
+representaciones de entrenamiento por clase). La
+tabla~\ref{tab:dermapixel-spanderm-l3} reporta las cifras completas
+sobre las $250$ clases efectivas del vocabulario de entrenamiento.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Ranking L3 por prototipos coseno de Dermapixel R0 sobre el
+conjunto de test de DermapixelAI~1.0 ($250$ clases efectivas
+del vocabulario de entrenamiento). Cifras: media $\pm$ desviación
+estándar sobre tres semillas. La columna $\times$~azar reporta el
+factor de mejora respecto a la asignación aleatoria uniforme
+sobre $250$ clases ($1/250 = 0{,}004$).}
+\label{tab:dermapixel-spanderm-l3}
+\begin{tabular}{lrrr}
+\hline
+Métrica & Media                 & Std            & $\times$~azar \\
+\hline
+Acc@1   & $0{,}167$             & $0{,}000$      & $\times 42$ \\
+Acc@3   & $0{,}259$             & $0{,}013$      & $\times 22$ \\
+Acc@5   & $0{,}296$             & $0{,}026$      & $\times 15$ \\
+BAcc    & $0{,}148$             & $0{,}000$      & --- \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Cabezas alternativas sobre embeddings congelados}
+
+Sobre los mismos \emph{embeddings} de PanDerm Large utilizados en la
+tabla~\ref{tab:dermapixel-lp} se evalúan tres cabezas adicionales:
+$k$-vecinos más cercanos con distancia coseno ($k = 10$, valor
+óptimo dentro de $k \in \{1, 5, 10\}$), perceptrón multicapa con
+una capa oculta de $512$ unidades y \emph{dropout} $0{,}3$ (MLP
+512), y regresión logística con \texttt{class\_weight='balanced'}
+(LogReg \emph{balanced}). El protocolo de partición es el del split
+fijo de la tabla~\ref{tab:dermapixel-lp}
+($N_{\mathrm{train}} = 874$, $N_{\mathrm{test}} = 36$ en L1/L2,
+$N_{\mathrm{test}} = 28$ en L3). La tabla~\ref{tab:dermapixel-heads}
+recoge la AUROC \emph{one-vs-rest}, métrica discriminativa robusta
+al desbalance, como criterio comparativo.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Cabezas alternativas sobre \emph{embeddings} congelados de
+PanDerm Large (test fijo de DermapixelAI~1.0). AUROC
+\emph{one-vs-rest} por nivel ontológico. LP: regresión logística
+estándar (referencia tabla~\ref{tab:dermapixel-lp}); kNN $k=10$:
+$k$-vecinos con distancia coseno; MLP 512: perceptrón multicapa
+con $512$ unidades ocultas y \emph{dropout} $0{,}3$; LogReg
+\emph{balanced}: regresión logística con \texttt{class\_weight =
+balanced}. Mejor valor por nivel en negrita.}
+\label{tab:dermapixel-heads}
+\begin{tabular}{lrrr}
+\hline
+Cabeza                & L1 (4 cls)         & L2 (38 cls)        & L3 (224 cls) \\
+\hline
+LP (referencia)       & $0{,}796$          & $0{,}793$          & $0{,}813$ \\
+kNN $k=10$            & $0{,}752$          & $0{,}698$          & $0{,}694$ \\
+MLP 512               & $\mathbf{0{,}817}$ & $\mathbf{0{,}812}$ & $\mathbf{0{,}827}$ \\
+LogReg \emph{balanced}& $0{,}797$          & $0{,}800$          & $0{,}810$ \\
+\hline
+\end{tabular}
+\end{table}
+
+El MLP de $512$ unidades alcanza la mejor AUROC sobre los tres
+niveles, con incrementos modestos pero consistentes sobre la cabeza
+lineal de referencia: $+2{,}1$\,pp en L1
+($0{,}796 \to 0{,}817$), $+1{,}9$\,pp en L2
+($0{,}793 \to 0{,}812$) y $+1{,}4$\,pp en L3
+($0{,}813 \to 0{,}827$). La regresión logística con re-ponderación
+de clases mantiene Acc@1 idéntico al LP estándar y mejora la BAcc
+sobre L1 ($0{,}703$ frente a $0{,}735$ del LP estándar dentro de
+los IC95\% solapados), sin diferencias relevantes sobre L2 y L3.
+La cabeza $k$-NN queda por debajo de las cabezas paramétricas en
+los tres niveles, lo que se interpreta como insuficiente densidad
+local en el espacio de \emph{embeddings} para $N_{\mathrm{train}}
+= 874$ frente a un vocabulario de $224$ clases L3. La elección de
+la regresión logística estándar como cabeza primaria en la
+tabla~\ref{tab:dermapixel-lp} se mantiene defendible: la mejora
+absoluta del MLP no compensa la pérdida de interpretabilidad
+lineal de los coeficientes ni la mayor sensibilidad a la
+inicialización aleatoria, especialmente con el tamaño muestral del
+test.
+
+\section{Función de pérdida: Cross-Entropy frente a Focal}
+\label{sec:dermapixel-focal}
+
+La cola larga severa del dataset, particularmente acusada en el
+nivel L3 ($77\%$ de las clases con $\leq 5$ ejemplos de
+entrenamiento, $3{,}9$ muestras por clase de media en
+\emph{train}, ver Anexo~\ref{cap:anexoc}), motiva contrastar la
+pérdida de entropía cruzada estándar con \emph{Focal Loss} de
+Lin et~al.\ 2017, diseñada explícitamente para mitigar el efecto
+del desbalance reduciendo el peso de los ejemplos fáciles vía el
+factor $(1-p_t)^\gamma$. Sobre los \emph{embeddings} congelados de
+PanDerm Large del split fijo de la tabla~\ref{tab:dermapixel-lp}
+se reentrena la cabeza lineal con \emph{Focal Loss} bajo dos
+parámetros de focalización ($\gamma \in \{1{,}0,\,2{,}0,\,5{,}0\}$)
+y dos regímenes de ponderación de clase
+(\texttt{class\_weight = None} frente a
+\texttt{class\_weight = balanced}), optimizada con LBFGS y
+evaluada sobre el mismo conjunto de test que el sondeo lineal
+estándar. La tabla~\ref{tab:dermapixel-focal} reporta la mejor
+variante por nivel junto a las dos referencias previas (LP CE
+estándar, LogReg \emph{balanced}) de la
+tabla~\ref{tab:dermapixel-heads}.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Función de pérdida sobre \emph{embeddings} congelados de
+PanDerm Large (test fijo de DermapixelAI~1.0,
+$N_{\mathrm{test}} = 36$ en L1/L2 y $N_{\mathrm{test}} = 28$ en
+L3). LP CE: regresión logística con entropía cruzada estándar
+(referencia tabla~\ref{tab:dermapixel-lp}); LogReg
+\emph{balanced}: re-ponderación inversa por frecuencia de clase
+(tabla~\ref{tab:dermapixel-heads}); \emph{Focal} $\gamma$: pérdida
+focal sin re-ponderación con parámetro de focalización indicado.
+Mejor valor por columna y nivel en negrita.}
+\label{tab:dermapixel-focal}
+\begin{tabular}{llrrr}
+\hline
+Nivel        & Pérdida                                       & Acc@1              & BAcc               & AUROC \\
+\hline
+L1 (4 cls)   & LP CE (referencia)                            & $0{,}750$          & $0{,}735$          & $0{,}796$ \\
+L1 (4 cls)   & LogReg \emph{balanced}                        & $0{,}694$          & $0{,}703$          & $0{,}797$ \\
+L1 (4 cls)   & \emph{Focal} $\gamma = 2{,}0$                 & $\mathbf{0{,}778}$ & $\mathbf{0{,}768}$ & $\mathbf{0{,}800}$ \\
+\hline
+L2 (38 cls)  & LP CE (referencia)                            & $0{,}250$          & $0{,}265$          & $\mathbf{0{,}793}$ \\
+L2 (38 cls)  & LogReg \emph{balanced}                        & $0{,}250$          & $0{,}265$          & $\mathbf{0{,}800}$ \\
+L2 (38 cls)  & \emph{Focal} $\gamma = 2{,}0$                 & $\mathbf{0{,}278}$ & $\mathbf{0{,}324}$ & $0{,}778$ \\
+L2 (38 cls)  & \emph{Focal} $\gamma = 5{,}0$                 & $\mathbf{0{,}278}$ & $\mathbf{0{,}324}$ & $\mathbf{0{,}793}$ \\
+\hline
+L3 (224 cls) & LP CE (referencia)                            & $\mathbf{0{,}143}$ & $\mathbf{0{,}132}$ & $\mathbf{0{,}813}$ \\
+L3 (224 cls) & \emph{Focal} $\gamma = 2{,}0$                 & $\mathbf{0{,}143}$ & $\mathbf{0{,}132}$ & $0{,}771$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\emph{Focal Loss} con $\gamma = 2{,}0$ y sin re-ponderación de
+clase supera marginalmente a la entropía cruzada estándar sobre L1
+($+3{,}3$\,pp BAcc) y L2 ($+5{,}9$\,pp BAcc), pero degrada la
+AUROC L2 en $-1{,}5$\,pp ($0{,}793 \to 0{,}778$). Añadir
+\texttt{class\_weight = balanced} no aporta, porque el factor
+$(1-p_t)^\gamma$ ya modula el peso por dificultad. Sobre L3 ningún
+ajuste de la pérdida mejora a la entropía cruzada (Acc@1 y BAcc
+idénticos en $0{,}143$ y $0{,}132$; AUROC $-4{,}2$\,pp). Como en
+el FT denso (sección~\ref{sec:dermapixel-ft-l1}), la cola larga
+estructural de L3 no admite mitigación por la función de pérdida
+sobre el dataset actual.
+
+El patrón observado es análogo al documentado en el aumento en
+tiempo de inferencia (TTA, sección~\ref{sec:dermapixel-tta}):
+\emph{Focal Loss} desplaza el régimen Acc@1/BAcc-AUROC
+favoreciendo la primera dimensión sobre la segunda, pero no
+resuelve el cuello de botella estructural impuesto por la
+cardinalidad y la cola larga del dataset. La elección del LP CE
+estándar como cabeza primaria de la tabla~\ref{tab:dermapixel-lp}
+se mantiene defendible: la mejora de \emph{Focal Loss} sobre L1 y
+L2 está dentro de los IC95\% solapados y no compensa la pérdida
+de interpretabilidad probabilística calibrada de la entropía
+cruzada estándar.
+
+\section{Aumento en tiempo de inferencia}
+\label{sec:dermapixel-tta}
+
+La sección~\ref{sec:ensemble-results} documenta la aplicación de
+\emph{Test-Time Augmentation} (TTA) sobre el clasificador M1
+(PanDerm Large \emph{fine-tuned}) del servidor de inferencia, con un
+patrón de cinco augmentaciones deterministas (original, simetría
+horizontal, simetría vertical, rotación de $90^\circ$ y rotación de
+$270^\circ$, omitiendo la rotación de $180^\circ$). El presente
+experimento replica el protocolo sobre la cabeza lineal entrenada
+sobre los \emph{embeddings} de PanDerm Large del dataset
+DermapixelAI~1.0: para cada imagen de test se extraen los cinco
+\emph{embeddings} correspondientes a las cinco augmentaciones, cada
+uno se evalúa con la cabeza lineal entrenada sobre el conjunto de
+\emph{train} original y las cinco distribuciones de probabilidad se
+promedian antes del \emph{argmax} final. La
+tabla~\ref{tab:dermapixel-tta} compara el sondeo lineal sin TTA
+(referencia tabla~\ref{tab:dermapixel-lp}) frente al sondeo lineal
+con TTA sobre los tres niveles ontológicos.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Sondeo lineal con PanDerm Large sobre DermapixelAI~1.0:
+referencia sin TTA frente a TTA con cinco augmentaciones
+deterministas (original, simetría horizontal, simetría vertical,
+rotación $90^\circ$, rotación $270^\circ$). Promedio de
+probabilidades sobre las cinco augmentaciones antes del
+\emph{argmax}. Mejor valor por par en negrita.}
+\label{tab:dermapixel-tta}
+\begin{tabular}{llrrrr}
+\hline
+Nivel & Modo & Acc@1 & Acc@3 & BAcc & AUROC \\
+\hline
+L1 (4 cls)   & LP                & $\mathbf{0{,}750}$ & $0{,}944$          & $\mathbf{0{,}735}$ & $\mathbf{0{,}796}$ \\
+L1 (4 cls)   & LP $+$ TTA        & $0{,}694$          & $\mathbf{1{,}000}$ & $0{,}703$          & $0{,}779$ \\
+L2 (38 cls)  & LP                & $\mathbf{0{,}250}$ & $0{,}278$          & $\mathbf{0{,}265}$ & $\mathbf{0{,}793}$ \\
+L2 (38 cls)  & LP $+$ TTA        & $0{,}222$          & $\mathbf{0{,}500}$ & $0{,}250$          & $0{,}787$ \\
+L3 (224 cls) & LP                & $\mathbf{0{,}179}$ & $0{,}214$          & $\mathbf{0{,}184}$ & $\mathbf{0{,}813}$ \\
+L3 (224 cls) & LP $+$ TTA        & $0{,}179$          & $\mathbf{0{,}250}$ & $0{,}184$          & $0{,}807$ \\
+\hline
+\end{tabular}
+\end{table}
+
+El patrón es consistente sobre los tres niveles ontológicos: TTA
+degrada Acc@1, BAcc y AUROC en magnitudes pequeñas ($-5{,}6$,
+$-2{,}8$ y $0{,}0$\,pp Acc@1 sobre L1, L2 y L3 respectivamente;
+$-3{,}2$, $-1{,}5$ y $0{,}0$\,pp BAcc; $-1{,}7$, $-0{,}6$ y
+$-0{,}6$\,pp AUROC) y mejora sistemáticamente Acc@3
+($+5{,}6$\,pp en L1 hasta alcanzar $1{,}000$, $+22{,}2$\,pp en
+L2 y $+3{,}6$\,pp en L3). El comportamiento es coherente con la
+observación reportada en sección~\ref{sec:ensemble-results} para
+M1 sobre HAM10000, donde TTA produce $-2{,}6$\,pp BAcc y
+$+4{,}3$\,pp \emph{recall} de melanoma. La interpretación es que el
+promediado sobre cinco augmentaciones suaviza la distribución de
+probabilidad y reduce la confianza en la clase \emph{argmax} pero
+distribuye masa de probabilidad entre clases visualmente cercanas,
+lo que penaliza la precisión \emph{top-1} y mejora el conjunto
+\emph{top-3}. PanDerm Base presenta la misma dirección de efecto
+(cifras completas en el material reproducible). La recomendación
+operativa derivada es que TTA es preferible en escenarios de cribado
+con presentación \emph{top-k} de diagnósticos diferenciales al
+clínico (Acc@3 L2 $= 0{,}500$ frente a $0{,}278$ sin TTA), y el
+sondeo lineal sin TTA es preferible para decisiones automatizadas
+\emph{top-1}.
+
+
+\section{Codificadores generalistas no médicos: DINOv2 y CLIP-L}
+\label{sec:dermapixel-extra-encoders}
+
+Se evalúan dos codificadores fuera del dominio biomédico bajo el
+protocolo de sondeo lineal congelado descrito en la
+sección~\ref{sec:dermapixel-results}, sobre el mismo
+\emph{split} fijo ($N_{\mathrm{train}} = 874$,
+$N_{\mathrm{test}} = 36$ en L1/L2, $N_{\mathrm{test}} = 28$ en
+L3). DINOv2 ViT-L (\texttt{vit\_large\_patch14\_dinov2.lvd142m},
+embedding $1\,024$-D, CLS) corresponde al modelo auto-supervisado
+visual generalista de Meta sobre LVD-142M~\cite{dinov2}; CLIP-L-336
+(OpenAI, ViT-L/14 con resolución $336$) corresponde al modelo
+contrastivo texto-imagen generalista entrenado sobre $400$
+millones de pares web~\cite{clip2021}, con embedding proyectado de
+$768$-D. La cabeza es regresión logística L-BFGS con $C = 1{,}0$ y
+$\mathrm{max\_iter} = 5\,000$, idéntica a la
+sección~\ref{sec:dermapixel-results}. La
+tabla~\ref{tab:dermapixel-extra-encoders} recoge los resultados.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Sondeo lineal sobre embeddings congelados de
+codificadores generalistas no médicos en DermapixelAI~1.0
+($N_{\mathrm{test}} = 36$ en L1/L2, $N_{\mathrm{test}} = 28$ en
+L3). Referencia: PanDerm Large
+(tabla~\ref{tab:dermapixel-lp}). Mejor valor por columna y nivel en
+negrita.}
+\label{tab:dermapixel-extra-encoders}
+\begin{tabular}{lrrrrrr}
+\hline
+              & \multicolumn{2}{c}{L1 (4 cls)} & \multicolumn{2}{c}{L2 (38 cls)} & \multicolumn{2}{c}{L3 (224 cls)} \\
+Encoder       & BAcc & AUROC & BAcc & AUROC & BAcc & AUROC \\
+\hline
+PanDerm Large & $\mathbf{0{,}735}$ & $\mathbf{0{,}796}$
+              & $0{,}265$          & $0{,}793$
+              & $0{,}184$          & $0{,}813$ \\
+DINOv2 ViT-L  & $0{,}537$          & $0{,}650$
+              & $0{,}250$          & $0{,}718$
+              & $\mathbf{0{,}211}$ & $0{,}794$ \\
+CLIP-L-336    & $0{,}556$          & $0{,}658$
+              & $\mathbf{0{,}279}$ & $\mathbf{0{,}826}$
+              & $0{,}184$          & $\mathbf{0{,}827}$ \\
+\hline
+\end{tabular}
+\end{table}
+
+CLIP-L-336 alcanza la mejor AUROC sobre L2 ($0{,}826$ frente a
+$0{,}793$ de PanDerm Large, $+3{,}3$\,pp) y sobre L3
+($0{,}827$ frente a $0{,}813$, $+1{,}4$\,pp) a pesar de no
+incorporar material biomédico en su preentrenamiento. DINOv2 ViT-L,
+auto-supervisado puro sin componente textual, gana la BAcc L3
+($0{,}211$ frente a $0{,}184$ de PanDerm Large,
+$+2{,}7$\,pp) pero pierde sistemáticamente sobre L1
+($-19{,}8$\,pp BAcc, $-14{,}6$\,pp AUROC) y se mantiene por
+debajo sobre L2 ($-1{,}5$\,pp BAcc, $-7{,}5$\,pp AUROC).
+PanDerm Large conserva la primacía sobre L1 en BAcc y AUROC.
+Ningún codificador domina simultáneamente en todas las métricas y
+los tres niveles ontológicos, patrón coherente con la lectura de la
+sección~\ref{sec:dermapixel-results} sobre la complementariedad
+entre el preentrenamiento auto-supervisado de PanDerm y el
+contrastivo texto-imagen de DermLIP. La clasificación
+\emph{zero-shot} con CLIP-L (\emph{prompts} en castellano e
+inglés idénticos a la sección~\ref{sec:dermapixel-zs}) resulta
+catastrófica sobre los tres niveles (AUROC L1 $0{,}559$ en
+castellano y $0{,}635$ en inglés, AUROC L2 $0{,}699$ en
+castellano, AUROC L3 $0{,}617$ en castellano), confirmando que los
+codificadores generalistas requieren adaptación supervisada para
+operar sobre material clínico dermatológico.
+
+\section{\emph{Retrieval} $k$-NN con índice FAISS sobre
+embeddings PanDerm Large}
+\label{sec:dermapixel-extra-faiss}
+
+Una alternativa al clasificador paramétrico sobre el espacio de
+\emph{embeddings} congelados consiste en la recuperación basada en
+similitud: dado un \emph{embedding} de consulta, se recuperan sus
+$k$ vecinos más próximos del conjunto de entrenamiento bajo
+similitud coseno y se predice por votación. Se construye un índice
+\texttt{IndexFlatIP} de FAISS~\cite{faiss2019} sobre los
+$874$ \emph{embeddings} L2-normalizados de PanDerm Large
+correspondientes al conjunto de \emph{train} de la
+sección~\ref{sec:dermapixel-results} y se evalúan dos variantes
+(votación por mayoría y \emph{softmax} ponderado por
+similitud) cruzadas con $k \in \{1, 5, 10, 20\}$. La
+tabla~\ref{tab:dermapixel-extra-faiss} reporta la mejor combinación
+por nivel y métrica frente a la referencia LP paramétrica.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{\emph{Retrieval} $k$-NN sobre embeddings PanDerm Large
+con índice FAISS (\texttt{IndexFlatIP}, similitud coseno tras
+L2-normalize). Mejor combinación $k \times $ variante por nivel y
+métrica. Referencia: sondeo lineal paramétrico sobre el mismo
+encoder (LP, tabla~\ref{tab:dermapixel-lp}). Mejor valor por
+columna y nivel en negrita.}
+\label{tab:dermapixel-extra-faiss}
+\begin{tabular}{llrrr}
+\hline
+Nivel & Método & Acc@1 & BAcc & AUROC \\
+\hline
+L1 & LP paramétrico (LR)              & $0{,}750$          & $\mathbf{0{,}735}$ & $\mathbf{0{,}796}$ \\
+L1 & $k$-NN $k=10$ \emph{majority}     & $0{,}722$          & $0{,}686$          & $0{,}748$ \\
+\hline
+L2 & LP paramétrico (LR)              & $0{,}250$          & $0{,}265$          & $\mathbf{0{,}793}$ \\
+L2 & $k$-NN $k=20$ \emph{majority}     & $\mathbf{0{,}278}$ & $\mathbf{0{,}265}$ & $0{,}700$ \\
+\hline
+L3 & LP paramétrico (LR)              & $0{,}179$          & $0{,}184$          & $\mathbf{0{,}813}$ \\
+L3 & $k$-NN $k=5$ \emph{majority}      & $\mathbf{0{,}214}$ & $\mathbf{0{,}210}$ & $0{,}615$ \\
+L3 & $k$-NN $k=20$ \emph{weighted}     & $0{,}214$          & $0{,}210$          & $0{,}719$ \\
+\hline
+\end{tabular}
+\end{table}
+
+El \emph{retrieval} $k$-NN supera al sondeo lineal paramétrico
+sobre el régimen de cola larga severa L3 ($224$ clases efectivas,
+$3{,}5$ muestras/clase media en \emph{train}): $+3{,}5$\,pp
+Acc@1 ($0{,}179 \to 0{,}214$) y $+2{,}6$\,pp BAcc
+($0{,}184 \to 0{,}210$) con $k = 5$ y votación por mayoría. Sobre
+L2, $k$-NN con $k = 20$ empata en BAcc ($0{,}265$) y mejora
+Acc@1 en $+2{,}8$\,pp ($0{,}250 \to 0{,}278$). Sobre L1, en
+cambio, $k$-NN pierde respecto al LP paramétrico
+($-4{,}9$\,pp BAcc, $-4{,}8$\,pp AUROC), comportamiento
+consistente con que la cardinalidad reducida del nivel ($4$ clases)
+favorece a la regresión logística sobre la votación de vecinos. La
+AUROC global del $k$-NN es sistemáticamente inferior a la del LP
+(diferencias entre $-4{,}8$ y $-9{,}3$\,pp según nivel),
+atribuible a que la estimación de probabilidad por frecuencia
+relativa de vecinos no es densa sobre el conjunto de clases. El
+hallazgo es coherente con la arquitectura del módulo M4 del
+prototipo de producción (\emph{retrieval} sobre Derm1M descrito en
+el Anexo~\ref{cap:anexoh}), que emplea el mismo principio de
+similitud coseno sobre \emph{embeddings} PanDerm Large como
+soporte conceptual al diagnóstico ofrecido por las cabezas
+paramétricas.
+
+\section{\emph{Zero-shot} jerárquico: cascada L1$\to$L2$\to$L3
+con propagación de errores}
+\label{sec:dermapixel-extra-hierzs}
+
+La sección~\ref{sec:dermapixel-zs} evalúa la clasificación
+\emph{zero-shot} sobre los tres niveles ontológicos de forma
+independiente, considerando en cada caso todas las clases
+candidatas del nivel. Una estrategia alternativa, motivada por el
+flujo diagnóstico clínico real, consiste en una cascada
+jerárquica: predecir primero L1, restringir las candidatas L2 a las
+hijas del L1 predicho, y restringir las candidatas L3 a las hijas
+del L2 predicho. La jerarquía L1$\to$L2 utilizada se deriva del
+dataset de \emph{train} (Inflamatoria: $25$ subcategorías L2;
+Infecciosa: $5$; Tumoral: $12$; Genodermatosis: $2$). El encoder
+es DermLIP v2 (el mejor \emph{zero-shot} de la
+sección~\ref{sec:dermapixel-zs}), bajo \emph{prompts} en
+castellano. Se contrastan tres variantes: el \emph{zero-shot}
+plano de la sección~\ref{sec:dermapixel-zs} (todas las clases del
+nivel como candidatas), la cascada jerárquica estricta con el L1
+$\arg\max$, y una variante \emph{top-3 L1} que mantiene las tres
+categorías L1 más probables como candidatas y agrega sus hijas L2.
+La tabla~\ref{tab:dermapixel-extra-hierzs} compara las tres
+variantes.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Comparación entre clasificación \emph{zero-shot} plana y
+\emph{zero-shot jerárquico} en cascada sobre el conjunto de test de
+DermapixelAI~1.0 ($N_{\mathrm{test}} = 36$ en L1/L2,
+$N_{\mathrm{test}} = 28$ en L3). Encoder: DermLIP v2, prompts en
+castellano. La fila ``L2 hier $|$ L1 correcto'' restringe la
+evaluación a las muestras con L1 predicho correctamente. Mejor
+valor por columna en negrita; la cifra condicionada se reporta
+separadamente.}
+\label{tab:dermapixel-extra-hierzs}
+\begin{tabular}{lrrr}
+\hline
+Variante                                  & L1 Acc@1 & L2 Acc@1 & L3 Acc@1 \\
+\hline
+ZS plano (referencia, sección~\ref{sec:dermapixel-zs}) & $\mathbf{0{,}361}$ & $\mathbf{0{,}222}$ & $\mathbf{0{,}107}$ \\
+ZS jerárquico (cascada estricta)           & $0{,}361$          & $0{,}139$          & $0{,}036$ \\
+ZS jerárquico (top-3 L1)                   & $0{,}361$          & $0{,}194$          & $0{,}036$ \\
+\hline
+L2 hier $|$ L1 correcto (condicionada)     & ---                & $0{,}385$          & --- \\
+\hline
+\end{tabular}
+\end{table}
+
+La cascada jerárquica estricta degrada el rendimiento plano sobre
+L2 en $-8{,}3$\,pp Acc@1 ($0{,}222 \to 0{,}139$) y sobre L3 en
+$-7{,}1$\,pp Acc@1 ($0{,}107 \to 0{,}036$). La causa
+principal es la propagación de errores desde el nivel L1: dado que
+DermLIP v2 acierta L1 sólo en el $36{,}1\%$ de los casos, el
+$63{,}9\%$ restante recibe en L2 un conjunto de candidatas
+desalineado con la verdad de terreno, lo que invalida toda
+predicción posterior independientemente del codificador. La
+variante \emph{top-3 L1} amortigua parcialmente la propagación al
+mantener las tres categorías L1 más probables como hipótesis activa
+y recupera $0{,}194$ Acc@1 sobre L2 ($-2{,}8$\,pp respecto a
+plano), sin efecto sobre L3. Condicionado a L1 correcto, la
+cascada jerárquica L2 alcanza Acc@1 $= 0{,}385$, casi el doble
+del plano, evidencia de que la restricción del espacio de
+candidatas a las subcategorías clínicamente coherentes con la
+categoría etiológica acertada incrementa la discriminación de
+forma sustancial. La implicación clínica es directa: la arquitectura
+jerárquica funciona si la decisión inicial sobre la familia
+etiológica es robusta; con \emph{zero-shot} modesto, la cascada
+acumula errores y degrada el rendimiento plano.

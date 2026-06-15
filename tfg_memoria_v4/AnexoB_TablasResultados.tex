@@ -1,0 +1,301 @@
+%!TeX root=MemoriaTFG.tex
+
+\chapter{Tablas detalladas de resultados}
+\label{anexo:tablas}
+\label{cap:anexob}
+
+Este anexo recoge desgloses y tablas adicionales a las del
+capítulo~\ref{cap:resultados}: cifras por clase de los protocolos
+de sondeo lineal y ajuste fino sobre HAM10000 y PAD-UFES-20, la
+caracterización completa por fototipo cutáneo en la formulación de
+$114$ patologías sobre Fitzpatrick17k, y la tabla extendida
+de evaluación cruzada \emph{Light}~$\leftrightarrow$~\emph{Dark}.
+
+\section{Desglose por clase sobre HAM10000}
+\label{sec:anexob-ham}
+
+La tabla~\ref{tab:anexob-perclass-gpt4o} reporta el desglose por
+clase de la evaluación zero-shot con GPT-4o sobre HAM10000,
+ampliada respecto a la presentada en
+sección~\ref{sec:llm-results}. La columna ``Predicciones'' indica el
+número total de imágenes asignadas a cada clase por el modelo,
+revelando el sesgo léxico discutido en sección~\ref{sec:disc-llm}.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Desglose por clase del modelo GPT-4o zero-shot sobre
+HAM10000. \emph{Recall}: proporción de imágenes de la clase
+correctamente identificadas. \emph{Predicciones}: número de
+imágenes asignadas a la clase por el modelo (debe contrastarse
+con $N_{\mathrm{test}}$ para detectar sesgos sistemáticos).}
+\label{tab:anexob-perclass-gpt4o}
+\begin{tabular}{lrrrr}
+\hline
+Clase                       & $N_{\mathrm{test}}$ & Recall (GPT-4o) & Predicciones (GPT-4o) & Recall (GPT-4o-mini) \\
+\hline
+actinic keratosis           & $35$    & $0{,}000$ & $2$    & $0{,}086$ \\
+basal cell carcinoma        & $44$    & $0{,}477$ & ---    & $0{,}136$ \\
+seborrheic keratosis        & $107$   & $0{,}308$ & ---    & $0{,}654$ \\
+dermatofibroma              & $8$     & $0{,}750$ & $284$  & $0{,}000$ \\
+melanoma                    & $70$    & $0{,}686$ & $299$  & $0{,}571$ \\
+melanocytic nevus           & $951$   & $0{,}505$ & ---    & $0{,}196$ \\
+vascular lesion             & $17$    & $0{,}529$ & ---    & $0{,}588$ \\
+\hline
+\end{tabular}
+\end{table}
+
+La asimetría entre $N_{\mathrm{test}}$ y predicciones es máxima en
+dermatofibroma ($N_{\mathrm{test}} = 8$, predicciones $284$:
+factor $35{,}5\times$) y melanoma ($N_{\mathrm{test}} = 70$,
+predicciones $299$: factor $4{,}3\times$). El comportamiento es
+diagnóstico de un sesgo léxico hacia categorías con presencia
+elevada en el \emph{prompt}, no hacia categorías mayoritarias en el
+dataset.
+
+\section{Desglose por clase del ajuste fino MedGemma~27B sobre HAM10000}
+\label{sec:anexob-medgemma}
+
+La tabla~\ref{tab:anexob-medgemma} desglosa por clase el rendimiento
+de MedGemma~27B con LoRA sobre el conjunto de test de HAM10000.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Desglose por clase de MedGemma~27B con LoRA sobre
+HAM10000 (\emph{precision}, \emph{recall}, F1).}
+\label{tab:anexob-medgemma}
+\begin{tabular}{lrrrr}
+\hline
+Clase                       & $N$ test & Precision & Recall    & F1 \\
+\hline
+actinic keratosis           & $35$     & $0{,}32$  & $0{,}26$  & $0{,}29$ \\
+basal cell carcinoma        & $44$     & $0{,}34$  & $0{,}25$  & $0{,}29$ \\
+dermatofibroma              & $8$      & $0{,}00$  & $0{,}00$  & $0{,}00$ \\
+melanocytic nevus           & $951$    & $0{,}85$  & $0{,}99$  & $0{,}92$ \\
+melanoma                    & $70$     & $0{,}38$  & $0{,}36$  & $0{,}37$ \\
+seborrheic keratosis        & $107$    & $0{,}67$  & $0{,}04$  & $0{,}07$ \\
+vascular lesion             & $17$     & $0{,}00$  & $0{,}00$  & $0{,}00$ \\
+\hline
+\end{tabular}
+\end{table}
+
+Tras la adaptación con LoRA, el modelo concentra el rendimiento en
+la clase mayoritaria (nevus melanocítico: \emph{recall}
+$0{,}99$) a costa de las clases menos representadas
+(dermatofibroma y vascular lesion: F1 $0{,}00$). Esta
+concentración es coherente con la accuracy de $0{,}802$
+reportada en la tabla~\ref{tab:llm-comparativa} pese a una BAcc
+de sólo $0{,}270$.
+
+\section{Equidad sobre Fitzpatrick17k: formulación de 114 patologías}
+\label{sec:anexob-fst-114}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.78\textwidth]{fig_fairness_fst.png}
+\caption{Rendimiento por fototipo Fitzpatrick sobre la
+formulación de $114$ patologías de Fitzpatrick17k con PanDerm
+Large + sondeo lineal. El rendimiento crece de FST~I a FST~V y
+desciende bruscamente en FST~VI.}
+\label{fig:anexob-fairness-fst}
+\end{figure}
+
+La figura~\ref{fig:anexob-fairness-fst} y la
+tabla~\ref{tab:anexob-fst114} reportan el rendimiento por
+fototipo Fitzpatrick de PanDerm Large sobre la formulación de
+$114$ patologías (grano fino del dataset), complementaria a la
+formulación de tres clases de malignidad presentada en la
+tabla~\ref{tab:equidad-fototipo}.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Rendimiento por subgrupo Fitzpatrick sobre la
+formulación de $114$ patologías de Fitzpatrick17k (PanDerm
+Large + sondeo lineal).}
+\label{tab:anexob-fst114}
+\begin{tabular}{lrrrrr}
+\hline
+Fototipo (FST) & $N$ test & Acc       & BAcc      & W-F1      & AUROC \\
+\hline
+I              & $299$    & $0{,}515$ & $0{,}522$ & $0{,}509$ & --- \\
+II             & $470$    & $0{,}519$ & $0{,}524$ & $0{,}513$ & --- \\
+III            & $325$    & $0{,}640$ & $0{,}590$ & $0{,}636$ & --- \\
+IV             & $261$    & $0{,}670$ & $0{,}602$ & $0{,}654$ & --- \\
+V              & $169$    & $0{,}692$ & $0{,}614$ & $0{,}680$ & --- \\
+VI             & $73$     & $0{,}479$ & $0{,}474$ & $0{,}462$ & --- \\
+\hline
+\multicolumn{2}{l}{\emph{Global}} & $0{,}581$ & $0{,}549$ & $0{,}576$ & $0{,}968$ \\
+\hline
+\end{tabular}
+\end{table}
+
+La distribución es notablemente distinta a la formulación de tres
+clases de malignidad: el rendimiento crece desde FST~I a FST~V y
+cae bruscamente en FST~VI. El \emph{gap} entre FST~V (mejor) y
+FST~VI (peor) es de $0{,}213$\,pp accuracy. La interpretación
+sugiere que el grano fino de $114$ patologías expone una capa
+de información clínica donde la representación visual de las
+lesiones sobre fototipos intermedios y altos
+(III, IV, V) supera a la de fototipos extremos
+(I, II y VI), mientras que la formulación gruesa de tres
+clases de malignidad refleja el patrón general
+peor-en-fototipos-elevados.
+
+\section{Evaluación cruzada Light/Dark sobre 114 patologías}
+\label{sec:anexob-cross-114}
+
+La tabla~\ref{tab:anexob-cross114} reporta el experimento cruzado
+de entrenamiento/evaluación entre subgrupos \emph{Light} (FST~I-III)
+y \emph{Dark} (FST~IV-VI) sobre la formulación de $114$
+patologías de Fitzpatrick17k con PanDerm Large. \emph{All} agrupa
+el conjunto de entrenamiento completo. Las celdas de número de
+clases en evaluación reflejan que algunas patologías no aparecen
+en la partición \emph{Dark}, lo que reduce el número efectivo de
+clases sobre las que se evalúa.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Evaluación cruzada \emph{Light}~$\leftrightarrow$~\emph{Dark}
+sobre $114$ patologías de Fitzpatrick17k (PanDerm Large + sondeo
+lineal). $C$: número de clases efectivas en la evaluación.}
+\label{tab:anexob-cross114}
+\begin{tabular}{lrrrrrr}
+\hline
+Configuración   & $N$ train & $N$ test & $C$ & Acc       & BAcc      & AUROC \\
+\hline
+Light $\to$ Light & $8\,845$ & $1\,094$ & $114$ & $0{,}541$ & $0{,}528$ & $0{,}962$ \\
+Light $\to$ Dark  & $8\,028$ & $503$    & $100$ & $0{,}473$ & $0{,}453$ & $0{,}944$ \\
+Dark $\to$ Dark   & $3\,807$ & $503$    & $100$ & $0{,}616$ & $0{,}519$ & $0{,}948$ \\
+Dark $\to$ Light  & $3\,958$ & $1\,094$ & $114$ & $0{,}351$ & $0{,}325$ & $0{,}906$ \\
+All $\to$ Light   & $12\,803$& $1\,094$ & $114$ & $0{,}559$ & $0{,}547$ & $0{,}965$ \\
+All $\to$ Dark    & $11\,835$& $503$    & $100$ & $0{,}658$ & $0{,}614$ & $0{,}970$ \\
+\hline
+\end{tabular}
+\end{table}
+
+La asimetría más notable se observa en \emph{Dark}~$\to$~\emph{Light}
+(BAcc $0{,}325$, AUROC $0{,}906$), configuración con menor
+volumen de entrenamiento ($3\,958$ imágenes) sobre un conjunto
+de evaluación mayor ($1\,094$ imágenes) y con $114$ clases
+efectivas. La accuracy desciende desde $0{,}616$ en
+\emph{Dark}~$\to$~\emph{Dark} a $0{,}351$ en
+\emph{Dark}~$\to$~\emph{Light}, lo que cuantifica la pérdida
+sistemática asociada al cambio de distribución de fototipo a la
+inversa de la dirección habitual reportada en la literatura.
+
+\section{Resumen comparativo por paradigma sobre HAM10000}
+\label{sec:anexob-paradigmas}
+
+La tabla~\ref{tab:anexob-paradigmas} amplía la
+tabla~\ref{tab:llm-comparativa} del cuerpo con los costes de
+entrenamiento e inferencia agregados por paradigma sobre HAM10000.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Comparativa por paradigma sobre HAM10000. Datos
+etiquetados: tamaño del conjunto de entrenamiento empleado. Coste
+indicativo en EUR para los modelos de acceso comercial (cifras
+$2026$); $0$\,EUR para los modelos locales.}
+\label{tab:anexob-paradigmas}
+\begin{tabular}{lllrrr}
+\hline
+Paradigma                            & Modelo                & Datos etiq.       & Acc       & AUROC     & Coste eval.\ \\
+\hline
+ZS (\emph{prompts} genéricos)        & DermLIP v1/v2         & $0$               & $0{,}086$ & $0{,}366$ & $0$ \\
+ZS (\emph{prompts} A3 Derm1M)        & DermLIP original      & $0$               & $0{,}427$ & $0{,}854$ & $0$ \\
+ZS LLM multimodal                    & GPT-4o                & $0$               & $0{,}485$ & ---       & $\sim$\$2{,}71 \\
+ZS LLM multimodal                    & MedGemma~27B          & $0$               & $0{,}665$ & ---       & $0$ \\
+LP ($1\%$ entrenam.)                 & PanDerm Large         & $82$              & $0{,}850$ & $0{,}918$ & $0$ \\
+LP ($100\%$ entrenam.)               & PanDerm Base          & $8\,207$          & $0{,}853$ & $0{,}892$ & $0$ \\
+LP ($100\%$ entrenam.)               & PanDerm Large         & $8\,207$          & $0{,}888$ & $0{,}954$ & $0$ \\
+LP ($100\%$ entrenam.)               & SigLIP-Large          & $8\,207$          & $0{,}900$ & $0{,}971$ & $0$ \\
+FT LoRA LLM                          & MedGemma~27B + LoRA   & $8\,207$          & $0{,}802$ & ---       & $0$ \\
+FT (receta paper) + TTA              & PanDerm Base          & $8\,207$          & $0{,}920$ & $0{,}978$ & $0$ \\
+\hline
+\end{tabular}
+\end{table}
+
+Las figuras~\ref{fig:anexob-tradeoff}, \ref{fig:anexob-l1-dist} y
+\ref{fig:anexob-l2-acc} caracterizan el dataset armonizado de
+$72\,654$ imágenes empleado en el clasificador unificado: el
+compromiso entre número de clases y \emph{accuracy}, la distribución
+de imágenes por categoría L1 y la \emph{accuracy} por clase L2,
+respectivamente.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{tradeoff_classes_accuracy.png}
+\caption{Compromiso entre número de clases y accuracy sobre el
+dataset armonizado. La accuracy decrece conforme aumenta el
+número de categorías; el nivel L2 ($43$ clases) constituye el
+punto operativo más equilibrado entre granularidad clínica y
+rendimiento agregado.}
+\label{fig:anexob-tradeoff}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{unified_l1_distribution.png}
+\caption{Distribución de imágenes por categoría L1 sobre el
+dataset armonizado de $72\,654$ imágenes. Predominio de
+patología tumoral y patología inflamatoria; patología infecciosa
+y genodermatosis representan la cola larga.}
+\label{fig:anexob-l1-dist}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{unified_l2_perclass_accuracy.png}
+\caption{Accuracy por clase L2 ($43$ entradas) sobre el
+clasificador unificado del dataset armonizado. Las clases con
+mayor accuracy corresponden a categorías con más
+representación en el conjunto de entrenamiento, mientras que la
+cola larga presenta variabilidad asociada al tamaño muestral.}
+\label{fig:anexob-l2-acc}
+\end{figure}
+
+\section{Composición del conjunto de entrenamiento del SAE Large}
+\label{sec:anexob-sae-train}
+
+El SAE Large utilizado en el módulo M3 del prototipo y descrito en
+detalle en el Anexo~\ref{cap:anexof} se entrena sobre la
+concatenación de siete datasets dermatológicos. La
+tabla~\ref{tab:anexob-sae-train} reporta la composición exacta.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{Composición del conjunto de entrenamiento del Sparse
+Autoencoder Large ($1\,024 \to 16\,384$ \emph{features}).}
+\label{tab:anexob-sae-train}
+\begin{tabular}{lr}
+\hline
+Dataset            & Imágenes \\
+\hline
+HAM10000           & $10\,015$ \\
+BCN20000           & $12\,413$ \\
+Dermnet            & $19\,559$ \\
+PAD-UFES-20        & $2\,298$ \\
+Fitzpatrick17k     & $3\,887$ \\
+DDI                & $647$ \\
+HIBA               & $1\,635$ \\
+\hline
+\textbf{Total}     & $\mathbf{50\,454}$ \\
+\hline
+\end{tabular}
+\end{table}

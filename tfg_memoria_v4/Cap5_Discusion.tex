@@ -1,0 +1,826 @@
+%!TeX root=MemoriaTFG.tex
+
+\chapter{Discusión}
+\label{cap:discusion}
+
+\section{Significado de los resultados}
+\label{sec:significado}
+
+La lectura agregada de los experimentos no apunta a la existencia de
+un único modelo vencedor, sino a que el rendimiento dermatológico está
+condicionado por cuatro ejes simultáneos: el nivel ontológico al que
+se evalúa, el régimen de datos etiquetados disponible, la modalidad de
+entrada y la estrategia de adaptación empleada. Bajo esta lectura, el
+cuello de botella deja de residir únicamente en la calidad del encoder
+visual y se desplaza hacia un conjunto de factores complementarios ---la
+taxonomía con la que se organizan las clases, el volumen y la calidad de
+las etiquetas, el alineamiento texto-imagen de la rama contrastiva, la
+formulación de los \emph{prompts}, la equidad entre subgrupos y la propia
+estrategia de despliegue---. Las subsecciones siguientes interpretan cada
+uno de estos ejes a partir de la evidencia empírica del
+capítulo~\ref{cap:resultados}, y la sección~\ref{sec:implicaciones}
+deriva sus consecuencias operativas.
+
+\subsection{Ausencia de un método óptimo único: especialización por tarea}
+\label{sec:disc-especializacion}
+
+La síntesis transversal de los experimentos sobre DermapixelAI~1.0
+(tabla~\ref{tab:dermapixel-extra-sintesis}) muestra que ningún
+codificador ni clasificador único domina todos los escenarios, sino que
+cada tarea favorece una combinación distinta. PanDerm Large encabeza la
+mayor parte de los escenarios de transferencia visual; DermLIP v2 y
+Dermapixel R0 destacan sobre la cardinalidad clínica intermedia L2; el
+\emph{retrieval} $k$-NN con índice FAISS resulta competitivo sobre L3 por
+efecto de la cola larga; SAM2.1 domina la segmentación; los
+\emph{ensembles} aportan en el cribado de seguridad de melanoma; e incluso
+un codificador generalista no médico (CLIP-L) puede liderar la AUROC en
+algún nivel pese a carecer de preentrenamiento clínico. El corolario es
+que la elección del modelo no se resuelve en abstracto, sino en función
+del objetivo: clasificación general, subcategoría clínica, cola larga,
+ranking probabilístico, segmentación o cribado. Las subsecciones que
+siguen y el resto de §\ref{sec:significado} desarrollan la evidencia que
+sostiene esta especialización por tarea.
+
+El primer hallazgo a discutir es el peso del preentrenamiento de
+dominio. Los resultados del sondeo lineal
+(sección~\ref{sec:rep-panderm} y sección~\ref{sec:benchmark})
+sostienen la hipótesis de que preentrenar sobre datos clínicos
+aporta una ventaja empírica medible frente a encoders generalistas
+adaptados: PanDerm Large supera a PanDerm Base en accuracy, AUROC y
+F1 ponderada sobre los diez datasets externos contrastados, con una
+mejora media de $+9{,}0$\,pp en BAcc (tabla~\ref{tab:lp-panderm}).
+El detalle por dataset de esa tabla matiza el origen del beneficio:
+es modesto sobre dermatoscopia estandarizada ---donde una
+arquitectura convolucional supervisada sobre ImageNet-21K llega a
+empatar o superar la AUROC--- y crece sobre fotografía clínica con
+dispositivos heterogéneos (PAD-UFES-20, DDI). Los resultados
+sugieren que la ventaja del preentrenamiento de dominio aumenta con
+la distancia entre el dataset y los datasets web generalistas, lo
+que la hace especialmente relevante en condiciones clínicas no
+estandarizadas, como la atención primaria o la teledermatología.
+
+SigLIP-Large SO400M, un modelo vision-lenguaje generalista,
+confirma esta lectura desde el extremo opuesto: lidera accuracy y
+AUROC sobre HAM10000 (tabla~\ref{tab:benchmark}) ---atribuible a la
+sobrerrepresentación de dermatoscopia estandarizada en los $400$
+millones de pares imagen-texto web de su preentrenamiento--- pero
+esa superioridad desaparece sobre PAD-UFES-20 y DDI. Su rango de
+utilidad queda así delimitado a las modalidades canónicas, no al
+material clínico heterogéneo.
+
+El beneficio del preentrenamiento de dominio no es uniforme entre
+niveles ontológicos, y esta segunda lectura matiza la anterior. El
+experimento de combinación de codificadores sobre DermapixelAI~1.0
+(sección~\ref{sec:dermapixel-ensemble},
+tabla~\ref{tab:dermapixel-ensemble}) sitúa a DermLIP v2 como la
+mejor cabeza individual sobre L2, con una ventaja de $+6{,}7$\,pp de
+AUROC sobre PanDerm Large. El hallazgo es coherente con la lectura
+\emph{zero-shot} sobre el mismo dataset
+(sección~\ref{sec:dermapixel-zs}), donde DermLIP v2 lidera también
+la AUROC L2 sin entrenar cabeza alguna. Leídos en conjunto, ambos
+resultados sugieren que el preentrenamiento contrastivo texto-imagen
+sobre el millón de pares de Derm1M~\cite{derm1m} captura la
+granularidad de subcategoría clínica con mayor fidelidad que el
+preentrenamiento auto-supervisado puro de la familia PanDerm. Esta
+observación matiza la jerarquía PanDerm Large $>$ PanDerm Base $>$
+DermLIP v2 observada en la mayoría de datasets y niveles: el
+codificador óptimo depende del nivel ontológico, y el
+preentrenamiento multimodal aporta una señal complementaria sobre la
+categorización clínica intermedia que no se reduce al beneficio de
+las \emph{features} visuales aisladas.
+
+El ajuste fino parcial sobre DermapixelAI~1.0 nivel L1
+(sección~\ref{sec:dermapixel-ft-l1},
+tabla~\ref{tab:dermapixel-ft-multilevel}) refuerza esta lectura
+desde un ángulo metodológico. Con $N_{\mathrm{train}} = 874$, el FT
+que descongela parcialmente el encoder PanDerm Large mejora de forma
+sustancial la BAcc sobre el sondeo lineal congelado, pero no supera
+al \emph{ensemble} lineal \texttt{avg\_large\_dermlip}, que lo aventaja
+tanto en BAcc como en AUROC (tabla~\ref{tab:dermapixel-ensemble}).
+El patrón es coherente con la literatura sobre régimen de bajo $N$:
+una combinación lineal de codificadores fundacionales congelados
+aprovecha la diversidad de sus representaciones preentrenadas sin
+añadir los parámetros que el FT denso debe ajustar sobre un dataset
+reducido. La implicación de diseño para Dermapixel R0
+(sección~\ref{sec:linea-spanderm}) es directa: priorizar la
+adaptación de bajo rango mediante LoRA y la combinación de
+codificadores con cabezas ligeras, antes que el FT denso clásico.
+
+La ejecución posterior de la cabeza supervisada L2 de Dermapixel R0
+(sección~\ref{sec:dermapixel-spanderm-v0}) confirma
+cuantitativamente esta implicación y aporta la cifra-ancla del
+argumento. La adaptación LoRA sobre los dos últimos bloques de
+PanDerm Large, con sólo $524\,K$ parámetros entrenables
+($0{,}17\%$ del total) frente a los $25{,}2$\,M del FT denso parcial
+---una razón aproximada de $48\times$---, alcanza la mejor BAcc L2
+documentada sobre el dataset, superando tanto al sondeo lineal
+congelado como a DermLIP v2 individual. La lectura cruzada con
+DermLIP v2 es particularmente informativa: la AUROC L2 de
+Dermapixel R0 empata estadísticamente con la de DermLIP v2 nativo
+(tabla~\ref{tab:dermapixel-ft-multilevel}). Esto sugiere que el
+techo discriminativo del dataset a nivel L2 se alcanza tanto por el
+preentrenamiento contrastivo PubMedBERT-DermLIP nativo como por la
+adaptación textual ligera vía LoRA de un encoder de mayor capacidad:
+la elección del codificador base y la estrategia de adaptación
+operan como dimensiones aproximadamente ortogonales sobre la
+cardinalidad L2.
+
+La extensión posterior del FT denso parcial a los niveles L2 y L3
+(sección~\ref{sec:dermapixel-ft},
+tabla~\ref{tab:dermapixel-ft-multilevel}) cierra el contraste
+metodológico. Sobre L2, el FT denso con $25{,}2$\,M parámetros
+entrenables no supera a Dermapixel R0 LoRA ($524\,K$ parámetros):
+queda por debajo en BAcc y empata en AUROC pese a la diferencia de
+parametrización de $48\times$, lo que refuerza la hipótesis de
+sección~\ref{sec:disc-lp-vs-ft} ---bajo $N_{\mathrm{train}} = 874$,
+la adaptación de bajo rango sobre un encoder fundacional congelado
+domina al FT denso clásico sobre el mismo encoder---. Sobre L3, en
+cambio, el FT denso no mejora al sondeo lineal: ningún protocolo de
+ajuste denso supera el techo que impone la cola larga estructural
+($3{,}9$ muestras por clase de media en \emph{train}) sobre el
+dataset actual.
+
+La extensión a codificadores generalistas no médicos
+(sección~\ref{sec:dermapixel-extra-encoders}) refuerza esta
+no-uniformidad. CLIP-L-336, sin material biomédico en su
+preentrenamiento, encabeza la AUROC bajo sondeo lineal sobre L2 y L3,
+lo que matiza la hipótesis de especialización de dominio sobre las
+métricas de ranking probabilístico. La sustitución del clasificador
+paramétrico por \emph{retrieval} $k$-NN con índice FAISS sobre los
+mismos \emph{embeddings} PanDerm Large
+(sección~\ref{sec:dermapixel-extra-faiss}) supera al sondeo lineal en
+el régimen de cola larga severa L3. Ambas observaciones cierran la
+lectura de esta subsección: la elección óptima debe condicionarse al nivel
+ontológico objetivo y al criterio operativo predominante, no a un
+codificador o clasificador presupuesto como universal.
+
+\subsection{DermapixelAI 1.0 como contribución metodológica}
+\label{sec:disc-dermapixel-contrib}
+
+Buena parte de la lectura anterior se apoya en DermapixelAI~1.0, cuyo
+papel en este trabajo conviene precisar: no es un dataset auxiliar de
+validación, sino una contribución metodológica en sí misma. Se trata de
+un dataset clínico construido en castellano, independiente del dataset de
+preentrenamiento Derm1M y auditado por hash MD5 frente a él
+(sección~\ref{sec:auditoria-resultados}), lo que permite evaluar
+transferencia, \emph{zero-shot}, adaptación LoRA y \emph{retrieval} sin la
+incertidumbre de solapamiento que afecta a otros conjuntos. Su
+organización conforme a la ontología jerárquica L1/L2/L3 habilita la
+comparación de modelos a varios niveles de granularidad sobre un mismo
+material, y su disponibilidad documentada lo sitúa como punto de partida
+para evaluar modelos fundacionales sobre dermatología clínica en español.
+La interpretación debe acotarse: se trata de una primera versión de
+tamaño limitado y con una cola larga marcada a nivel L3, por lo que las
+cifras derivadas requieren la estimación robusta discutida en
+sección~\ref{sec:disc-cv-robustez} y no admiten extrapolación directa a
+la práctica asistencial.
+
+\subsection{Eficiencia en etiquetas y régimen de saturación}
+\label{sec:disc-eficiencia}
+
+Si el preentrenamiento de dominio es tan determinante, cabe
+preguntarse cuántas etiquetas hacen falta para explotarlo. La curva
+de eficiencia en etiquetas (sección~\ref{sec:label-eff-results},
+tabla~\ref{tab:label-eff}) responde con un fenómeno propio de
+encoders preentrenados sobre datasets masivos del dominio: el
+rendimiento sobre HAM10000 satura con muy pocos datos etiquetados.
+Con $1\%$ del conjunto de entrenamiento ($82$ imágenes),
+PanDerm Large alcanza $0{,}850$ accuracy y $0{,}918$ AUROC. Eso
+equivale al $95{,}7\%$ y al $96{,}2\%$ del rendimiento con el
+conjunto completo. Con $5\%$ ($410$ imágenes), la AUROC sube a
+$0{,}932$, el $97{,}7\%$ del máximo, a sólo $2{,}2$\,pp de la
+cifra con $100\%$. La BAcc escala más despacio y no alcanza su
+máximo hasta el $50\%$ del conjunto ($0{,}589$), lo que es
+consistente con la dependencia de las clases minoritarias respecto
+al volumen total.
+
+Sobre PAD-UFES-20 ($N_{\mathrm{train}} = 1\,493$ con el conjunto
+completo) la saturación es aún más temprana: con $14$ imágenes
+($1\%$) se alcanza $0{,}740$ accuracy y $0{,}907$ AUROC, el
+$95{,}5\%$ del AUROC con el conjunto completo. La implicación
+clínica es directa. En contextos con pocos datos etiquetados
+---enfermedades raras, centros de bajo volumen, subgrupos poco
+representados--- una cabeza lineal sobre PanDerm Large preentrenado
+es una opción técnicamente defendible.
+
+\subsection{Sondeo lineal frente a ajuste fino}
+\label{sec:disc-lp-vs-ft}
+
+La elección entre congelar el encoder o reentrenarlo no tiene una
+respuesta única, y esta subsección discute de qué depende. La
+comparación directa entre sondeo lineal y ajuste fino sobre cuatro
+datasets (sección~\ref{sec:ft-results},
+tabla~\ref{tab:ft-panderm}) revela un patrón asimétrico con
+implicaciones para el diseño de sistemas clínicos. Sobre HAM10000 y
+PAD-UFES-20, datasets de tamaño intermedio o alto
+($N \in [1\,493, 8\,207]$), el ajuste fino mejora la BAcc en
+$+47{,}1$\,pp y $+19{,}4$\,pp respectivamente. Esto confirma la
+utilidad de la receta original de PanDerm ---\emph{weighted random
+sampler}, Mixup, CutMix y \emph{layer decay}--- para aprender las
+clases minoritarias bajo desbalance acusado.
+
+El comportamiento se invierte cuando el dataset es pequeño. Sobre
+DDI, con $N_{\mathrm{train}} = 427$, el sondeo lineal supera al
+ajuste fino en accuracy ($+7{,}3$\,pp), BAcc ($+2{,}1$\,pp),
+AUROC ($+14{,}5$\,pp) y F1 ponderada ($+5{,}6$\,pp). El
+descenso de AUROC ($0{,}827 \to 0{,}682$) es especialmente
+diagnóstico: el encoder ajustado pierde capacidad de ranking sobre
+el \emph{test}, lo que es compatible con sobreajuste a la
+distribución de entrenamiento pese a las augmentaciones empleadas.
+Sobre MSKCC ($N_{\mathrm{train}} = 6\,189$), la mejora de BAcc es
+marginal ($+3{,}0$\,pp) y la AUROC desciende ligeramente
+($-2{,}7$\,pp).
+
+Estos tres casos delimitan un régimen operativo cuantificable. Para
+datasets con $N_{\mathrm{train}} \lesssim 500$ imágenes, el sondeo
+lineal sobre PanDerm Large es la opción de referencia. Para
+$N_{\mathrm{train}} \gtrsim 5\,000$, el ajuste fino con la receta
+original es preferible, siempre que existan clases minoritarias
+clínicamente relevantes que el sondeo lineal no logre discriminar.
+Entre ambos regímenes, la decisión depende del desbalance de clases
+y del coste computacional asumible.
+
+La oposición no se reduce, sin embargo, a congelar frente a ajustar el
+encoder completo: cabe una tercera vía intermedia. La evidencia sobre
+DermapixelAI~1.0 a nivel L2 (sección~\ref{sec:dermapixel-ft})
+indica que la adaptación de bajo rango mediante LoRA mejora la BAcc frente
+al ajuste fino parcial denso entrenando del orden de $48$ veces menos
+parámetros. Este patrón condiciona la estrategia recomendable bajo $N$
+reducido: la adaptación eficiente es preferible al ajuste denso, no sólo
+por coste computacional sino por menor exposición al sobreajuste. La
+implicación de diseño es directa y se materializa en la decisión
+arquitectónica de Dermapixel R0 (sección~\ref{sec:dermapixel-spanderm-v0}),
+que adopta LoRA sobre los últimos bloques de PanDerm Large en lugar de un
+ajuste fino denso sobre el mismo encoder.
+
+\subsection{Segmentación promptable y adaptación de bajo coste}
+\label{sec:disc-segmentacion}
+
+La segmentación aporta el hallazgo de mayor magnitud absoluta del
+trabajo, y conviene discutir tanto su alcance como su origen. Sobre
+ISIC2018 (sección~\ref{sec:seg-results}, tabla~\ref{tab:seg}),
+SAM2.1-Large con \emph{fine-tuning} de su decodificador alcanza
+Dice $0{,}947$ en el conjunto de test. Supera en $+2{,}6$\,pp la
+cifra publicada por Yan et~al.~\cite{panderm2025} ($0{,}921$) y
+en $+5{,}3$\,pp al baseline CAE-seg con backbone PanDerm Large
+entrenado desde cero ($0{,}894$). El ajuste mantiene congelado el
+\emph{image\_encoder} y entrena sólo el decodificador de máscaras y
+el \emph{promptable encoder}. Por eso los pesos actualizados se
+limitan a $\sim 4{,}2$\,M sobre los $\sim 227$\,M de
+SAM2.1-Large (menos del $2\%$), con un coste computacional bajo.
+
+La transferencia fuera de dominio es prácticamente nula: el Dice apenas
+varía sobre ISIC2017 y PH2 respecto a ISIC2018. Este patrón sugiere que
+las representaciones del encoder visual congelado (Hiera-Large) codifican
+primitivas geométricas y de contorno suficientemente generales, de modo
+que el ajuste del decodificador de máscaras y del \emph{promptable
+encoder} captura los matices del dominio dermatoscópico sin sobreajustar a
+una fuente de adquisición concreta. La magnitud del efecto de la
+adaptación de dominio, cuantificada en sección~\ref{sec:seg-results}
+frente a SAM2 \emph{zero-shot}, confirma que el coste de adaptación se
+concentra en el decodificador y no en el encoder.
+
+La comparativa pareada de arquitecturas promptables
+(sección~\ref{sec:seg-arquitecturas},
+tabla~\ref{tab:seg-arquitecturas}) matiza, no obstante, dónde reside
+ese valor. La generación de la arquitectura pesa más que el
+preentrenamiento médico: SAM2.1-tiny generalista supera a MedSAM~v1
+con preentrenamiento médico, y el tamaño de \emph{backbone} no
+aporta en el régimen \emph{box-prompted}. La especialización
+dermatológica del segmentador parece, por tanto, un factor
+secundario frente al diseño del modelo. Esta asimetría contrasta con
+el peso decisivo del preentrenamiento de dominio observado en
+clasificación (sección~\ref{sec:disc-especializacion}) e invita a
+tratar por separado ambas familias de tareas.
+
+El control automático sin caja
+(sección~\ref{sec:seg-control-automatico}) reordena, sin embargo,
+esta jerarquía de factores. Si las cinco arquitecturas
+\emph{promptables} caben en $\sim 1$\,pp pero retirar el \emph{prompt}
+cuesta $7{,}5$\,pp, el determinante real del rendimiento no es el
+segmentador sino la caja: la información de localización pesa entre
+seis y siete veces más que la elección de modelo. La consecuencia de
+diseño es directa ---el esfuerzo de ingeniería rinde más en el
+detector que produce la caja que en sustituir un segmentador por
+otro--- y conecta con la decisión de producto de ofrecer un modo
+interactivo, en el que el clínico aporta la caja, junto a uno
+automático. Para este último, el análisis de robustez
+(sección~\ref{sec:seg-robustez}) deja una especificación poco
+habitual pero accionable: dado que apretar la caja degrada el Dice
+mucho más que aflojarla, el detector debe sesgarse hacia cajas
+ligeramente holgadas. La validación cruzada de cinco pliegues sitúa
+además el \emph{headline} en $0{,}9554\pm 0{,}0010$, lo que eleva la
+cifra de segmentación de estimación puntual a estimación con
+intervalo, a diferencia del resto de protocolos del trabajo.
+
+Conviene, por último, no sobreinterpretar la magnitud absoluta. El
+análisis sobre anotación múltiple
+(sección~\ref{sec:seg-techo-anotador}) muestra que el acuerdo entre
+dermatólogos sobre el mismo contorno es de apenas $0{,}728$ de Dice,
+mientras que el modelo concuerda con el consenso en $0{,}915$. El
+$0{,}9556$ se sitúa, por tanto, cerca del techo que impone la propia
+ambigüedad del borde lesional: las diferencias de $\sim 1$\,pp entre
+arquitecturas son inferiores al desacuerdo inter-anotador y el «error»
+residual frente a una referencia única es, en buena medida, ruido de
+etiqueta. La salvedad pertinente es que esa consistencia convive con
+una ligera sobreconfianza en los bordes dudosos, donde el modelo traza
+una frontera nítida que los humanos no comparten.
+
+\subsection{Sensibilidad al tokenizador en zero-shot multimodal}
+\label{sec:disc-zs}
+
+El rendimiento zero-shot no depende sólo del modelo, sino de cómo se
+le interroga. La evaluación sobre HAM10000
+(sección~\ref{sec:zs-results}, tabla~\ref{tab:zs-ham}) revela una
+sensibilidad acusada al tokenizador y a la formulación de los
+\emph{prompts}. La AUROC oscila entre $0{,}366$ (DermLIP v1/v2 con
+tokenizador PubMedBERT y \emph{prompts} genéricos) y $0{,}854$
+(DermLIP original con tokenizador GPT-2/CLIP y \emph{prompts} A3 de
+Derm1M). Es un rango de $48{,}8$\,pp para variaciones que no tocan
+los pesos visuales, sino sólo la rama lingüística y la formulación
+textual de las clases.
+
+El valor AUROC $<0{,}5$ de la configuración inicial es diagnóstico de un
+desalineamiento entre el espacio textual proyectado por PubMedBERT y el
+espacio visual del encoder de DermLIP v1/v2, hasta el punto de invertir la
+correlación respecto a la tarea de clasificación. El experimento de
+modificaciones aisladas (sección~\ref{sec:zs-results}) permite atribuir la
+recuperación del rendimiento a la combinación de dos factores ---el cambio
+de tokenizador y el cambio al conjunto de \emph{prompts} A3---, sin que la
+evidencia disponible permita aislar una causa única de forma concluyente,
+puesto que ambos operan sobre la misma rama textual. La lectura no debe,
+por tanto, formularse como causalidad absoluta de un único componente,
+sino como el efecto conjunto del tokenizador, los \emph{prompts} y el
+alineamiento texto-imagen resultante. La rama textual no es un componente
+accesorio del modelo multimodal: puede determinar el rendimiento final
+tanto como la representación visual. De aquí se sigue una implicación
+práctica directa: todo despliegue \emph{zero-shot} debe validar
+empíricamente, sobre un conjunto del dominio, no sólo el modelo sino
+también su tokenizador y la formulación de los \emph{prompts}, porque la
+transferencia desde la configuración publicada por los autores no está
+garantizada.
+
+La evaluación adicional sobre DermapixelAI~1.0
+(sección~\ref{sec:dermapixel-zs}, tabla~\ref{tab:dermapixel-zs})
+extiende esta lectura al idioma. DermLIP v2 con \emph{prompts} en
+inglés alcanza Acc@1 $= 0{,}500$ sobre la categoría etiológica
+L1, frente a $0{,}361$ con \emph{prompts} equivalentes en
+castellano ($-13{,}9$\,pp); SigLIP-SO400M cae $-11{,}1$\,pp en
+la misma comparación. BiomedCLIP, en cambio, mantiene Acc@1
+$= 0{,}389$ en ambos idiomas. Esto sitúa la penalización por
+castellano como dependiente del dataset textual de preentrenamiento.
+La magnitud de la caída motiva, como línea futura inmediata,
+construir modelos vision-lenguaje contrastivos con rama textual
+entrenada sobre material clínico en castellano.
+
+\subsection{Brecha entre modelos específicos y LLMs multimodales}
+\label{sec:disc-llm}
+
+La sensibilidad de la rama contrastiva al texto invitaba a
+comprobar si los grandes modelos de lenguaje multimodales, con
+dataset de preentrenamiento mucho mayores, cierran la distancia con
+los especialistas. La comparación de paradigmas sobre HAM10000
+(sección~\ref{sec:llm-results}, tabla~\ref{tab:llm-comparativa})
+muestra lo contrario y fija un orden de magnitud entre familias
+relevante para elegir arquitectura en escenarios clínicos. El
+gradiente de accuracy entre el mejor especialista ajustado (PanDerm
+Base con ajuste fino y \emph{test-time augmentation}) y el mejor LLM
+multimodal \emph{zero-shot} (GPT-4o) supera los $43$\,pp; la
+tabla~\ref{tab:llm-comparativa} desglosa la escala completa de
+configuraciones intermedias.
+
+Tres observaciones cualitativas, detalladas en
+sección~\ref{sec:llm-results}, matizan esta brecha sin reducirla.
+Primero, la adaptación con LoRA sobre MedGemma~27B mejora la accuracy
+sobre los datasets vistos en entrenamiento pero no transfiere de forma
+sistemática al resto, lo que aconseja reportar su rendimiento por dataset
+y no agregado. Segundo, GPT-4o y GPT-4o-mini exhiben un sesgo de error
+hacia clases minoritarias del \emph{prompt} ---con sobreproducción de
+predicciones de dermatofibroma y melanoma muy por encima de su prevalencia
+real---, lo que sugiere que responden al espacio léxico de la consigna
+tanto como a la evidencia visual. Tercero, BLIP-2 e InstructBLIP con
+\emph{Q-Former} preentrenado producen una accuracy incompatible con
+cualquier uso clínico, atribuible a la falta de adaptación al vocabulario
+dermatológico. Las tres observaciones convergen en que la distancia entre
+especialistas y LLMs multimodales generalistas no se explica por capacidad
+bruta del modelo, sino por su grado de adaptación al dominio.
+
+La brecha tiene además una vertiente de coste. La evaluación con
+APIs comerciales sobre los tres datasets cuesta unos \$4{,}07.
+MedGemma~27B, en cambio, opera localmente en BF16 sobre los
+$128$\,GB de memoria unificada de la DGX Spark sin cuantización,
+con latencia media de $1{,}49$ segundos por imagen. La diferencia
+operativa importa para un despliegue hospitalario: los modelos
+cerrados añaden coste recurrente y dependencia de un proveedor
+externo, sin mejora apreciable de rendimiento clínico.
+
+\subsection{Equidad por fototipo cutáneo}
+\label{sec:disc-equidad}
+
+La generalización entre fototipos es una condición de seguridad
+clínica, y los resultados la cuantifican sin ambigüedad. La
+evaluación sobre Fitzpatrick17k completo
+(sección~\ref{sec:equidad-results}, tablas~\ref{tab:equidad-fototipo}
+y~\ref{tab:cross-eval}) reproduce un patrón conocido en la
+literatura: los cinco encoders contrastados presentan \emph{gap}~I-VI
+positivo en la formulación de tres clases de malignidad, con valores
+entre $+0{,}124$ y $+0{,}306$\,pp de BAcc. Ese \emph{gap} no se
+interpreta en aislamiento, sino junto a la BAcc global de cada
+modelo. DermLIP v2 obtiene la mejor BAcc global ($0{,}721$) y la
+mejor AUROC global ($0{,}909$), pero su \emph{gap}~I-VI es
+$+0{,}281$\,pp: el rendimiento sobre FST~VI ($0{,}434$) cae
+mucho respecto a FST~III ($0{,}765$). PanDerm Large presenta un
+\emph{gap} menor ($+0{,}217$\,pp) con BAcc global ligeramente
+inferior ($0{,}699$). BiomedCLIP exhibe el \emph{gap} mínimo
+($+0{,}124$\,pp), pero la peor BAcc global ($0{,}590$).
+
+Esta última asimetría ---\emph{gap} mínimo con BAcc global
+inferior--- ilustra que la métrica de equidad aislada no es
+decisional. Un modelo uniformemente malo entre subgrupos puede
+mostrar baja desigualdad aritmética sin ser equitativo en sentido
+sustantivo, porque su rendimiento es bajo en todos los fototipos por
+igual. Por eso BAcc global y \emph{gap} deben leerse de forma
+conjunta. El mejor compromiso entre ambas variables es PanDerm
+Large, seguido de DermLIP v2 cuando se ponderan el rendimiento sobre
+FST~I-IV y la AUROC global.
+
+El experimento cruzado \emph{Light}~$\leftrightarrow$~\emph{Dark}
+(tabla~\ref{tab:cross-eval}) añade una segunda lectura. La caída de
+rendimiento al entrenar sólo con fototipos claros y evaluar sobre
+fototipos oscuros (L$\to$D vs L$\to$L) es máxima en DINOv2
+($\Delta = -0{,}132$\,pp BAcc) y mínima en BiomedCLIP
+($\Delta = -0{,}063$\,pp). DermLIP v2 mantiene la menor caída
+Dark$\to$Light vs Dark$\to$Dark ($\Delta = +0{,}016$\,pp), lo que
+sugiere mayor invariancia de sus representaciones al fototipo. El
+patrón es coherente con su dataset de preentrenamiento Derm1M,
+derivado de fuentes web abiertas con representación variable de
+fototipos.
+
+\subsection{Estimación robusta del rendimiento sobre datasets de tamaño moderado}
+\label{sec:disc-cv-robustez}
+
+La fiabilidad de las cifras sobre un dataset pequeño depende del método de
+estimación empleado. La validación cruzada de cinco \emph{folds} agrupada
+por caso clínico sobre DermapixelAI~1.0
+(sección~\ref{sec:dermapixel-results}, tabla~\ref{tab:dermapixel-cv})
+ilustra un punto metodológico relevante para evaluar modelos
+fundacionales sobre datasets de tamaño moderado: la diferencia entre la
+cifra puntual del \emph{split} fijo y la media de los \emph{folds} es
+sustancial sobre las métricas dependientes de umbral (BAcc) y casi nula
+sobre la AUROC \emph{one-vs-rest}. Esta observación matiza la lectura de
+toda cifra de BAcc puntual sobre un \emph{test} reducido. De aquí se siguen
+dos lecturas operativas. \textit{Primero}, la cifra del \emph{split}
+publicado conserva validez como punto operativo de referencia ---y como
+base de la comparación cruzada con la evaluación \emph{zero-shot} sobre el
+mismo \emph{test} (sección~\ref{sec:dermapixel-zs})---, pero requiere la
+estimación cruzada para defender el rendimiento esperado del sistema.
+\textit{Segundo}, sobre datasets clínicos de tamaño moderado la AUROC es la
+métrica primaria recomendable para comparar configuraciones de
+\emph{transfer learning} congelado, mientras que la BAcc y la
+\emph{accuracy} deben acompañarse de su intervalo de confianza o de su
+estimación cruzada por \emph{folds}.
+
+Leídas en conjunto, las ocho subsecciones anteriores indican que las
+ganancias de rendimiento clínicamente relevantes no proceden de sustituir
+un encoder por otro, sino de acertar en un conjunto de decisiones de
+diseño: el nivel ontológico al que se evalúa y se reporta, la estrategia de
+adaptación (sondeo lineal, LoRA o ajuste denso según el régimen de datos),
+la formulación y el tokenizador de la rama textual, el equilibrio entre
+BAcc y AUROC en presencia de desbalance, la validación por subgrupos de
+fototipo y la combinación selectiva de modelos. Estas decisiones, más que
+la elección aislada de un modelo, determinan el rendimiento alcanzable y
+constituyen el objeto de las implicaciones operativas que se desarrollan en
+la sección~\ref{sec:implicaciones}.
+
+\section{Comparación con la literatura}
+\label{sec:lit}
+
+\subsection{Reproducción del benchmark de PanDerm}
+\label{sec:lit-panderm}
+
+El primer contraste con la literatura es la propia reproducción del
+modelo. Yan et~al.~\cite{panderm2025} reportan para PanDerm Large,
+sobre los $28$ \emph{downstream tasks} de su benchmark interno,
+una mejora media del $+10{,}2\%$ sobre el estado del arte previo.
+Las cifras de sondeo lineal de la tabla~\ref{tab:lp-panderm} caen
+dentro del margen que reportan los autores para los datasets
+compartidos (HAM10000, PAD-UFES-20, Derm7pt) y reproducen
+cualitativamente el comportamiento del modelo sobre arquitectura
+aarch64 con CUDA~13.0 y BF16. La verificación numérica frente al
+hardware x86\_64 canónico es, por tanto, satisfactoria dentro de
+las tolerancias esperables por aritmética BF16 y por diferencias de
+versiones de \texttt{cuDNN}. Esto documenta la portabilidad del
+pipeline al chip Grace Hopper GB10.
+
+La cifra agregada del paper también es coherente con la observada
+aquí. La diferencia PanDerm Large vs PanDerm Base sobre los diez
+datasets externos contrastados ($+4{,}1$\,pp accuracy,
+$+9{,}0$\,pp BAcc) sitúa el $+9{,}0$\,pp de BAcc cerca del
+$+10{,}2\%$ que los autores reportan sobre su benchmark interno.
+La ventaja del modelo Large parece, por tanto, estable entre los
+conjuntos públicos contrastados y los conjuntos internos del grupo
+de Monash.
+
+\subsection{Segmentación binaria de lesión}
+\label{sec:lit-seg}
+
+En segmentación, la cifra obtenida también supera la referencia
+publicada y conviene explicar por qué. SAM2.1-Large con
+\emph{fine-tuning} del decodificador sobre ISIC2018 ($0{,}947$
+Dice) mejora en $+2{,}6$\,pp el resultado de
+Yan et~al.~\cite{panderm2025} ($0{,}921$ Dice con $100$ épocas).
+Tres factores explican plausiblemente la diferencia. (i)~La
+arquitectura promptable de SAM2.1 con \emph{bounding box} derivada
+de la máscara de \emph{ground truth} aporta un guiado espacial
+fuerte que las arquitecturas no promptables no aprovechan. (ii)~El
+encoder Hiera-Large, preentrenado sobre $\sim 11$ millones de
+imágenes y mil millones de máscaras, codifica primitivas
+geométricas más informativas que las que el backbone visual de
+PanDerm aprende sobre dermatoscopia. (iii)~El ajuste del
+decodificador introduce los parámetros justos para capturar las
+particularidades del dominio sin sobreajuste, mientras que un
+\emph{fine-tuning} completo sobre $50$ épocas podría requerir más
+datos o regularización adicional para superar la referencia. La
+lectura operativa es que la segmentación binaria de lesión sobre
+dermatoscopia roza la saturación cuando se combinan un encoder
+promptable preentrenado a gran escala y una adaptación de bajo coste
+sobre ISIC2018.
+
+\subsection{Comportamiento zero-shot}
+\label{sec:lit-zs}
+
+El comportamiento zero-shot coincide en parte con lo publicado,
+pero aporta también un matiz nuevo. La AUROC máxima alcanzada aquí
+sobre HAM10000 con DermLIP en formulación zero-shot ($0{,}854$)
+encaja cualitativamente con los rangos del paper original de
+Derm1M~\cite{derm1m} para su mejor configuración. En cambio, la
+sensibilidad al tokenizador documentada en
+sección~\ref{sec:disc-zs} no está cuantificada de forma
+sistemática en la literatura previa sobre la familia DermLIP, lo que
+constituye una aportación empírica de este trabajo. La diferencia de
+$48{,}8$\,pp AUROC entre la peor y la mejor configuración sobre el
+mismo encoder visual es de un orden de magnitud comparable al efecto
+de cambiar de paradigma (LP vs ZS). Esto desplaza la discusión
+metodológica desde el modelo hacia su configuración operativa.
+
+\subsection{Disparidad por fototipo}
+\label{sec:lit-equidad}
+
+La disparidad por fototipo confirma la literatura y, a la vez, la
+amplía. El sentido de la desigualdad ---peor rendimiento sobre
+fototipos elevados--- coincide con los hallazgos previos sobre
+Fitzpatrick17k~\cite{fitzpatrick17k} y con la motivación que dio
+origen a la curación de DDI~\cite{ddi}. Este trabajo extiende esa
+línea evaluando cinco encoders bajo un mismo protocolo, lo que
+permite contrastes directos. La paradoja BiomedCLIP (\emph{gap}
+mínimo asociado a la peor BAcc global) no está documentada de forma
+explícita en la literatura sobre equidad dermatológica. Es una
+observación sobre la métrica \emph{gap} aislada que aconseja
+reportes complementarios: BAcc global, AUROC global y \emph{gap}
+deben presentarse conjuntamente.
+
+\section{Implicaciones operativas}
+\label{sec:implicaciones}
+
+\subsection{Arquitectura defendible para sistemas de apoyo al diagnóstico}
+\label{sec:disc-arq}
+
+Los cuatro bloques de evidencia anteriores convergen en una
+arquitectura técnicamente defendible para sistemas de apoyo al
+diagnóstico dermatológico construidos sobre los modelos
+fundacionales disponibles. La estructura recomendable es la
+siguiente. El encoder es PanDerm Large preentrenado, congelado por
+defecto y ajustado sólo bajo demanda. La cabeza es una regresión
+logística multi-clase (L-BFGS, $C=1{,}0$,
+\texttt{max\_iter}~$=5\,000$) cuando el dataset de entrenamiento es
+reducido ($N_{\mathrm{train}} \lesssim 500$), o una cabeza
+ajustada con la receta de PanDerm Large (Mixup, CutMix,
+\emph{weighted random sampler}, $50$ épocas) cuando
+$N_{\mathrm{train}} \gtrsim 5\,000$ y existe desbalance acusado.
+La segmentación se resuelve con SAM2.1-Large adaptado mediante
+\emph{fine-tuning} del decodificador cuando la tarea requiera
+localizar la lesión.
+
+Las ramas textuales se incorporan con cautela. La rama lingüística
+contrastiva (DermLIP) sólo entra con prompts validados y tokenizador
+compatible, verificado sobre un conjunto de validación del dominio.
+La rama LLM multimodal generalista (GPT-4o, Gemini, MedGemma) no se
+usa como clasificador principal, dado el orden de magnitud de
+rendimiento inferior cuantificado en sección~\ref{sec:disc-llm}.
+Su rol natural es complementario: generar razonamiento textual o
+explicaciones para casos ya clasificados por el encoder
+especializado.
+
+La consecuencia de diseño que se desprende del conjunto de hallazgos
+(sección~\ref{sec:hallazgos}) es que la arquitectura defendible es
+modular, no un modelo único: PanDerm Large para la transferencia visual
+general, adaptación LoRA para la subcategoría clínica bajo $N$ reducido,
+\emph{retrieval} FAISS para la cola larga, SAM2.1 para la segmentación y
+un \emph{ensemble} acotado para el cribado de melanoma, seleccionando el
+componente según la tarea y el nivel ontológico. Sobre esta estructura,
+dos validaciones son condición necesaria antes del despliegue: la de los
+\emph{prompts} y el tokenizador de cualquier rama contrastiva sobre un
+conjunto del dominio, dada la sensibilidad documentada en
+sección~\ref{sec:disc-zs}, y la validación por fototipo cutáneo que se
+detalla en sección~\ref{sec:disc-ventana}.
+
+\subsection{Armonización taxonómica y nivel de agregación}
+\label{sec:disc-armonizacion}
+
+La ontología no sólo permite comparar datasets, sino que obliga a
+elegir a qué nivel se compara. La heterogeneidad taxonómica entre
+datasets, mitigada mediante la ontología jerárquica L1/L2/L3 descrita
+en sección~\ref{sec:ontologia}, sigue requiriendo una decisión
+explícita sobre el nivel de agregación de los contrastes. La
+comparación inter-dataset es defendible a nivel L1 (cuatro familias
+etiológicas) y L2 ($43$ subcategorías clínicas) sobre el dataset
+armonizado de $72\,654$ imágenes. El nivel L3 ($367$
+diagnósticos individuales) conserva la cola larga propia de cada
+dataset y no admite contrastes directos sin agregación adicional. La
+implicación para un sistema de producción es que la jerarquía debe
+mostrarse de forma explícita al usuario clínico: presentar la
+predicción L3 junto a su agregación L2 y L1 da robustez frente a la
+incertidumbre de la cola larga sin sacrificar especificidad cuando
+ésta es fiable.
+
+\subsection{Ventana operativa por fototipo cutáneo}
+\label{sec:disc-ventana}
+
+El rendimiento desigual entre fototipos también acota dónde puede
+desplegarse el sistema con garantías. Esa ventana operativa, definida
+en el experimento de equidad (tabla~\ref{tab:equidad-fototipo}),
+condiciona la generalización a poblaciones con fototipos elevados.
+Los cinco encoders presentan \emph{gap}~I-VI positivo entre
+$+0{,}124$ y $+0{,}306$\,pp BAcc. La paradoja BiomedCLIP
+---\emph{gap} mínimo asociado a la peor BAcc global--- vuelve a
+ilustrar que el \emph{gap} aislado no es una métrica decisional. El
+mejor compromiso entre BAcc global y \emph{gap} sobre la formulación
+de tres clases es PanDerm Large, seguido de DermLIP v2 cuando se
+prioriza la AUROC global. La implicación clínica es clara: desplegar
+sobre poblaciones con representación significativa de fototipos
+elevados exige validación específica por subgrupos y mecanismos de
+revisión humana cuando el modelo opere en su régimen de menor
+confianza.
+
+\subsection{Ensemble de seguridad para detección de melanoma}
+\label{sec:disc-ensemble}
+
+La detección de melanoma admite un esquema orientado a la seguridad,
+y conviene discutir tanto su valor como sus costes. El protocolo
+auxiliar de ensemble (sección~\ref{sec:ensemble-results},
+tabla~\ref{tab:ensemble}) muestra que la combinación OR
+\emph{top-3} de PanDerm Large \emph{fine-tuned} sobre HAM10000 (M1)
+y SigLIP-Large SO400M con sondeo lineal alcanza \emph{recall} de
+melanoma del $100\%$ ($70$ de $70$) sobre el \emph{split} de
+test de HAM10000. El análisis de errores explica por qué: los dos
+melanomas que M1 no captura en \emph{top-3} sí los captura SigLIP,
+lo que confirma la complementariedad de los \emph{backbones} y
+justifica la elección del par. M7 (clasificador unificado sobre el
+dataset armonizado de $43$ clases) no añade melanomas adicionales
+sobre HAM, pero mantiene valor en escenarios multidataset por su
+mayor cobertura ontológica.
+
+Tres caveats acompañan la lectura operativa de este resultado.
+(i)~El \emph{recall} del $100\%$ es \emph{top-3}, no
+\emph{top-1}, por lo que exige una interfaz que presente al clínico
+las tres clases más probables. (ii)~El tamaño muestral de melanomas
+es $N = 70$, lo que produce intervalos de confianza al $95\%$
+amplios y obliga a validación prospectiva sobre una cohorte mayor.
+(iii)~El coste en falsos positivos del esquema OR \emph{top-3} es
+elevado ($885$ FP sobre $1\,162$ no-melanomas): asumible en un
+cribado oportunista, pero suficiente para descartar su uso aislado
+como clasificación primaria. La lectura operativa, coherente con la
+arquitectura modular de sección~\ref{sec:disc-arq}, es que este
+\emph{ensemble} debe integrarse como mecanismo de apoyo orientado a la
+sensibilidad ---priorizar la detección de melanoma asumiendo falsos
+positivos--- y nunca como decisión diagnóstica autónoma.
+
+\section{Hallazgos no anticipados}
+\label{sec:hallazgos}
+
+Seis observaciones transversales del trabajo no se anticipaban desde la
+literatura y merecen atención específica. Se ordenan de mayor a menor
+alcance interpretativo, comenzando por las que afectan a la elección de
+método y terminando por las acotadas a un protocolo concreto.
+
+\paragraph{Ausencia de un método óptimo único.}
+Ningún codificador ni clasificador domina todos los niveles ontológicos y
+todas las tareas: PanDerm Large encabeza la transferencia visual general,
+DermLIP v2 y Dermapixel R0 la subcategoría clínica L2, el \emph{retrieval}
+$k$-NN la cola larga L3, SAM2.1 la segmentación y los \emph{ensembles} el
+cribado de melanoma, mientras que un codificador generalista no médico
+puede liderar la AUROC en algún nivel
+(tabla~\ref{tab:dermapixel-extra-sintesis}). La literatura sobre modelos
+fundacionales dermatológicos tiende a buscar un modelo de referencia
+único; la evidencia aquí sugiere que la pregunta correcta es qué modelo
+para qué tarea y a qué nivel ontológico.
+
+\paragraph{Sensibilidad extrema al tokenizador y al \emph{prompt}.}
+La AUROC \emph{zero-shot} de la familia DermLIP sobre HAM10000 varía en un
+rango comparable al de cambiar de paradigma completo, sin modificar los
+pesos del encoder visual, en función del tokenizador y de la formulación
+de los \emph{prompts} (sección~\ref{sec:disc-zs}). Esta sensibilidad no
+está cuantificada de forma sistemática en la literatura previa sobre
+DermLIP y desplaza parte de la atención metodológica del modelo hacia su
+configuración operativa.
+
+\paragraph{Sondeo lineal supera al ajuste fino en DDI.}
+Sobre DDI ($N_{\mathrm{train}} = 427$), el sondeo lineal sobre PanDerm
+Large supera al ajuste fino en accuracy, AUROC, BAcc y F1 ponderada
+(sección~\ref{sec:disc-lp-vs-ft}). El comportamiento, atribuible a
+sobreajuste bajo $N$ reducido, no se documenta de forma explícita en la
+literatura sobre PanDerm y ofrece una heurística operativa para datasets
+pequeños.
+
+\paragraph{Retrieval competitivo en la cola larga L3.}
+La sustitución del clasificador lineal por \emph{retrieval} $k$-NN con
+índice FAISS sobre los mismos \emph{embeddings} PanDerm Large supera al
+sondeo lineal en el régimen de cola larga severa L3 de DermapixelAI~1.0
+(sección~\ref{sec:dermapixel-extra-faiss}). El hallazgo indica que, cuando
+el número de muestras por clase es muy bajo, un esquema no paramétrico
+basado en vecindad puede ser preferible al ajuste de una frontera de
+decisión paramétrica.
+
+\paragraph{Asimetría rendimiento-equidad en DermLIP v2.}
+DermLIP v2 alcanza la mejor BAcc y AUROC globales sobre Fitzpatrick17k pero
+uno de los \emph{gap}~I-VI más altos entre los cinco encoders contrastados
+(sección~\ref{sec:disc-equidad}). Que un rendimiento agregado superior
+conviva con una desigualdad por subgrupo elevada ---en contraste con la
+paradoja BiomedCLIP, que asocia \emph{gap} mínimo a la peor BAcc global---
+sugiere que el preentrenamiento sobre Derm1M produce representaciones
+informativas sobre la categoría diagnóstica pero no suficientemente
+invariantes al fototipo cutáneo.
+
+\paragraph{Interpretabilidad emergente del SAE Large sobre
+Derm7pt.}
+La validación independiente del SAE Large ($16\,384$
+\emph{features}) sobre el dataset Derm7pt~\cite{kawahara2019},
+reportada en sección~\ref{sec:sae-derm7pt}, identifica
+\emph{features} individuales con AUROC efectivo hasta $0{,}823$
+sobre \emph{vascular structures} y hasta $0{,}926$ sobre vasos
+en horquilla ($N_{+} = 15$ positivos). Las anotaciones del
+\emph{Seven-Point Checklist} no se usaron ni en el preentrenamiento
+del SAE ni en el del encoder PanDerm Large. Esto implica que la base
+sparse aprendida sobre Derm1M ($507\,657$ imágenes) ya ha
+capturado representaciones alineadas con la taxonomía dermatoscópica
+clásica. El hallazgo sostiene la interpretabilidad mediante Sparse
+Autoencoders más allá de los $48$ conceptos visuales de
+SkinCon~\cite{skincon} sobre los que se diseñó el experimento
+original del Anexo~\ref{cap:anexof}. El \emph{Concept Bottleneck
+Model} con cuello de botella sobre los siete criterios cuantifica
+además el coste de esta interpretabilidad sobre la tarea binaria
+melanoma/no-melanoma ($-5{,}8$\,pp AUROC, $0{,}890 \to
+0{,}832$). La jerarquía de pesos del meta-clasificador
+(\emph{blue whitish veil} $+2{,}54$, \emph{regression structures}
+$+2{,}07$) es coherente con el peso clínico de estos criterios en
+la escala diagnóstica de referencia~\cite{kawahara2019}. La lectura
+operativa es que el SAE no es sólo un mecanismo de reducción
+dimensional: admite interpretación concepto-a-concepto sobre el
+vocabulario dermatoscópico. Esto refuerza la viabilidad del módulo de
+interpretabilidad del prototipo (Anexo~\ref{cap:anexoh}) sin
+reentrenar el SAE.
+
+Dos observaciones de menor alcance completan el cuadro. La
+competitividad de ConvNeXt-Large preentrenado sobre ImageNet-21K sobre
+HAM10000, que supera ligeramente a PanDerm Large en AUROC, es un caso
+particular del primer hallazgo: confirma que la ventaja del
+preentrenamiento de dominio se concentra en el material clínico no
+estandarizado y se diluye sobre dermatoscopia canónica. Y la adaptación
+LoRA sobre MedGemma~27B mejora la accuracy sobre los datasets vistos en
+entrenamiento sin transferir de forma sistemática al resto
+(sección~\ref{sec:disc-llm}), lo que aconseja reportar su rendimiento por
+dataset; ambas refinan hallazgos ya enunciados más que constituir patrones
+independientes.
+
+\section{Limitaciones interpretativas}
+\label{sec:disc-limitaciones}
+
+Conviene cerrar la discusión acotando hasta dónde llegan estas
+conclusiones. Cuatro elementos condicionan la interpretación de los
+resultados, y el capítulo~\ref{cap:limitaciones} los desarrolla en
+detalle. Primero, el solapamiento exacto de Dermnet con el dataset de
+preentrenamiento Derm1M ($100\%$ por hash MD5) introduce una
+incertidumbre acotada sobre las cifras de la familia DermLIP en ese
+dataset ---HIBA y MSKCC, pese a su origen ISIC-archive, no presentan
+solapamiento MD5---; las cifras de PanDerm, DINOv2, ConvNeXt-Large,
+EfficientNetV2-Large y SigLIP-Large no se ven afectadas. Segundo, los
+tamaños muestrales de los subgrupos Fitzpatrick V y VI ($169$ y
+$73$ imágenes respectivamente en el conjunto de test) producen
+intervalos de confianza amplios para las cifras de \emph{gap}, lo que
+limita la cuantificación exacta de la desigualdad por fototipo.
+Tercero, la sensibilidad al \emph{prompt} en zero-shot y en la
+evaluación de LLMs multimodales hace que las cifras reportadas sean
+condicionales a una formulación concreta; generalizarlas a otras
+formulaciones requiere validación específica. Cuarto, el trabajo
+evalúa rendimiento sobre fotografías de archivos de investigación; la
+generalización a imagen real adquirida en flujos de teledermatología
+sobre cohorte hospitalaria prospectiva no se aborda y constituye una
+línea futura inmediata.
+
+Estas limitaciones acotan el dominio de validez de las cifras, pero
+no invalidan los patrones cualitativos identificados: la ventaja del
+preentrenamiento de dominio, la saturación temprana del sondeo
+lineal, el régimen $N_{\mathrm{train}} \lesssim 500$ como umbral de
+preferencia del LP, la brecha entre especialistas y LLMs
+multimodales generalistas, y la existencia de un \emph{gap} por
+fototipo sistemático y consistente entre encoders.
