@@ -95,7 +95,7 @@ Servicio                & Imagen               & Puerto host & Función \\
 \subsection{Persistencia: esquema de base de datos}
 \label{sec:dermapixel-db}
 
-La base de datos contiene once tablas relacionales que documentan
+La base de datos contiene doce tablas relacionales que documentan
 cada estudio dermatológico, sus resultados parciales por módulo y
 las validaciones posteriores. La tabla raíz \texttt{derm\_studies}
 contiene el identificador único, el estado del estudio
@@ -330,6 +330,12 @@ restringe artificialmente el espacio de clases.
 \hline
 \end{tabular}
 \end{table}
+
+La nomenclatura y los recuentos de la tabla~\ref{tab:dermapixel-presets}
+corresponden a la configuración inicial del prototipo; el catálogo de
+\emph{presets} se amplió con posterioridad ---con selecciones por
+subcategoría L2 y un ajuste de las claves de los presets
+etiológicos--- sin alterar el diseño descrito.
 
 Un hallazgo operativo documentado durante el despliegue
 (sección~\ref{sec:disc-zs}) es la sensibilidad extrema de DermLIP v2 a
