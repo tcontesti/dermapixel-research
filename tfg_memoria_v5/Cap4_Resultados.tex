@@ -297,34 +297,25 @@ MSKCC        & FT   & $\mathbf{0{,}731}$ & $\mathbf{0{,}684}$ & $0{,}719$     & 
 \end{tabular}
 \end{table}
 
-El ajuste fino eleva la BAcc en HAM10000 ($+47{,}1$\,pp) y
-PAD-UFES-20 ($+19{,}4$\,pp), concentrando la mejora en las clases
-minoritarias (melanoma, \emph{akiec}, \emph{df}, \emph{vasc}),
-responsables de la baja \emph{balanced accuracy} del sondeo lineal. El
-efecto se invierte al escasear los datos: sobre DDI
-($N_{\mathrm{train}} = 427$) el sondeo lineal supera al ajuste fino en
-todas las métricas (sobreajuste pese a las augmentaciones) y sobre
-MSKCC ($N_{\mathrm{train}} = 6\,189$) la mejora es marginal
-($+3{,}0$\,pp BAcc, AUROC algo inferior). Con pocos cientos de
-imágenes, las representaciones congeladas resultan, por tanto, más
-robustas que el ajuste fino del encoder
-(figura~\ref{fig:ft-comparison}).
+El ajuste fino mejora sustancialmente el rendimiento en HAM10000
+($+47{,}1$\,pp BAcc) y PAD-UFES-20 ($+19{,}4$\,pp), especialmente
+sobre las clases minoritarias (melanoma, \emph{akiec}, \emph{df},
+\emph{vasc}), responsables de la baja \emph{balanced accuracy} del
+sondeo lineal. Sin embargo, el beneficio desaparece cuando disminuye
+la disponibilidad de datos: DDI muestra una degradación global
+compatible con sobreajuste y MSKCC sólo obtiene mejoras marginales. En
+conjunto, los resultados sugieren que el ajuste fino resulta
+ventajoso cuando existe una cantidad moderada o elevada de ejemplos
+etiquetados, mientras que las representaciones congeladas son más
+robustas en escenarios de datos limitados.
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.85\textwidth]{fig_ft_comparison.png}
-\caption{Comparación entre sondeo lineal y ajuste fino con
-PanDerm Base sobre cuatro datasets. El ajuste fino aporta
-mejoras sustanciales sobre HAM10000 y PAD-UFES-20
-($+47{,}1$\,pp y $+19{,}4$\,pp BAcc respectivamente) pero
-degrada el rendimiento sobre DDI ($N_{\mathrm{train}} = 427$),
-caso compatible con sobreajuste pese a las augmentaciones.}
-\label{fig:ft-comparison}
-\end{figure}
-
-La utilidad del ajuste fino depende, por tanto, de la disponibilidad
-de datos etiquetados, lo que motiva cuantificar cuántas etiquetas son
-realmente necesarias para aprovechar estas representaciones.
+Este resultado justifica la exploración posterior de técnicas de
+adaptación eficiente de parámetros (PEFT), que buscan capturar parte
+de las ventajas del ajuste fino reduciendo el riesgo de sobreajuste en
+datasets clínicos de tamaño moderado
+(sección~\ref{sec:dermapixel-spanderm-v0}). Cabe asimismo cuantificar
+cuántas etiquetas son realmente necesarias para aprovechar estas
+representaciones, objeto de la sección siguiente.
 
 \section{Eficiencia en etiquetas}
 \label{sec:label-eff-results}
