@@ -149,7 +149,11 @@ una cabeza al incorporar clases nuevas y permite mostrar los casos
 similares que sustentan la predicción. Ambas observaciones cierran la
 lectura: la elección óptima debe condicionarse al nivel ontológico y
 al criterio operativo predominante, no a un codificador o clasificador
-presupuesto como universal.
+presupuesto como universal. Esta lectura sobre L3 debe entenderse, no
+obstante, como indicio y no como ordenación cerrada: la cola larga
+extrema y el tamaño reducido del conjunto de test en ese nivel
+(sección~\ref{sec:lim-dermapixel}) limitan la fuerza de cualquier
+ranking sobre L3.
 
 \subsection{DermapixelAI 1.0 como contribución metodológica}
 \label{sec:disc-dermapixel-contrib}
@@ -811,14 +815,19 @@ independientes.
 \label{sec:disc-limitaciones}
 
 Conviene cerrar la discusión acotando hasta dónde llegan estas
-conclusiones. Cuatro elementos condicionan la interpretación de los
+conclusiones. Cinco elementos condicionan la interpretación de los
 resultados, y el capítulo~\ref{cap:limitaciones} los desarrolla en
 detalle. Primero, el solapamiento exacto de Dermnet con el dataset de
 preentrenamiento Derm1M ($100\%$ por hash MD5) introduce una
 incertidumbre acotada sobre las cifras de la familia DermLIP en ese
 dataset ---HIBA y MSKCC, pese a su origen ISIC-archive, no presentan
 solapamiento MD5---; las cifras de PanDerm, DINOv2, ConvNeXt-Large,
-EfficientNetV2-Large y SigLIP-Large no se ven afectadas. Segundo, los
+EfficientNetV2-Large y SigLIP-Large no se ven afectadas. Conviene
+además precisar el alcance de esa auditoría: el hash MD5 detecta
+coincidencias exactas pero no \emph{near-duplicates} ---recortes,
+reescalados o recompresiones de una misma imagen---, de modo que lo
+verificado es la ausencia de solapamiento \emph{exacto}, no de toda
+contaminación visual posible (sección~\ref{sec:lim-leakage}). Segundo, los
 tamaños muestrales de los subgrupos Fitzpatrick V y VI ($169$ y
 $73$ imágenes respectivamente en el conjunto de test) producen
 intervalos de confianza amplios para las cifras de \emph{gap}, lo que
@@ -830,7 +839,15 @@ formulaciones requiere validación específica. Cuarto, el trabajo
 evalúa rendimiento sobre fotografías de archivos de investigación; la
 generalización a imagen real adquirida en flujos de teledermatología
 sobre cohorte hospitalaria prospectiva no se aborda y constituye una
-línea futura inmediata.
+línea futura inmediata. Quinto, la denominación de Dermapixel R0 como
+primer modelo fundacional dermatológico en español es una afirmación
+de prioridad deliberadamente acotada: designa la adaptación de un
+modelo fundacional preexistente al castellano, no un preentrenamiento
+a gran escala, y su condición de \emph{primero} se circunscribe a esa
+categoría ---pesos abiertos, texto clínico narrativo y registro en
+español--- (sección~\ref{sec:linea-spanderm}); una reivindicación de
+prioridad histórica exhaustiva excedería el alcance bibliográfico de
+este trabajo.
 
 Estas limitaciones acotan el dominio de validez de las cifras, pero
 no invalidan los patrones cualitativos identificados: la ventaja del

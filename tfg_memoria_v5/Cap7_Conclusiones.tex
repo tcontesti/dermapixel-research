@@ -409,11 +409,21 @@ condición de defensibilidad en publicaciones del campo.
 
 Las líneas abiertas que se desarrollan a continuación constituyen
 propuestas concretas con experimentos identificados, prerrequisitos
-declarados y métricas esperables. No son trabajo simplemente
-pendiente, sino aportaciones intelectuales del proyecto cuya
-ejecución requiere recursos o aprobaciones específicas. Todas
-descansan sobre las contribuciones reproducibles enumeradas en
+declarados y métricas esperables. Todas descansan sobre las
+contribuciones reproducibles enumeradas en
 sección~\ref{sec:contribuciones}.
+
+Conviene distinguir con precisión dos registros dentro de esta
+sección. Algunas subsecciones recogen trabajo ya \emph{ejecutado} y
+reportado en el capítulo~\ref{cap:resultados} ---la cobertura
+experimental sobre DermapixelAI~1.0, el eje Derm7pt + Sparse
+Autoencoders y la selección de arquitectura de segmentación---, que se
+presenta aquí como base consolidada y no como agenda pendiente. Las
+restantes ---el escalado con el banco hospitalario del HUSLL, la
+validación clínica prospectiva, el aprendizaje activo, la IA agéntica
+y el reentrenamiento multilingüe de la rama lingüística--- son agenda
+futura genuina, condicionada a recursos o aprobaciones específicas y
+no ejecutada en este trabajo.
 
 \subsection{Cobertura experimental sobre DermapixelAI~1.0: técnicas ejecutadas y pendientes}
 \label{sec:dermapixel-futuro}
@@ -667,57 +677,31 @@ muestreo y anotación de aproximadamente $200$ imágenes por concepto.
 con peor cobertura}
 \label{sec:linea-active-learning}
 
-La trilogía experimental de la rama contrastiva de Dermapixel R0
-reportada en
-sección~\ref{sec:spanderm-clip} delimita con precisión la palanca
-correcta para superar el umbral L3 \emph{accuracy}@1
-$\sim 0{,}25$ bajo \emph{zero-shot} castellano. La iteración v4
-($\text{LoRA}$ visual $r=32$ sobre los últimos doce bloques del
-ViT, régimen híbrido \emph{H6} en inferencia) alcanza
-$0{,}2475$ sobre el conjunto de test fijo, esencialmente el
-umbral fijado a priori. La iteración v5, bajo configuración
-arquitectónica idéntica y ampliación del dataset de
-entrenamiento con $15\,128$ imágenes externas genéricas, queda
-\emph{flat-to-negative} ($0{,}2079$): la escala genérica
-mejora las representaciones visuales aisladas ($+41{,}2\%$
-relativo sobre régimen visual puro \emph{H1}, $+54{,}4\%$
-relativo sobre techo \emph{Linear Probing} L2 supervisado) pero
-erosiona la alineación cross-modal sobre el registro discursivo
-castellano del archivo original. La cola larga estructural del nivel L3
-permanece sin cobertura: $327$ clases con $\leq 5$ imágenes sobre
-el vocabulario ontológico completo ($178$ con muestras $1$--$5$ en
-entrenamiento, $149$ sin imágenes en el dataset actual) no se
-rellenan tras la incorporación del dataset externo.
+La trilogía contrastiva de Dermapixel R0
+(sección~\ref{sec:spanderm-clip}) mostró que ampliar el dataset de
+entrenamiento con escala genérica externa (v5) no rellena la cola
+larga de L3 ---$327$ clases con $\leq 5$ imágenes en el vocabulario
+ontológico--- y erosiona la alineación cross-modal sobre el registro
+castellano, mientras que la iteración v4 ya alcanza el umbral
+\emph{a priori} de \emph{accuracy}@1 $\sim 0{,}25$. La palanca correcta
+para extender la cobertura no es, por tanto, más datos genéricos, sino
+aprendizaje activo dirigido \emph{in-domain}: identificar las clases
+L3 con peor cobertura en el subconjunto castellano e invertir en ellas
+anotación experta, con los candidatos generados por el prototipo
+DermApIxel sobre cohortes del HUSLL bajo revisión de la
+Dra.~R.~Taberner.
 
-La línea identificada como palanca correcta para superar
-$0{,}25$ bajo \emph{zero-shot} castellano fino consiste en una
-estrategia de aprendizaje activo dirigida \emph{in-domain}: en
-lugar de ampliar el dataset de entrenamiento de forma
-indiscriminada, se identifican las clases L3 con peor cobertura
-en el subconjunto castellano (las ocho clases críticas
-$\emph{deepened}$ en v5 ---seis tumorales más dermatitis atópica
-y urticaria--- como muestra inicial extensible) y se invierte
-esfuerzo experto en anotación dirigida sobre estas clases. Los
-candidatos a anotación se generan mediante consulta del
-prototipo DermApIxel sobre cohortes hospitalarias del HUSLL bajo
-revisión por la Dra.~R.~Taberner. El banco hospitalario HUSLL
-($\sim 22\,000$ estudios estimados tras aprobación CEIC,
-sección~\ref{sec:linea-husll}) constituye el recurso natural
-para esta estrategia: su composición clínica refleja la
-distribución diagnóstica real del Servicio de Dermatología, su
-material está alineado con el registro castellano del archivo
-Dermapixel~1.0 y su escala permite tanto el llenado dirigido de
-la cola larga L3 como la eventual activación del modelo
-supervisado directo L3 (cabeza L3 de Dermapixel R0) cuando se supere el umbral
-operativo de $\sim 30$ imágenes por clase L3
-(sección~\ref{sec:linea-spanderm}). La consecución del umbral
-operativo $0{,}25$ por v4 sobre el dataset actual hace que esta
-línea de continuación ya no se plantee como ruta hacia el
-\emph{target}, sino como ruta de generalización del sistema
-hacia cobertura clínica completa. Esta dirección queda reforzada
-por la ablación del Anexo~\ref{cap:anexoi}: la palanca pendiente
-para la rama contrastiva de Dermapixel R0 no es escala genérica de datos sino anotación
-experta \emph{in-domain} sobre las clases L3 con peor cobertura.
+El banco hospitalario HUSLL ($\sim 22\,000$ estudios tras aprobación
+CEIC, sección~\ref{sec:linea-husll}) es el recurso natural: refleja la
+distribución diagnóstica real del servicio, está alineado con el
+registro castellano del archivo Dermapixel y permite tanto el llenado
+dirigido de la cola larga como la eventual activación de la cabeza L3
+directa al superar las $\sim 30$ imágenes por clase
+(sección~\ref{sec:linea-spanderm}). Tras alcanzar v4 el umbral
+operativo, esta línea se replantea como ruta de generalización hacia
+cobertura clínica completa, no hacia el \emph{target}. La ablación del
+Anexo~\ref{cap:anexoi} la refuerza: la palanca pendiente es anotación
+experta \emph{in-domain}, no escala genérica de datos.
 
 \subsection{Selección de arquitectura para segmentación promptable}
 \label{sec:linea-seg-arquitectura}

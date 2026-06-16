@@ -343,8 +343,10 @@ La partición \emph{case-aware} del dataset
 ($891 / 157 / 41$ imágenes en \emph{train/val/test}) es
 metodológicamente correcta para evitar fuga de información entre
 imágenes del mismo caso clínico, pero produce un conjunto de test
-reducido ($41$ imágenes) que limita la potencia estadística de
-los contrastes realizados sobre él. La explotación experimental
+reducido ($41$ imágenes en el \emph{split} de producción; los
+contrastes por nivel ontológico se evalúan sobre el subconjunto
+filtrado, $N = 36$ en L1/L2 y $N = 28$ en L3) que limita la potencia
+estadística de los contrastes realizados sobre él. La explotación experimental
 sistemática sobre DermapixelAI~1.0 se ha pospuesto al periodo
 posterior al cierre de este documento por esta razón. En consecuencia,
 las conclusiones comparativas sobre el dataset ---en particular la
