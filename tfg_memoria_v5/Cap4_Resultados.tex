@@ -1682,13 +1682,11 @@ semillas) figura en el Anexo~\ref{cap:anexoa}
 
 \subsection{Resultados principales L2}
 
-Las cifras corresponden a media $\pm$ desviación sobre tres semillas
-($\{42, 43, 44\}$), con selección por máxima BAcc de validación
-(\emph{best val checkpoint}). Sobre el test L2
-($N_{\mathrm{test}} = 36$, $38$ clases), Dermapixel R0 alcanza
-Acc@1 $= 0{,}250 \pm 0{,}000$, BAcc $= 0{,}363 \pm 0{,}007$ y
-AUROC $= 0{,}855 \pm 0{,}006$. Los resultados fueron estables entre las
-tres semillas y mostraron un sobreajuste leve; el análisis
+Sobre el conjunto de test L2, Dermapixel R0 alcanza una BAcc de
+$0{,}363 \pm 0{,}007$ y una AUROC de $0{,}855 \pm 0{,}006$ (media
+$\pm$ desviación sobre tres semillas), con comportamiento estable
+entre ellas y sobreajuste leve. La tabla~\ref{tab:dermapixel-spanderm-comp}
+desglosa la comparación con el sondeo lineal y DermLIP v2; el análisis
 \emph{best-checkpoint} frente a las últimas épocas figura en el
 Anexo~\ref{cap:anexoi}.
 
@@ -1781,32 +1779,20 @@ larga se mantiene como cautela transversal.
 \subsection{Diseño experimental}
 
 La rama contrastiva sigue el patrón dual-encoder estilo
-CLIP~\cite{clip2021}: encoder visual de $1\,024$-D (PanDerm Large,
-ViT-L/16, CLS \emph{pooling}), encoder textual multilingüe de $768$-D
-(\texttt{intfloat/multilingual-e5-base}), proyecciones lineales con
-normalización L2 a un espacio compartido de $512$-D y pérdida InfoNCE
-bidireccional con temperatura aprendible. Frente a DermLIP, sustituye el
-encoder textual anglosajón (PubMedBERT) por uno multilingüe adaptado al
-lenguaje clínico castellano (justificación frente a un \emph{wrapper}
-inglés con traducción ES--EN en el Anexo~\ref{cap:anexoi}). Se entrena
-sobre DermapixelAI~1.0 (Anexo~\ref{cap:anexoc}) bajo el \emph{split}
-per-case estratificado por L1 ($854$/$107$/$101$ imágenes;
-$521$/$66$/$66$ casos), idéntico al de las
-secciones~\ref{sec:dermapixel-results} y~\ref{sec:dermapixel-zs} y
-fijado por manifiesto SHA-256. Para amplificar la señal textual se
-generan, mediante un modelo de lenguaje grande, ocho perspectivas
-clínicas por imagen que, combinadas con nueve variantes base, producen
-$\sim 22\,000$ pares (imagen, texto). Las cinco iteraciones aíslan por
-construcción tres palancas: adaptación textual (v1$\to$v2, LoRA sobre
-E5), adaptación visual (v2$\to$v3, LoRA $r=16$ sobre los últimos cuatro
-bloques del ViT; v3$\to$v4, $r=32$ sobre los últimos doce) y escala del
-dataset (v4$\to$v5, $15\,128$ imágenes externas genéricas con
-\emph{captions} sintéticas bajo idéntica LoRA que v4). La configuración
-completa y los detalles de generación de \emph{captions}, costes y
-tiempos figuran en los Anexos~\ref{cap:anexoa}
-(tabla~\ref{tab:spanderm-config}) y~\ref{cap:anexoi}. El objetivo
+CLIP~\cite{clip2021}: un encoder visual basado en PanDerm Large y un
+encoder textual multilingüe adaptado al lenguaje clínico castellano,
+en sustitución del encoder anglosajón de DermLIP (la justificación
+frente a un \emph{wrapper} inglés con traducción ES--EN, en el
+Anexo~\ref{cap:anexoi}). Se entrenan cinco iteraciones que aíslan por
+construcción tres palancas: adaptación textual, adaptación visual y
+aumento de escala con imágenes externas genéricas. El objetivo
 experimental, fijado a priori, es L3 \emph{accuracy}@1 $\geq 0{,}25$ en
-\emph{zero-shot} sobre las $54$ clases L3 representadas en el test.
+\emph{zero-shot} sobre las $54$ clases L3 representadas en el test. La
+arquitectura completa, los hiperparámetros, las particiones
+\emph{case-aware} y los detalles de generación de \emph{captions},
+costes y tiempos figuran en los Anexos~\ref{cap:anexoa}
+(tabla~\ref{tab:spanderm-config}), \ref{cap:anexoc}
+y~\ref{cap:anexoi}.
 
 \subsection{Evolución v1$\to$v5}
 
