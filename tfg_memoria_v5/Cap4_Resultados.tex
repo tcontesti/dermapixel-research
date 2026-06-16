@@ -131,24 +131,20 @@ MSKCC         & Large  & $\mathbf{0{,}746}$ & $0{,}644$      & $\mathbf{0{,}751}
 \end{tabular}
 \end{table}
 
-Sobre el conjunto y la configuración evaluados (estimación puntual de
-una semilla; sección~\ref{sec:estadistica}), PanDerm Large supera a
-PanDerm Base en accuracy, AUROC y F1 ponderada sobre los diez datasets.
-La mejora media absoluta alcanza $+4{,}1$\,pp en accuracy, $+9{,}0$\,pp
-en \emph{balanced accuracy} y $+3{,}6$\,pp en AUROC
-(figura~\ref{fig:lp-per-dataset}). La única excepción aparece en la
-BAcc de MSKCC, donde PanDerm Base obtiene una ventaja marginal de
-$1{,}0$\,pp ($0{,}654$ frente a $0{,}644$).
+Sobre los diez datasets evaluados (estimación de semilla única,
+sección~\ref{sec:estadistica}), PanDerm Large supera a PanDerm Base en
+cuatro de las cinco métricas, con mejoras medias de $+4{,}1$\,pp en
+accuracy, $+9{,}0$\,pp en \emph{balanced accuracy} y $+3{,}6$\,pp en
+AUROC (figura~\ref{fig:lp-per-dataset}); la única excepción es la BAcc
+de MSKCC ($-1{,}0$\,pp).
 
-La mejora es máxima en Dermnet ($+10{,}0$\,pp accuracy),
-WSI~patches ($+8{,}7$\,pp) y PAD-UFES-20 ($+4{,}7$\,pp), conjuntos de
-mayor diversidad de clases, modalidades o condiciones de adquisición:
-el incremento de capacidad del encoder beneficia especialmente los
-problemas de generalización más complejos. El mejor rendimiento
-absoluto se da en histopatología (WSI~patches), con accuracy $0{,}868$
-y AUROC $0{,}991$. Dermnet queda marcado con asterisco por estar
-íntegramente contenido en Derm1M ($100\%$ por hash MD5;
-sección~\ref{sec:auditoria-resultados}).
+Las mayores ganancias aparecen en Dermnet, WSI~patches y PAD-UFES-20
+---los escenarios más heterogéneos del benchmark---, lo que sugiere
+que el aumento de capacidad del encoder beneficia especialmente la
+generalización compleja. Dermnet, no obstante, está íntegramente
+contenido en Derm1M ($100\%$ por hash MD5;
+sección~\ref{sec:auditoria-resultados}) y su cifra debe leerse con ese
+\emph{caveat}.
 
 \begin{figure}[H]
 \centering
@@ -160,14 +156,18 @@ promedio) a favor de PanDerm Large.}
 \label{fig:lp-per-dataset}
 \end{figure}
 
-En conjunto, estos resultados indican que el beneficio del
-preentrenamiento dermatológico no se limita al dataset de origen,
-sino que se transfiere de forma consistente a múltiples cohortes
-externas, modalidades de imagen y condiciones de adquisición. Las
-medias por columna agregan datasets de taxonomía, modalidad y
-prevalencia heterogéneas, por lo que se interpretan como brújula
-descriptiva de la tendencia y no como marcador absoluto del mejor
-modelo (sección~\ref{sec:agregacion-datasets}).
+En conjunto, estos resultados indican que las representaciones
+aprendidas por la familia PanDerm transfieren de forma consistente más
+allá del dataset de origen, a múltiples cohortes externas, modalidades
+de imagen y condiciones de adquisición. La ventaja de PanDerm Large se
+observa en las tres modalidades evaluadas ---clínica, dermatoscópica e
+histopatológica---, lo que sugiere que el aumento de capacidad del
+encoder produce representaciones transferibles más allá de una única
+modalidad de adquisición. Las medias por columna agregan datasets de
+taxonomía, modalidad y prevalencia heterogéneas, por lo que se
+interpretan como brújula descriptiva de la tendencia y no como
+marcador absoluto del mejor modelo
+(sección~\ref{sec:agregacion-datasets}).
 
 \section{Benchmark comparativo entre familias}
 \label{sec:benchmark}
@@ -228,14 +228,13 @@ PanDerm Large supera en accuracy a la mejor CNN supervisada sobre los
 tres datasets (figura~\ref{fig:lp-benchmark}), con ventaja no uniforme:
 $+0{,}5$\,pp en HAM10000 (dermatoscopia estandarizada) frente a
 $+8{,}2$\,pp en PAD-UFES-20 (fotografía móvil) y $+2{,}9$\,pp en DDI.
-El patrón en AUROC es similar salvo en HAM10000, donde ConvNeXt-Large
-($0{,}967$) supera a PanDerm Large por $1{,}3$\,pp y SigLIP-Large
-SO400M logra la mejor accuracy y AUROC ($0{,}900 / 0{,}971$), posible
-reflejo de la proximidad entre las imágenes dermatoscópicas
-estandarizadas y su preentrenamiento a gran escala (hipótesis no
-verificable con los datos disponibles). PanDerm Large encabeza, en
-cambio, en PAD-UFES-20 y DDI ---los datasets clínicos más alejados del
-dominio web--- sobre el conjunto y la configuración evaluados.
+HAM10000 constituye una excepción parcial: SigLIP-Large SO400M obtiene
+la mejor accuracy y AUROC, y ConvNeXt-Large supera ligeramente a
+PanDerm Large en AUROC ($-1{,}3$\,pp). Este comportamiento sugiere que
+los beneficios del preentrenamiento de dominio son menores en entornos
+dermatoscópicos altamente estandarizados; en cambio, PanDerm Large
+encabeza en PAD-UFES-20 y DDI, los datasets clínicos más alejados del
+dominio web.
 
 \begin{figure}[H]
 \centering
@@ -247,11 +246,17 @@ PAD-UFES-20 ($+8{,}2$\,pp Acc) y DDI ($+8{,}6$\,pp AUROC).}
 \label{fig:lp-benchmark}
 \end{figure}
 
-El preentrenamiento dermatológico ofrece, por tanto, una ventaja
-creciente con la heterogeneidad del dominio: SigLIP iguala o supera a
-PanDerm Large en escenarios dermatoscópicos muy estandarizados, pero
-los modelos especializados generalizan de forma más robusta sobre
-datasets clínicos externos alejados del dominio web.
+Estos resultados muestran que no existe una jerarquía universal entre
+familias de modelos: los sistemas visión-lenguaje generalistas pueden
+igualar o superar a los especializados en escenarios dermatoscópicos
+muy estandarizados, mientras que los modelos dermatológicos mantienen
+una ventaja clara cuando aumenta la variabilidad clínica y de
+adquisición. El preentrenamiento de dominio ofrece, por tanto, una
+ventaja \emph{creciente} con la heterogeneidad del dominio, no una
+superioridad absoluta ---lectura que anticipa la tesis de
+especialización por tarea desarrollada en el
+capítulo~\ref{cap:discusion}
+(sección~\ref{sec:disc-especializacion}).
 
 \section{Ajuste fino supervisado}
 \label{sec:ft-results}
