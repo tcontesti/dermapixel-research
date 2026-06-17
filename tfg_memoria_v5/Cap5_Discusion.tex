@@ -28,27 +28,37 @@ el diseño de sistemas dermatológicos basados en modelos fundacionales.
 \label{sec:disc-especializacion}
 
 La síntesis transversal de los experimentos sobre DermapixelAI~1.0
-(tabla~\ref{tab:dermapixel-extra-sintesis}) muestra que ningún
-codificador ni clasificador único domina todos los escenarios, sino que
-cada tarea favorece una combinación distinta. PanDerm Large encabeza la
-mayor parte de los escenarios de transferencia visual; DermLIP v2 y
-Dermapixel R0 destacan sobre la cardinalidad clínica intermedia L2; el
-\emph{retrieval} $k$-NN con índice FAISS resulta competitivo sobre L3 por
-efecto de la cola larga; SAM2.1 domina la segmentación; los
-\emph{ensembles} aportan en el cribado de seguridad de melanoma; e incluso
-un codificador generalista no médico (CLIP-L) puede liderar la AUROC en
-algún nivel pese a carecer de preentrenamiento clínico. El corolario es
-conceptual antes que numérico: la elección del modelo no se resuelve
-en abstracto, sino en función del objetivo ---clasificación general,
-subcategoría clínica, cola larga diagnóstica, ranking probabilístico,
-segmentación o cribado de seguridad---. No se identifica un modelo
-universalmente superior, sino una especialización por tarea; la
-pregunta operativa deja de ser \emph{qué modelo es el mejor} y pasa a
-ser \emph{qué combinación de codificador, adaptación y clasificador
-conviene a esta tarea y a este nivel ontológico}. Las tres lecturas
-que siguen ---por nivel ontológico, por estrategia de adaptación y por
-paradigma de clasificación--- desarrollan la evidencia que sostiene
-esta especialización.
+(tabla~\ref{tab:dermapixel-extra-sintesis}) muestra que no existe un
+método universalmente superior para todas las tareas evaluadas. Los
+distintos modelos alcanzan su mejor rendimiento en escenarios diferentes
+según el nivel ontológico, la modalidad de entrada y el criterio de
+evaluación considerado. Así, los codificadores especializados destacan en
+transferencia visual y clasificación supervisada, las arquitecturas
+contrastivas muestran ventajas en recuperación multimodal y búsqueda
+semántica, los métodos basados en recuperación resultan competitivos en
+escenarios de cola larga diagnóstica y los \emph{ensembles} aportan
+sensibilidad adicional en tareas de seguridad clínica como el cribado de
+melanoma.
+
+Esta diversidad de resultados sugiere que el problema no puede
+formularse en términos de un único modelo vencedor. La elección óptima
+depende del objetivo perseguido: clasificación general, subcategorización
+clínica, recuperación de casos similares, segmentación, razonamiento
+multimodal o maximización de sensibilidad diagnóstica. En consecuencia,
+la pregunta relevante deja de ser \emph{qué modelo es el mejor} en
+términos absolutos y pasa a ser \emph{qué combinación de codificador,
+estrategia de adaptación y mecanismo de inferencia resulta más adecuada
+para una tarea concreta}.
+
+Este hallazgo conecta con una idea recurrente a lo largo del
+capítulo~\ref{cap:resultados}: a medida que los modelos fundacionales
+alcanzan niveles elevados de capacidad representacional, las diferencias
+de rendimiento dependen cada vez más de cómo se formula el problema, de
+la estructura de los datos y del objetivo clínico perseguido que de la
+arquitectura aislada del modelo. Las subsecciones siguientes desarrollan
+esta conclusión desde tres perspectivas complementarias: el nivel
+ontológico de clasificación, la estrategia de adaptación y el paradigma
+de inferencia empleado.
 
 \subsubsection{Especialización por nivel ontológico}
 \label{sec:disc-nivel-ontologico}
@@ -115,22 +125,20 @@ Dermapixel R0 (sección~\ref{sec:linea-spanderm}): en régimen de bajo
 $N$, la adaptación de bajo rango y la combinación de codificadores con
 cabezas ligeras son preferibles al ajuste fino denso clásico.
 
-Más allá de sus métricas concretas, Dermapixel R0 constituye una
-prueba de viabilidad. Los resultados muestran que un modelo
-dermatológico adaptado al castellano puede construirse mediante
-técnicas de adaptación eficiente sobre modelos fundacionales
-preexistentes, sin disponer de millones de imágenes ni de un
-presupuesto computacional comparable al del preentrenamiento original.
-Mientras que el preentrenamiento de los modelos de base exige los
-recursos de gran escala ---grandes datasets y cómputo--- propios de
-grupos de investigación especializados, la evidencia de este trabajo
-indica que, sobre esos pesos liberados, una institución hospitalaria y
-un grupo académico pueden construir un demostrador especializado con
-recursos modestos. Este resultado reduce la barrera de entrada para
-instituciones que deseen desarrollar modelos adaptados a contextos
-lingüísticos o clínicos específicos, y reposiciona a Dermapixel R0
----más que como un sistema de máximo rendimiento--- como evidencia de
-que la especialización dermatológica de bajo coste es factible.
+Más allá de sus métricas concretas, Dermapixel R0 constituye una prueba
+de viabilidad de la adaptación eficiente de modelos fundacionales en
+entornos hospitalarios. Los resultados muestran que es posible construir
+un modelo dermatológico adaptado al castellano mediante técnicas PEFT
+sobre pesos previamente entrenados, sin necesidad de reproducir la
+escala de datos ni de cómputo del preentrenamiento original. Mientras
+que el entrenamiento fundacional sigue estando reservado a grandes
+consorcios de investigación, la evidencia obtenida indica que
+instituciones sanitarias y grupos académicos pueden desarrollar
+adaptaciones especializadas con recursos sustancialmente más modestos.
+En este sentido, Dermapixel R0 debe interpretarse menos como un sistema
+de máximo rendimiento y más como una demostración de que la
+especialización dermatológica de bajo coste resulta técnicamente
+factible.
 
 \subsubsection{Retrieval frente a clasificación paramétrica}
 \label{sec:disc-retrieval}
@@ -141,7 +149,11 @@ Primero, CLIP-L-336, un codificador generalista sin material
 biomédico en su preentrenamiento, encabeza la AUROC bajo sondeo lineal
 sobre L2 y L3 (sección~\ref{sec:dermapixel-extra-encoders}), lo que
 matiza la hipótesis de especialización de dominio cuando la métrica es
-el ranking probabilístico. Segundo, sustituir el clasificador
+el ranking probabilístico. Este resultado no contradice la ventaja
+global del preentrenamiento dermatológico, sino que pone de manifiesto
+que la AUROC y la BAcc capturan propiedades distintas del espacio de
+representación: la primera mide la ordenación probabilística y la
+segunda el acierto equilibrado por clase. Segundo, sustituir el clasificador
 paramétrico por \emph{retrieval} $k$-NN con índice FAISS sobre los
 mismos \emph{embeddings} de PanDerm Large
 (sección~\ref{sec:dermapixel-extra-faiss}) supera al sondeo lineal en
@@ -173,6 +185,31 @@ organización conforme a la ontología jerárquica L1/L2/L3 habilita la
 comparación de modelos a varios niveles de granularidad sobre un mismo
 material, y su disponibilidad documentada lo sitúa como punto de partida
 para evaluar modelos fundacionales sobre dermatología clínica en español.
+
+Más aún, DermapixelAI~1.0 no se limita a proporcionar un nuevo conjunto
+de imágenes dermatológicas, sino que habilita preguntas experimentales
+que los \emph{benchmarks} clásicos no permiten abordar. La estructura
+jerárquica L1/L2/L3 posibilita estudiar el comportamiento de los modelos
+a diferentes niveles de granularidad diagnóstica; la disponibilidad
+simultánea de imagen y texto clínico en castellano permite evaluar
+recuperación multimodal y alineamiento \emph{cross-modal}; y la auditoría
+explícita frente a Derm1M garantiza que los experimentos de
+transferencia, \emph{zero-shot} y adaptación se realizan en un escenario
+libre de contaminación conocida. En este sentido, DermapixelAI~1.0 actúa
+simultáneamente como \emph{benchmark}, banco de pruebas para modelos
+fundacionales dermatológicos y demostrador metodológico para futuros
+estudios en español.
+
+A diferencia de los grandes repositorios internacionales, concebidos
+principalmente para clasificación supervisada, DermapixelAI~1.0 ha sido
+diseñado desde su origen para soportar tareas heterogéneas
+---clasificación, recuperación multimodal, razonamiento asistido por RAG
+y adaptación eficiente de modelos fundacionales---, aproximándose más a
+las necesidades reales de un entorno clínico digital. Esta orientación lo
+convierte, antes que en un \emph{dataset}, en la plataforma experimental
+sobre la que se han generado los resultados de las
+secciones~\ref{sec:dermapixel-results}--\ref{sec:dermapixel-extra-sintesis}.
+
 La interpretación debe acotarse: se trata de una primera versión de
 tamaño limitado y con una cola larga marcada a nivel L3, por lo que las
 cifras derivadas requieren la estimación robusta discutida en
@@ -183,29 +220,55 @@ la práctica asistencial.
 \label{sec:disc-eficiencia}
 
 Si el preentrenamiento de dominio es tan determinante, cabe
-preguntarse cuántas etiquetas hacen falta para explotarlo. La curva
-de eficiencia en etiquetas (sección~\ref{sec:label-eff-results},
-tabla~\ref{tab:label-eff}) responde con un fenómeno propio de
-encoders preentrenados sobre datasets masivos del dominio: el
-rendimiento sobre HAM10000 satura con muy pocos datos etiquetados.
-Con $1\%$ del conjunto de entrenamiento ($82$ imágenes),
-PanDerm Large alcanza $0{,}850$ accuracy y $0{,}918$ AUROC. Eso
-equivale al $95{,}7\%$ y al $96{,}2\%$ del rendimiento con el
-conjunto completo. Con $5\%$ ($410$ imágenes), la AUROC sube a
-$0{,}932$, el $97{,}7\%$ del máximo, a sólo $2{,}2$\,pp de la
-cifra con $100\%$. La BAcc escala más despacio y no alcanza su
-máximo hasta el $50\%$ del conjunto ($0{,}589$), lo que es
-consistente con la dependencia de las clases minoritarias respecto
-al volumen total.
+preguntarse cuántas etiquetas son realmente necesarias para
+explotarlo. La curva de eficiencia en etiquetas
+(sección~\ref{sec:label-eff-results}, tabla~\ref{tab:label-eff})
+muestra un comportamiento característico de los modelos fundacionales:
+la mayor parte de la capacidad discriminativa ya está codificada en las
+representaciones aprendidas durante el preentrenamiento, de modo que el
+clasificador supervisado sólo necesita una pequeña cantidad de ejemplos
+para adaptarse a una tarea concreta.
 
-Sobre PAD-UFES-20 ($N_{\mathrm{train}} = 1\,493$ con el conjunto
-completo) la saturación es aún más temprana: con $14$ imágenes
-($1\%$) se alcanza $0{,}740$ accuracy y $0{,}907$ AUROC, el
-$95{,}5\%$ del AUROC con el conjunto completo. La implicación
-clínica es directa. En contextos con pocos datos etiquetados
----enfermedades raras, centros de bajo volumen, subgrupos poco
-representados--- una cabeza lineal sobre PanDerm Large preentrenado
-es una opción técnicamente defendible.
+Sobre HAM10000, PanDerm Large alcanza $0{,}850$ de \emph{accuracy} y
+$0{,}918$ de AUROC utilizando únicamente el $1\%$ del conjunto de
+entrenamiento ($82$ imágenes), lo que equivale al $95{,}7\%$ y al
+$96{,}2\%$ del rendimiento obtenido con el conjunto completo. Con sólo
+el $5\%$ de los datos ($410$ imágenes) la AUROC asciende a $0{,}932$,
+el $97{,}7\%$ del máximo observado y a sólo $2{,}2$\,pp de la cifra con
+el $100\%$. La \emph{balanced accuracy} continúa mejorando con el
+incremento de muestras y no alcanza su mejor valor ($0{,}589$) hasta el
+$50\%$ del conjunto, reflejando que las clases minoritarias siguen
+beneficiándose de un mayor volumen de ejemplos.
+
+El mismo patrón aparece sobre PAD-UFES-20 ($N_{\mathrm{train}} = 1\,493$
+con el conjunto completo). Con únicamente $14$ imágenes de entrenamiento
+($1\%$), PanDerm Large obtiene $0{,}740$ de \emph{accuracy} y una AUROC
+de $0{,}907$, equivalente al $95{,}5\%$ del rendimiento alcanzado con
+todas las etiquetas disponibles. La rápida saturación observada en ambos
+datasets sugiere que gran parte del conocimiento visual relevante para la
+dermatología ya se encuentra internalizado en las representaciones del
+codificador.
+
+Este comportamiento tiene una consecuencia práctica importante. En los
+modelos supervisados clásicos, la obtención de nuevas etiquetas suele
+constituir la principal vía para mejorar el rendimiento; en cambio, en
+los modelos fundacionales dermatológicos la rentabilidad marginal de
+cada nueva etiqueta disminuye rápidamente una vez superado un umbral
+relativamente bajo de ejemplos. A partir de ese punto, la calidad del
+preentrenamiento y la adecuación del dominio pueden resultar más
+determinantes que el simple aumento del tamaño del conjunto etiquetado.
+
+Desde una perspectiva clínica, el resultado es especialmente relevante
+para enfermedades raras, centros con bajo volumen asistencial o
+subgrupos infrarrepresentados, donde la obtención de miles de
+anotaciones expertas es poco realista. Los datos sugieren que una
+estrategia basada en codificadores fundacionales especializados y
+cabezas ligeras puede ofrecer rendimientos cercanos al máximo alcanzable
+incluso en escenarios de escasez de datos. Esta observación refuerza una
+de las ideas centrales del trabajo: en dermatología, el cuello de
+botella deja de ser necesariamente la disponibilidad de etiquetas y pasa
+a ser, en muchos escenarios, la calidad del preentrenamiento del que se
+parte.
 
 \subsection{Sondeo lineal frente a ajuste fino}
 \label{sec:disc-lp-vs-ft}
