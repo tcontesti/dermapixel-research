@@ -2113,82 +2113,10 @@ uso previsto del sistema (clasificación, recuperación o soporte
 explicativo), en línea con la lectura interpretativa de la
 sección~\ref{sec:disc-especializacion}.
 
-
-\section{Aplicación de seguridad: ensemble para detección de melanoma}
-\label{sec:ensemble-results}
-
-Más allá de la comparación de modelos individuales, resulta
-relevante explorar si la complementariedad entre arquitecturas puede
-explotarse para maximizar la sensibilidad diagnóstica. Esta cuestión
-es especialmente importante en melanoma, donde el coste clínico de
-un falso negativo es potencialmente muy superior al de un falso
-positivo. Por ello se evalúa un \emph{ensemble} orientado
-explícitamente a maximizar el \emph{recall} de melanoma sobre
-HAM10000.
-
-Se combinan tres clasificadores independientes sobre el
-\emph{split} de test de HAM10000 ($N = 1\,232$ imágenes,
-$70$ melanomas):
-M1 (PanDerm Large \emph{fine-tuned} sobre HAM10000), SigLIP-Large
-SO400M con sondeo lineal sobre los \emph{embeddings} de
-$1\,152$ dimensiones, y M7 (clasificador unificado sobre el
-\emph{merged43} del dataset armonizado, descrito en el
-Anexo~\ref{cap:anexoh}).
-
-\begin{table}[H]
-\centering
-\footnotesize
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{0.95}
-\caption{Ensemble sobre HAM10000 ($N = 1\,232$, $70$ melanomas).
-\emph{Recall} \emph{top-3}: la clase melanoma aparece entre las
-tres primeras del ranking. FP\,mel: falsos positivos melanoma
-(imágenes no-melanoma marcadas).}
-\label{tab:ensemble}
-\begin{tabular}{lrrrrrr}
-\hline
-Configuración                   & Acc           & BAcc          & AUROC         & Mel rec.\ top-1 & Mel rec.\ top-3 & FP\,mel \\
-\hline
-M1 (PanDerm FT)                 & $0{,}919$     & $0{,}813$     & $0{,}986$     & $0{,}714$ (50/70) & $0{,}971$ (68/70) & $36$ \\
-SigLIP-L LP                     & $0{,}900$     & $0{,}776$     & $0{,}971$     & $0{,}614$ (43/70) & $0{,}986$ (69/70) & $31$ \\
-Avg M1 + SigLIP                 & $0{,}917$     & $0{,}836$     & $0{,}986$     & $0{,}686$         & $0{,}986$         & $32$ \\
-MaxMel M1 + SigLIP              & $0{,}909$     & $0{,}832$     & $0{,}985$     & $\mathbf{0{,}771}$ & $\mathbf{1{,}000}$ & $50$ \\
-OR top-3 M1 + SigLIP            & ---           & ---           & ---           & ---               & $\mathbf{1{,}000}$ (70/70) & $885$ \\
-\hline
-\end{tabular}
-\end{table}
-
-La combinación OR \emph{top-3} de M1 y SigLIP alcanza un
-\emph{recall} de melanoma del $100\%$ ($70$ de $70$), pero a costa
-de $885$ falsos positivos sobre las $1\,232$ imágenes del test: la
-sensibilidad máxima se obtiene marcando como sospechosa cerca del
-$72\%$ del conjunto, lo que reduce drásticamente la precisión y
-acota su utilidad a un escenario de \emph{cribado}, nunca de
-decisión diagnóstica.
-
-El principal hallazgo de esta sección, sin embargo, no es ese
-$100\%$ ---una cifra trivialmente alcanzable ampliando el margen de
-sospecha de cualquier clasificador--- sino la evidencia de
-complementariedad entre una arquitectura especializada (M1, PanDerm
-\emph{fine-tuned} \emph{in-domain}) y una generalista (SigLIP con
-sondeo lineal): ambas recuperan melanomas distintos. Los dos
-melanomas que M1 omite en \emph{top-3} (ISIC\_0024886.jpg e
-ISIC\_0030360.jpg) sí los recupera SigLIP, y el único melanoma que
-SigLIP no sitúa en \emph{top-3} sí lo recupera M1. Este resultado
-indica que los errores de ambos modelos no están completamente
-correlacionados ---condición necesaria para que una estrategia de
-\emph{ensemble} aporte un beneficio clínico real, y no una mera
-redundancia--- y sugiere que cada arquitectura explota
-representaciones parcialmente diferentes de la lesión. M7, evaluado
-sobre el subconjunto de $198$ imágenes con predicción simultánea de
-los tres modelos ($12$ melanomas), no recupera melanomas adicionales
-sobre el par, pero aporta cobertura sobre las $43$ clases
-ontológicas del dataset armonizado.
-
-Tres caveats acompañan la interpretación de este resultado: (i)~el
-\emph{recall} del $100\%$ es \emph{top-3}, no \emph{top-1};
-(ii)~el tamaño muestral de melanomas es $N = 70$, con intervalos
-de confianza al $95\%$ amplios; (iii)~no existe validación
-prospectiva sobre cohorte hospitalaria. El resultado se interpreta
-como prueba de concepto para un escenario de cribado oportunista,
-no como sustituto del juicio clínico.
+Como exploración aplicada orientada a seguridad clínica, se evaluó un
+\emph{ensemble} entre modelos dermatológicos y generalistas para
+maximizar la sensibilidad en melanoma; al tratarse de una característica
+del prototipo y no de un resultado central sobre modelos fundacionales,
+los detalles completos (configuración, tabla comparativa y análisis de
+complementariedad) se presentan en el Anexo~\ref{cap:anexoh}
+(sección~\ref{sec:ensemble-results}).
