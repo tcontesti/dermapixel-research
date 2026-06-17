@@ -1143,27 +1143,24 @@ base de comparación con el experimento \emph{zero-shot}
 
 Dado que parte de las etiquetas etiológicas procede de la ontología y
 no de revisión individual, se compara el sondeo lineal sobre el
-subconjunto verificado (\texttt{rosa\_verified=True}) frente al dataset
-completo en los tres niveles. Las diferencias son pequeñas,
-inconsistentes en dirección y compatibles con la variabilidad muestral
-por \emph{bootstrap} (IC95\% ampliamente solapados, sin deterioro
-consistente): la imputación etiológica sobre las $170$ imágenes no
-revisadas no degrada apreciablemente el rendimiento, lo que respalda
-el flujo de etiquetado del Anexo~\ref{cap:anexoe} (resultados
-completos en Anexo~\ref{cap:anexoj},
-tabla~\ref{tab:dermapixel-rosa}).
-
-Diversas ablaciones metodológicas adicionales sobre los mismos
-\emph{embeddings} congelados ---cabezas alternativas ($k$-NN, MLP,
-regresión logística reponderada), función de pérdida y
-\emph{Test-Time Augmentation}--- no modificaron las conclusiones
-principales y se documentan íntegramente en el
-Anexo~\ref{cap:anexoj}.
+subconjunto verificado (\texttt{rosa\_verified}) frente al dataset
+completo. Las diferencias son pequeñas, inconsistentes en dirección y
+compatibles con la variabilidad muestral: la imputación etiológica no
+degrada apreciablemente el rendimiento (resultados completos en el
+Anexo~\ref{cap:anexoj}, tabla~\ref{tab:dermapixel-rosa}). Diversas
+ablaciones adicionales sobre los mismos \emph{embeddings} (cabezas
+$k$-NN/MLP, función de pérdida, \emph{Test-Time Augmentation}) tampoco
+modifican las conclusiones y se documentan en el mismo anexo.
 
 
-\subsection{Combinación de codificadores}
+\subsection{Estrategias de adaptación más allá del sondeo lineal}
 \label{sec:dermapixel-ensemble}
 
+Más allá de la representación congelada, dos estrategias buscan mejorar
+el rendimiento sobre DermapixelAI~1.0: combinar codificadores
+complementarios y ajustar finamente el encoder.
+
+\paragraph{Combinación de codificadores.}
 Para evaluar si las representaciones de distintos codificadores son
 complementarias, se entrena una cabeza logística por codificador
 (PanDerm Base, Large y DermLIP v2; protocolo de sección~\ref{sec:lp})
@@ -1222,16 +1219,13 @@ sobre PanDerm Large, $0{,}793 \to 0{,}860$), sin que ningún
 \emph{ensemble} lo supere, en coherencia con el experimento
 \emph{zero-shot} (sección~\ref{sec:dermapixel-zs}); en L3 lidera
 PanDerm Large individual, donde la cola larga limita la señal
-complementaria. No existe, por tanto, codificador óptimo universal: la
-mejor opción depende del nivel ontológico (lectura de diseño en
-sección~\ref{sec:disc-especializacion}).
+complementaria.
 
 
-\subsection{Ajuste fino parcial del codificador}
+\paragraph{Ajuste fino parcial del codificador.}
 \label{sec:dermapixel-ft}
 \label{sec:dermapixel-ft-l1}
-
-Esta subsección replica sobre DermapixelAI~1.0 el ajuste fino
+Este protocolo replica sobre DermapixelAI~1.0 el ajuste fino
 supervisado (FT) de la sección~\ref{sec:ft-results}. El encoder es
 PanDerm Large con las dos últimas capas descongeladas ($25{,}2$\,M
 parámetros entrenables, $8{,}3\%$ del encoder) y cabeza
@@ -1281,9 +1275,16 @@ L3 (224 cls) & $0{,}179$ [$0{,}143$--$0{,}214$] & $0{,}286$ [$0{,}214$--$0{,}357
 \end{tabular}
 \end{table}
 
-El FT denso parcial mejora al sondeo lineal en L1 y L2, pero no es
-la forma de adaptación más eficiente, como revela la comparación
-directa con la adaptación de bajo rango.
+El ajuste fino denso parcial mejora al sondeo lineal en L1 y L2, pero
+no es la forma de adaptación más eficiente, como revela la comparación
+directa con la adaptación de bajo rango (subsección siguiente). En
+conjunto, ni la combinación de codificadores ni el ajuste fino
+identifican una opción óptima universal: \textbf{el rendimiento
+depende simultáneamente del nivel ontológico, de la estrategia de
+adaptación y del criterio de evaluación}, de modo que la búsqueda de un
+único codificador \emph{ganador} resulta una simplificación excesiva
+del problema (lectura de diseño en
+sección~\ref{sec:disc-especializacion}).
 
 \subsection{LoRA frente a ajuste fino denso}
 
@@ -1330,12 +1331,10 @@ que justifica la decisión arquitectónica de Dermapixel R0
 
 \subsection{Limitaciones del ajuste fino en la cola larga}
 
-Sobre el nivel L3, el FT denso parcial alcanza BAcc $0{,}184$ y
-AUROC $0{,}804$ sobre las $224$ clases efectivas, sin superar al
-sondeo lineal congelado sobre el mismo \emph{split} (BAcc $0{,}184$,
-AUROC $0{,}813$). La cola larga severa del nivel ($77\%$ de las
-clases con $\leq 5$ ejemplos) anula el beneficio del ajuste fino
-denso, lo que reserva L3 al ranking por prototipos coseno de
+Sobre el nivel L3, el ajuste fino denso parcial no supera al sondeo
+lineal congelado (BAcc $0{,}184$ en ambos): la cola larga severa del
+nivel ($77\%$ de las clases con $\leq 5$ ejemplos) anula el beneficio
+del ajuste fino, lo que reserva L3 al ranking por prototipos coseno de
 Dermapixel R0 (tabla~\ref{tab:dermapixel-spanderm-l3}) o a la
 ampliación del dataset vía banco hospitalario del HUSLL.
 
