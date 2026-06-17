@@ -380,3 +380,27 @@ BiomedCLIP                & $0{,}595$     & $0{,}532$     & $0{,}571$     & $0{,
 \hline
 \end{tabular}
 \end{table}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Test de DeLong pareado entre encoders sobre la AUROC binaria
+de malignidad (\emph{maligno} frente al resto, test de Fitzpatrick17k):
+$p$-valor a dos colas. Valores no significativos al nivel nominal
+$0{,}05$ en cursiva. \emph{Provenance}:
+\texttt{delong\_malignancy\_results.json} del repositorio de
+investigación.}
+\label{tab:delong-pares}
+\begin{tabular}{lrrrr}
+\hline
+                & DermLIP v2          & PanDerm Base        & DINOv2              & BiomedCLIP \\
+\hline
+PanDerm Large   & \emph{$0{,}55$}     & $1{,}2\times 10^{-3}$ & $4{,}2\times 10^{-5}$ & $8{,}7\times 10^{-9}$ \\
+DermLIP v2      & ---                 & $7{,}3\times 10^{-3}$ & $2{,}4\times 10^{-3}$ & $6{,}0\times 10^{-7}$ \\
+PanDerm Base    & ---                 & ---                 & \emph{$0{,}12$}     & $1{,}2\times 10^{-4}$ \\
+DINOv2          & ---                 & ---                 & ---                 & \emph{$0{,}066$} \\
+\hline
+\end{tabular}
+\end{table}

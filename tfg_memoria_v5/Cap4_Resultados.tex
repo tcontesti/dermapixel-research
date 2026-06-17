@@ -920,8 +920,9 @@ malignidad (\emph{maligno} frente al resto) en el test de
 Fitzpatrick17k ($N = 1\,658$, $226$ malignos), con regresión logística
 binaria por encoder sobre sus \emph{features} congeladas
 (sección~\ref{sec:lp}). La tabla~\ref{tab:delong-auroc} reporta la
-AUROC binaria con IC95\% por la varianza de DeLong y la
-tabla~\ref{tab:delong-pares} los $p$-valores pareados (dos colas).
+AUROC binaria con IC95\% por la varianza de DeLong; la matriz completa
+de $p$-valores pareados (dos colas) figura en el
+Anexo~\ref{cap:anexob} (tabla~\ref{tab:delong-pares}).
 
 \begin{table}[H]
 \centering
@@ -946,53 +947,26 @@ BiomedCLIP        & $0{,}8915$          & $[0{,}8672,\, 0{,}9158]$ \\
 \end{tabular}
 \end{table}
 
-\begin{table}[H]
-\centering
-\footnotesize
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{0.95}
-\caption{Test de DeLong pareado entre encoders sobre la AUROC binaria
-de malignidad: $p$-valor a dos colas. Valores no significativos al
-nivel nominal $0{,}05$ en cursiva. \emph{Provenance}:
-\texttt{delong\_malignancy\_results.json} del repositorio de
-investigación.}
-\label{tab:delong-pares}
-\begin{tabular}{lrrrr}
-\hline
-                & DermLIP v2          & PanDerm Base        & DINOv2              & BiomedCLIP \\
-\hline
-PanDerm Large   & \emph{$0{,}55$}     & $1{,}2\times 10^{-3}$ & $4{,}2\times 10^{-5}$ & $8{,}7\times 10^{-9}$ \\
-DermLIP v2      & ---                 & $7{,}3\times 10^{-3}$ & $2{,}4\times 10^{-3}$ & $6{,}0\times 10^{-7}$ \\
-PanDerm Base    & ---                 & ---                 & \emph{$0{,}12$}     & $1{,}2\times 10^{-4}$ \\
-DINOv2          & ---                 & ---                 & ---                 & \emph{$0{,}066$} \\
-\hline
-\end{tabular}
-\end{table}
-
-Tres lecturas se desprenden del contraste. \textit{Primero}, los dos
-encoders específicos de dermatología, PanDerm Large y DermLIP v2,
-empatan estadísticamente ($\Delta\mathrm{AUROC} = 0{,}0036$,
-$p = 0{,}55$): ningún dato sostiene una jerarquía entre ambos sobre
-este endpoint. \textit{Segundo}, ambos superan de forma
-significativa a los codificadores generalistas DINOv2 y BiomedCLIP
-y a PanDerm Base ($p \leq 7{,}3\times 10^{-3}$ en los seis
-contrastes), lo que respalda cuantitativamente la ventaja del
-preentrenamiento específico de dominio. \textit{Tercero}, bajo
-corrección conservadora de Bonferroni para las diez comparaciones
-(umbral $0{,}005$), todos los contrastes de los dos líderes frente
-a los generalistas se mantienen significativos salvo DermLIP~v2
-frente a PanDerm~Base ($p = 7{,}3\times 10^{-3}$, significativo solo
-a nivel nominal); las diferencias DINOv2--BiomedCLIP y
-DINOv2--PanDerm~Base no son significativas, lo que delimita qué
-distinciones del \emph{ranking} son atribuibles a señal y cuáles a
+El test de DeLong confirma que PanDerm Large y DermLIP v2 presentan un
+rendimiento estadísticamente indistinguible
+($\Delta\mathrm{AUROC} = 0{,}0036$, $p = 0{,}55$): ningún dato sostiene
+una jerarquía entre ambos sobre este \emph{endpoint}. Los dos superan,
+en cambio, de forma significativa a los encoders generalistas (DINOv2
+y BiomedCLIP) y a PanDerm Base ($p \leq 7{,}3\times 10^{-3}$ en los
+seis contrastes), lo que respalda cuantitativamente la ventaja del
+preentrenamiento específico de dominio. Tras corrección de Bonferroni
+(umbral $0{,}005$), la mayoría de estas diferencias se mantienen
+significativas, mientras que algunas comparaciones entre generalistas
+(DINOv2--BiomedCLIP, DINOv2--PanDerm~Base) dejan de ser concluyentes,
+delimitando qué distinciones del \emph{ranking} son señal y cuáles
 ruido muestral.
 
-El contraste establece, con respaldo estadístico, que entre los dos
-encoders dermatológicos no existe ganador ($p = 0{,}55$) y que ambos
-superan significativamente a los generalistas, lo que confirma
-mediante un contraste controlado por la correlación entre modelos la
-ventaja del preentrenamiento de dominio documentada de forma
-recurrente en el capítulo.
+La lectura que el contraste habilita es más sólida que coronar a un
+único modelo: los resultados no identifican un encoder dermatológico
+claramente superior, sino una \emph{familia} de encoders
+dermatológicos que supera de forma consistente a los modelos
+generalistas ---conclusión que se retoma en la discusión
+(sección~\ref{sec:disc-especializacion}).
 
 \section{Validación en castellano sobre DermapixelAI 1.0}
 \label{sec:dermapixel-results}
