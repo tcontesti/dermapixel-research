@@ -8,18 +8,21 @@
 
 La lectura agregada de los experimentos no apunta a la existencia de
 un único modelo vencedor, sino a que el rendimiento dermatológico está
-condicionado por cuatro ejes simultáneos: el nivel ontológico al que
-se evalúa, el régimen de datos etiquetados disponible, la modalidad de
-entrada y la estrategia de adaptación empleada. Bajo esta lectura, el
-cuello de botella deja de residir únicamente en la calidad del encoder
-visual y se desplaza hacia un conjunto de factores complementarios ---la
-taxonomía con la que se organizan las clases, el volumen y la calidad de
-las etiquetas, el alineamiento texto-imagen de la rama contrastiva, la
-formulación de los \emph{prompts}, la equidad entre subgrupos y la propia
-estrategia de despliegue---. Las subsecciones siguientes interpretan cada
-uno de estos ejes a partir de la evidencia empírica del
-capítulo~\ref{cap:resultados}, y la sección~\ref{sec:implicaciones}
-deriva sus consecuencias operativas.
+condicionado por cuatro dimensiones principales: el nivel ontológico al
+que se evalúa, el régimen de datos etiquetados disponible, la modalidad
+de entrada y la estrategia de adaptación empleada. Los resultados
+sugieren que, una vez alcanzado un determinado nivel de capacidad
+representacional en los codificadores visuales modernos, las diferencias
+de rendimiento dependen cada vez más de factores relacionados con los
+datos, la formulación de la tarea y la integración multimodal. Entre
+ellos destacan la taxonomía utilizada para organizar las clases, el
+volumen y la calidad de las etiquetas, el alineamiento texto-imagen de
+las ramas contrastivas, la formulación de los \emph{prompts}, la equidad
+entre subgrupos y la propia estrategia de despliegue. Las subsecciones
+siguientes interpretan estos factores a partir de la evidencia empírica
+del capítulo~\ref{cap:resultados}, mientras que la
+sección~\ref{sec:implicaciones} deriva sus implicaciones operativas para
+el diseño de sistemas dermatológicos basados en modelos fundacionales.
 
 \subsection{Ausencia de un método óptimo único: especialización por tarea}
 \label{sec:disc-especializacion}
