@@ -407,45 +407,132 @@ condición de defensibilidad en publicaciones del campo.
 \section{Líneas de investigación abiertas}
 \label{sec:lineas-abiertas}
 
-Las líneas abiertas que se desarrollan a continuación constituyen
-propuestas concretas con experimentos identificados, prerrequisitos
-declarados y métricas esperables. Todas descansan sobre las
-contribuciones reproducibles enumeradas en
-sección~\ref{sec:contribuciones}.
+Las líneas abiertas se organizan en cuatro bloques. Conviene distinguir
+dos registros: parte del trabajo aquí recogido ya está \emph{ejecutado}
+y reportado en el capítulo~\ref{cap:resultados} ---la cobertura
+experimental sobre DermapixelAI~1.0, el eje Derm7pt + Sparse Autoencoders
+y la selección de arquitectura de segmentación---, y se presenta como
+base consolidada; el resto ---escalado con el banco HUSLL, validación
+clínica prospectiva, aprendizaje activo, IA agéntica y reentrenamiento
+multilingüe de la rama lingüística--- es agenda futura genuina,
+condicionada a recursos o aprobaciones específicas. Todas descansan sobre
+las contribuciones reproducibles de la sección~\ref{sec:contribuciones}.
 
-Conviene distinguir con precisión dos registros dentro de esta
-sección. Algunas subsecciones recogen trabajo ya \emph{ejecutado} y
-reportado en el capítulo~\ref{cap:resultados} ---la cobertura
-experimental sobre DermapixelAI~1.0, el eje Derm7pt + Sparse
-Autoencoders y la selección de arquitectura de segmentación---, que se
-presenta aquí como base consolidada y no como agenda pendiente. Las
-restantes ---el escalado con el banco hospitalario del HUSLL, la
-validación clínica prospectiva, el aprendizaje activo, la IA agéntica
-y el reentrenamiento multilingüe de la rama lingüística--- son agenda
-futura genuina, condicionada a recursos o aprobaciones específicas y
-no ejecutada en este trabajo.
+\subsection{Escalado del dataset con el banco hospitalario HUSLL}
+\label{sec:linea-husll}
 
-\subsection{Cobertura experimental sobre DermapixelAI~1.0: técnicas ejecutadas y pendientes}
+La extensión de DermapixelAI~1.0 con el banco hospitalario del HUSLL
+($\sim 22\,000$ estudios en archivo, con imagen clínica y dermatoscópica
+cuando disponible, diagnóstico final, edad y sexo) es la línea de mayor
+impacto potencial sobre el rendimiento clínico real. Sus prerrequisitos
+son cuatro: aprobación del Comité Ético de Investigación Clínica de las
+Illes Balears (CEIC-IB), un protocolo de anonimización conforme al RGPD y
+la Ley Orgánica~$3/2018$, un esquema de licencia compatible con la
+naturaleza hospitalaria del material (probablemente más restrictivo que
+CC-BY-NC-SA~4.0), y un equipo de validación experta liderado por la
+Dra.~R.~Taberner con apoyo de residentes del HUSLL. Su incorporación
+habilita la cabeza L3 directa de Dermapixel R0
+(sección~\ref{sec:linea-spanderm}), la validación clínica prospectiva
+(sección~\ref{sec:linea-prospectivo}) y un análisis de equidad por
+fototipo más representativo de la población atendida por el sistema
+sanitario español que el disponible en Fitzpatrick17k.
+
+\paragraph{Aprendizaje activo \emph{in-domain} sobre la cola larga L3.}
+\label{sec:linea-active-learning}
+La trilogía contrastiva de Dermapixel R0
+(sección~\ref{sec:spanderm-clip}) mostró que ampliar el entrenamiento con
+escala genérica externa (v5) no rellena la cola larga L3 ---$327$ clases
+con $\leq 5$ imágenes--- y erosiona la alineación cross-modal castellana,
+mientras que la iteración v4 ya alcanza el umbral \emph{a priori} de
+\emph{accuracy}@1 $\sim 0{,}25$. La palanca correcta no es más datos
+genéricos, sino aprendizaje activo dirigido \emph{in-domain}: identificar
+las clases L3 peor cubiertas e invertir en ellas anotación experta, con
+candidatos generados por el prototipo sobre cohortes del HUSLL bajo
+revisión de la Dra.~R.~Taberner, hasta superar las $\sim 30$ imágenes por
+clase que activan la cabeza L3 directa
+(sección~\ref{sec:linea-spanderm}). La ablación del Anexo~\ref{cap:anexoi}
+lo refuerza: la palanca pendiente es anotación \emph{in-domain}, no escala
+genérica.
+
+\paragraph{Auditoría sistemática de \emph{leakage} extensible.}
+\label{sec:linea-leakage}
+La auditoría por hash MD5 desarrollada para Derm1M
+(sección~\ref{sec:auditoria}) es directamente extensible a los demás
+datasets de preentrenamiento del ecosistema (SkinGPT-4, MONET, MM-Skin,
+SkinFM, entre otros): aplicar el mismo procedimiento sobre los
+\emph{splits} de evaluación canónicos y publicar las cardinalidades de
+intersección, con su script auditable, permitiría recalibrar las cifras
+\emph{zero-shot} publicadas sobre esos datasets.
+
+\subsection{Dermapixel R0: adaptación dermatológica multimodal en
+español}
+\label{sec:linea-spanderm}
+
+\textbf{Dermapixel R0} constituye, a juicio de este trabajo, su
+aportación más original. Hasta donde alcanza la revisión bibliográfica
+realizada en este trabajo, es una de las primeras adaptaciones
+dermatológicas multimodales con texto clínico narrativo en español
+construidas sobre un modelo fundacional abierto. La denominación se emplea
+en sentido preciso: no es un preentrenamiento fundacional a gran escala
+---como PanDerm o Derm1M---, sino la adaptación de un modelo fundacional
+preexistente (PanDerm Large) al registro clínico en castellano; el
+calificativo \emph{primero} se acota a esa categoría ---pesos abiertos,
+texto clínico narrativo y registro en español--- y no a una prioridad
+histórica absoluta. Su relevancia no reside en una métrica de máximo
+rendimiento ---es, por diseño, una versión base (R0) sobre un dataset
+reducido, un punto de partida y no un modelo terminado---, sino en lo que
+demuestra: que un modelo dermatológico especializado en castellano puede
+construirse sobre un modelo fundacional liberado mediante adaptación
+eficiente, con un presupuesto de cómputo y datos al alcance de una
+institución hospitalaria y un grupo académico.
+
+Dermapixel R0 se inicializa desde PanDerm Large, se adapta sobre
+DermapixelAI~1.0 y se articula en dos ramas complementarias. La rama
+\textbf{supervisada} ejecuta una cabeza L2 ($38$ clases) con LoRA $r=16$
+($524\,$K parámetros, $0{,}17\%$ del encoder), que reporta
+BAcc~$=0{,}363 \pm 0{,}007$ y AUROC~$=0{,}855 \pm 0{,}006$ sobre L2
+($+19{,}5$\,pp BAcc sobre el sondeo lineal congelado, AUROC en empate
+estadístico con DermLIP v2), con ranking L3 por prototipos coseno
+(Acc@1~$=0{,}167$; sección~\ref{sec:dermapixel-spanderm-v0}). La cabeza L3
+\emph{directa} ($251$ diagnósticos) queda condicionada al banco HUSLL: su
+activación exige $\geq 30$ imágenes por clase, umbral que DermapixelAI~1.0
+no satisface en aislamiento ($178$ entradas L3 con $\leq 5$ imágenes). La
+rama \textbf{zero-shot multimodal} (dual-encoder estilo CLIP, encoder
+visual PanDerm Large + textual \texttt{multilingual-e5-base}) ejecuta
+cinco iteraciones (sección~\ref{sec:spanderm-clip}): v4 alcanza L3
+\emph{accuracy}@1 $=0{,}2475$ (umbral \emph{a priori} $0{,}25$), v5
+documenta una ablación negativa de escala ($0{,}2079$) y v2 logra
+recuperación cross-modal con \emph{lift} de $\mathbf{14{,}0\times}$
+($i2t$ R@$5=0{,}654$), con calibración por \emph{temperature
+scaling}~\cite{guo2017} que reduce el ECE L3 un $97\%$. Ambas ramas operan
+en regímenes de uso distintos (vocabulario abierto frente a cerrado) y se
+integran como módulos paralelos del prototipo (Anexo~\ref{cap:anexoh}). En
+conjunto, Dermapixel R0 traslada al dominio una conclusión más amplia: la
+frontera de la especialización ya no la marca el acceso a grandes
+infraestructuras de preentrenamiento, sino la disponibilidad de datos
+clínicos bien curados y de un protocolo de adaptación adecuado, replicable
+por otras instituciones con archivos clínicos en su propia lengua.
+
+\paragraph{Cobertura experimental sobre DermapixelAI~1.0: técnicas
+ejecutadas y pendientes.}
 \label{sec:dermapixel-futuro}
-
-Las secciones~\ref{sec:dermapixel-results}
-y~\ref{sec:dermapixel-zs} del capítulo~\ref{cap:resultados} evalúan
-PanDerm Base, PanDerm Large, DermLIP v2, SigLIP-SO400M y BiomedCLIP
-sobre DermapixelAI~1.0 exclusivamente como extractores de
-\emph{features} congelados, en combinación con cabezas paramétricas
-ligeras (regresión logística, $k$-NN, MLP de $512$ unidades) o con
-clasificación contrastiva \emph{zero-shot}. El espacio de hipótesis
-no explorado sobre el dataset en castellano incluye un conjunto de
-técnicas de \emph{transfer learning} denso que la literatura sobre
-modelos fundacionales en imagen médica documenta como aportando
-incrementos típicos de $10$ a $20$\,pp en BAcc respecto al sondeo
-lineal congelado, en línea con los $+47{,}1$\,pp BAcc sobre
-HAM10000 y $+19{,}4$\,pp BAcc sobre PAD-UFES-20 cuantificados en
-la sección~\ref{sec:ft-results}. La presente sección documenta de
-forma explícita estas técnicas pendientes y la cifra esperable
-sobre L2 (38 clases) tras su aplicación, condicionada a la
-disponibilidad del banco hospitalario HUSLL como ampliación del
-dataset.
+Las secciones~\ref{sec:dermapixel-results} y~\ref{sec:dermapixel-zs}
+evalúan los codificadores sobre DermapixelAI~1.0 como extractores
+congelados con cabezas ligeras o clasificación \emph{zero-shot}, siguiendo
+el protocolo estándar de la literatura que cuantifica limpiamente el valor
+del preentrenamiento. La tabla~\ref{tab:dermapixel-pendiente} resume el
+estado de las técnicas de \emph{transfer learning} sobre el dataset: el
+ajuste fino denso, la adaptación LoRA de Dermapixel R0, el \emph{Test-Time
+Augmentation}, el ensemble multi-codificador y la pérdida focal están
+\emph{ejecutados} y reportados en el capítulo~\ref{cap:resultados};
+permanecen pendientes la línea CBM sobre conceptos SkinCon (condicionada a
+anotación, Anexo~\ref{cap:anexof}) y la extensión vía banco HUSLL
+(bloqueada por la revisión CEIC). Bajo aplicación combinada de las
+técnicas pendientes y la ampliación del dataset hasta superar el umbral
+L3, la cifra esperable para un clasificador desplegable sobre L2 en
+castellano se estima en BAcc entre $0{,}45$ y $0{,}55$; es una estimación
+prospectiva, no un compromiso, y queda condicionada a la disponibilidad
+efectiva del banco hospitalario.
 
 \begin{table}[H]
 \centering
@@ -474,355 +561,87 @@ Banco hospitalario HUSLL ($\sim 22$\,K) & Datos                  & $3$--$6$ mese
 \end{tabular}
 \end{table}
 
-La elección de evaluar sobre encoder congelado en las
-secciones~\ref{sec:dermapixel-results} y~\ref{sec:dermapixel-zs}
-sigue el protocolo estándar de la literatura sobre modelos
-fundacionales en imagen médica, que prioriza la cuantificación
-limpia del valor del preentrenamiento sobre datos del dominio sin
-contaminación por hiperparámetros específicos de ajuste fino. La
-familia PanDerm~\cite{panderm2025}, DermLIP~\cite{derm1m} y
-BiomedCLIP~\cite{biomedclip} reportan sus cifras principales bajo
-este protocolo, lo que permite la comparación directa con la
-literatura. Los métodos pendientes recogidos en la
-tabla~\ref{tab:dermapixel-pendiente} se concentran tras el cierre
-experimental del presente trabajo en la extensión del dataset vía
-banco hospitalario HUSLL (bloqueada por la revisión ética del
-CEIC) y en la línea de modelos de cuello de botella conceptual
-(CBM) sobre conceptos SkinCon, condicionada a la anotación
-dermatológica detallada en el Anexo~\ref{cap:anexof}. Las
-restantes técnicas (ajuste fino denso L1$+$L2$+$L3,
-adaptación LoRA de Dermapixel R0, \emph{Test-Time Augmentation},
-ensemble multi-codificador y pérdida focal) han sido ejecutadas y
-reportadas en las secciones correspondientes del
-capítulo~\ref{cap:resultados}.
 
-Bajo la hipótesis de aplicación combinada de las técnicas
-pendientes (ajuste fino del encoder con la receta de la
-sección~\ref{sec:ft-results}, ensemble PanDerm$+$DermLIP en la
-línea documentada en la sección~\ref{sec:ensemble-results} y
-ampliación con el banco hospitalario HUSLL hasta superar el umbral
-de aproximadamente $30$ imágenes por clase L3 que activa la
-variante con cabeza L3 directa de Dermapixel R0), las cifras esperables para un
-clasificador desplegable sobre L2 ($38$ subcategorías clínicas)
-en castellano se estiman en BAcc entre $0{,}45$ y $0{,}55$,
-orden de magnitud comparable con el rango reportado en la
-sección~\ref{sec:ft-results} para PanDerm Base ajustado sobre
-HAM10000 (BAcc $0{,}575$ sobre $7$ clases). Esta estimación es
-prospectiva, no constituye un compromiso ni una predicción puntual,
-y queda condicionada a la disponibilidad efectiva del banco
-hospitalario tras la revisión por el comité ético de investigación
-clínica y a la calibración empírica de la receta de ajuste fino
-sobre el material en castellano.
-
-\subsection{Dermapixel R0: primer modelo fundacional dermatológico
-en español}
-\label{sec:linea-spanderm}
-
-\textbf{Dermapixel R0} constituye, a juicio de este trabajo, su
-aportación más original: el primer modelo fundacional dermatológico
-adaptado al español del que se tiene constancia a la fecha de cierre.
-La denominación se emplea en sentido preciso: Dermapixel R0 no es un
-preentrenamiento fundacional a gran escala ---como PanDerm o
-Derm1M---, sino la adaptación de un modelo fundacional preexistente
-(PanDerm Large) al registro clínico en castellano; el calificativo
-\emph{primero} se acota a esa categoría ---adaptación con pesos
-abiertos, texto clínico narrativo y registro en español--- y no a una
-prioridad histórica absoluta sobre cualquier recurso dermatológico
-hispanohablante. Su relevancia no reside en una métrica de máximo
-rendimiento ---es,
-por diseño, una versión base (R0) entrenada sobre un dataset reducido,
-un punto de partida y no un modelo terminado---, sino en lo que
-demuestra: que un modelo dermatológico especializado en castellano
-puede construirse sobre un modelo fundacional liberado mediante
-técnicas de adaptación eficiente, con un presupuesto de cómputo y de
-datos al alcance de una institución hospitalaria y un grupo académico.
-El preentrenamiento de los modelos de base exige los grandes datasets
-y el cómputo de grupos de investigación especializados; este trabajo
-evidencia que la especialización posterior ---lingüística y
-clínica--- no comparte esa barrera de entrada.
-
-Dermapixel R0 se inicializa desde el codificador PanDerm Large, se
-adapta sobre el dataset DermapixelAI~1.0 y se articula en dos ramas
-complementarias.
-
-La primera es la rama \textbf{supervisada}: cabeza clasificadora
-sobre encoder PanDerm Large adaptado mediante \emph{Low-Rank
-Adaptation}. Comprende la cabeza L2 con LoRA $r=16$
-ejecutada y reportada en la
-sección~\ref{sec:dermapixel-spanderm-v0} y una cabeza L3 directa
----condicionada al banco hospitalario HUSLL---,
-descritas a continuación en los párrafos correspondientes.
-
-La segunda es la rama \textbf{zero-shot multimodal}:
-la rama contrastiva de Dermapixel R0, sistema dual-encoder estilo CLIP que alinea el
-encoder visual PanDerm Large con un encoder textual multilingüe
-(\texttt{intfloat/multilingual-e5-base}) sobre el mismo dataset
-DermapixelAI~1.0. Se han ejecutado cinco iteraciones
-experimentales (v1 a v5) reportadas íntegramente en la
-sección~\ref{sec:spanderm-clip}. La iteración v4
-($\text{LoRA}$ visual $r=32$ sobre los últimos doce bloques del
-ViT, régimen híbrido \emph{H6} en inferencia) alcanza L3
-\emph{accuracy}@1 \emph{zero-shot} $= 0{,}2475$ sobre el conjunto
-de test de $101$ imágenes, esencialmente el umbral paper-grade
-$0{,}25$ fijado a priori sobre vocabulario castellano fino. La
-iteración v5, bajo configuración LoRA idéntica y ampliación del
-dataset con $15\,128$ imágenes externas genéricas, reporta una
-ablación negativa documentada ($0{,}2079$, $-4{,}0$\,pp): la
-escala genérica mejora las representaciones visuales aisladas
-pero erosiona la alineación cross-modal sobre el registro
-discursivo castellano. La rama aporta tres resultados empíricos
-complementarios. El primero es la recuperación cross-modal
-castellano-imagen, con un \emph{lift} de $\mathbf{14{,}0\times}$
-sobre el azar (v2, $i2t$ R@$5 = 0{,}654$ frente a $0{,}047$ en
-régimen de \emph{caption} rica, \emph{pool} $= 107$). El segundo
-es el diagnóstico mecanístico del techo del encoder visual
-congelado mediante \emph{Linear Probing}. El tercero es la
-reducción del ECE L3 en un $97\%$
-($0{,}7262 \to 0{,}0213$ con $\tau = 0{,}4165$ sobre v4) mediante
-\emph{temperature scaling}~\cite{guo2017}. Una ablación
-independiente con un modelo fundacional inglés grande preentrenado
-confirma que el cuello de botella experimental era la escala de la
-alineación cross-modal castellano, no el codificador visual ni la
-formulación textual (Anexo~\ref{cap:anexoi}). La rama zero-shot no es sustitutiva de
-la supervisada: ambas operan sobre regímenes de uso distintos
-(vocabulario abierto frente a vocabulario cerrado L2/L3) y la
-integración del prototipo DermApIxel (Anexo~\ref{cap:anexoh})
-las expone como módulos paralelos del pipeline.
-
-Los párrafos siguientes describen los prerrequisitos y el estado
-de las dos versiones de la rama supervisada.
-
-\paragraph{Dermapixel R0 (cabeza supervisada L2).}
-Cabeza L2 ($38$ clases efectivas tras consolidación de
-variantes ortográficas) sobre encoder PanDerm Large adaptado
-mediante \emph{Low-Rank Adaptation} (LoRA, $r=16$, $\alpha=32$)
-sobre los dos últimos bloques de transformer, con ranking L3 por
-similitud coseno sobre los \emph{embeddings} prototípicos del
-conjunto de entrenamiento de DermapixelAI~1.0. El protocolo es
-ejecutable sobre el hardware actual del proyecto sin recursos
-adicionales. La métrica primaria prevista era Acc-top-1 sobre L2
-y \emph{recall}-top-3 sobre L3 en el conjunto de test, con
-validación cruzada estratificada por L1 dada la limitación del
-tamaño muestral.
-
-La ejecución del protocolo (sección~\ref{sec:dermapixel-spanderm-v0}
-del capítulo~\ref{cap:resultados}) reporta sobre el nivel L2
-BAcc $= 0{,}363 \pm 0{,}007$, AUROC $= 0{,}855 \pm 0{,}006$ y
-Acc@3 $= 0{,}500 \pm 0{,}023$ (media $\pm$ desviación estándar
-sobre tres semillas, con $524\,K$ parámetros entrenables que
-representan el $0{,}17\%$ del encoder). Sobre el ranking L3 por
-prototipos, Acc@1 $= 0{,}167$, Acc@3 $= 0{,}259 \pm 0{,}013$ y
-Acc@5 $= 0{,}296 \pm 0{,}026$ sobre $250$ clases. Las cifras
-observadas alcanzan o superan las expectativas del diseño: la
-BAcc L2 mejora en $+19{,}5$\,pp la cifra de validación cruzada
-del sondeo lineal congelado y la AUROC L2 empata
-estadísticamente con la de DermLIP v2 individual, lo que valida
-empíricamente la línea LoRA como protocolo de referencia sobre el
-dataset en castellano.
-
-\paragraph{Dermapixel R0 (cabeza L3 directa).}
-Cabeza L3 directa ($251$ diagnósticos efectivos sobre el
-vocabulario completo) condicionada a la incorporación del banco
-hospitalario del HUSLL ($\sim 22\,000$ estudios estimados tras
-aprobación CEIC). El umbral de activación es de al menos
-$30$ imágenes por clase L3, condición no satisfecha por
-DermapixelAI~1.0 en aislamiento dado que $178$ entradas L3 del
-vocabulario con muestras efectivas contienen $\leq 5$ imágenes
-(cola larga estricta del vocabulario representado). La extensión vía
-banco HUSLL es condición necesaria y suficiente para la viabilidad
-de esta cabeza L3 directa.
-
-En conjunto, Dermapixel R0 traslada al dominio dermatológico en
-español una conclusión de alcance más amplio: la frontera de la
-especialización ya no la marca el acceso a grandes infraestructuras de
-preentrenamiento, sino la disponibilidad de datos clínicos bien
-curados y de un protocolo de adaptación adecuado. La rama supervisada
-L2 ya ejecutada (sección~\ref{sec:dermapixel-spanderm-v0}) demuestra
-el principio sobre la cardinalidad clínica intermedia, y la cabeza L3
-directa ---condicionada al banco hospitalario HUSLL--- define la ruta
-de escalado natural. Como semilla reproducible y honestamente acotada,
-Dermapixel R0 deja establecida una línea de continuación que otras
-instituciones con archivos clínicos en su propia lengua podrían
-replicar sobre la misma receta de adaptación eficiente.
-
-\subsection{Derm7pt + Sparse Autoencoders: ground-truth conceptual
-para interpretabilidad}
+\paragraph{Derm7pt + Sparse Autoencoders como ground-truth conceptual.}
 \label{sec:linea-derm7pt-sae}
-
-Las anotaciones \emph{Seven-Point Checklist} de Derm7pt (siete
-criterios diagnósticos por imagen) constituyen ground-truth conceptual
-no explotada por la literatura previa sobre Sparse Autoencoders en
-dermatología. Los cuatro experimentos previstos sobre este eje (E1,
-correlación SAE-Derm7pt; E2, \emph{Concept Bottleneck Model}; E3,
-cruce con los conceptos del Grupo~A; E4, \emph{fine-tuning} multitarea
-\emph{concept-aware}) se han \emph{ejecutado} y se reportan en la
-sección~\ref{sec:sae-derm7pt} y en el Anexo~\ref{cap:anexof}; no
-constituyen, por tanto, trabajo pendiente, sino contribución ya
-realizada. Su resultado principal es que la base \emph{sparse}
-aprendida sobre Derm1M alinea \emph{features} individuales con la
+Las anotaciones \emph{Seven-Point Checklist} de Derm7pt (siete criterios
+por imagen) son ground-truth conceptual no explotada por la literatura
+previa sobre Sparse Autoencoders. Los cuatro experimentos de este eje
+(correlación SAE-Derm7pt, \emph{Concept Bottleneck Model}, cruce con el
+Grupo~A y \emph{fine-tuning} multitarea) están \emph{ejecutados}
+(sección~\ref{sec:sae-derm7pt}, Anexo~\ref{cap:anexof}): la base
+\emph{sparse} aprendida sobre Derm1M alinea \emph{features} con la
 taxonomía dermatoscópica sin entrenamiento específico (AUROC efectivo
-hasta $0{,}926$ sobre vasos en horquilla), y que el \emph{fine-tuning}
-multitarea con LoRA produce inferencia simultánea de melanoma y los
-siete criterios en una sola pasada (cabeza melanoma AUROC $0{,}891$),
-consolidando el módulo de interpretabilidad del prototipo
-(Anexo~\ref{cap:anexoh}) sin pipelines en cascada.
-
-La línea genuinamente abierta es la extensión del diccionario
-conceptual a los $15$ conceptos clínicos adicionales propuestos por la
-Dra.~R.~Taberner (Anexo~\ref{cap:anexof}) ---no contemplados por
-SkinCon ni por el \emph{Seven-Point Checklist}---, condicionada al
-muestreo y anotación de aproximadamente $200$ imágenes por concepto.
-
-\subsection{Aprendizaje activo \emph{in-domain} sobre clases L3
-con peor cobertura}
-\label{sec:linea-active-learning}
-
-La trilogía contrastiva de Dermapixel R0
-(sección~\ref{sec:spanderm-clip}) mostró que ampliar el dataset de
-entrenamiento con escala genérica externa (v5) no rellena la cola
-larga de L3 ---$327$ clases con $\leq 5$ imágenes en el vocabulario
-ontológico--- y erosiona la alineación cross-modal sobre el registro
-castellano, mientras que la iteración v4 ya alcanza el umbral
-\emph{a priori} de \emph{accuracy}@1 $\sim 0{,}25$. La palanca correcta
-para extender la cobertura no es, por tanto, más datos genéricos, sino
-aprendizaje activo dirigido \emph{in-domain}: identificar las clases
-L3 con peor cobertura en el subconjunto castellano e invertir en ellas
-anotación experta, con los candidatos generados por el prototipo
-DermApIxel sobre cohortes del HUSLL bajo revisión de la
-Dra.~R.~Taberner.
-
-El banco hospitalario HUSLL ($\sim 22\,000$ estudios tras aprobación
-CEIC, sección~\ref{sec:linea-husll}) es el recurso natural: refleja la
-distribución diagnóstica real del servicio, está alineado con el
-registro castellano del archivo Dermapixel y permite tanto el llenado
-dirigido de la cola larga como la eventual activación de la cabeza L3
-directa al superar las $\sim 30$ imágenes por clase
-(sección~\ref{sec:linea-spanderm}). Tras alcanzar v4 el umbral
-operativo, esta línea se replantea como ruta de generalización hacia
-cobertura clínica completa, no hacia el \emph{target}. La ablación del
-Anexo~\ref{cap:anexoi} la refuerza: la palanca pendiente es anotación
-experta \emph{in-domain}, no escala genérica de datos.
-
-\subsection{Selección de arquitectura para segmentación promptable}
-\label{sec:linea-seg-arquitectura}
-
-La comparativa pareada de arquitecturas promptables
-(sección~\ref{sec:seg-arquitecturas}) ya está ejecutada y delimita una
-pauta de selección reproducible: la generación SAM2 domina sobre SAM
-v1 con independencia del preentrenamiento de dominio, el factor
-determinante del rendimiento es la caja-\emph{prompt} y no el
-segmentador, y MedSAM2-tiny (Dice $0{,}9556$, $26$\,ms) se identifica
-como candidata de referencia para despliegues con restricciones de
-cómputo, con la cifra estable bajo validación cruzada y próxima al
-techo de acuerdo inter-anotador. La línea abierta se reduce, por
-tanto, a dos elementos no resueltos en este trabajo: la evaluación con
-un detector de lesión extremo a extremo que sustituya la caja manual y
-la validación prospectiva sobre adquisición clínica no dermatoscópica.
-
-\subsection{Escalado del dataset con el banco hospitalario HUSLL}
-\label{sec:linea-husll}
-
-La extensión del dataset DermapixelAI~1.0 con el banco hospitalario
-del HUSLL constituye la línea de mayor impacto potencial sobre el
-rendimiento clínico real del sistema. La estimación preliminar es
-de aproximadamente $22\,000$ estudios disponibles en archivo,
-con metadatos asociados (imagen clínica, dermatoscópica cuando
-disponible, diagnóstico final, edad y sexo del paciente). Los
-prerrequisitos son cuatro: aprobación del Comité Ético de
-Investigación Clínica de las Illes Balears (CEIC-IB),
-implementación de un protocolo de anonimización compatible con
-RGPD y la Ley Orgánica $3/2018$, definición de un esquema de
-licencia compatible con la naturaleza hospitalaria del material
-(probablemente más restrictiva que CC-BY-NC-SA~4.0), y
-establecimiento de un equipo de validación experta liderado por la
-Dra.~R.~Taberner con apoyo de residentes de dermatología del HUSLL.
-
-La incorporación del banco hospitalario habilita la cabeza L3 directa de Dermapixel R0
-(sección~\ref{sec:linea-spanderm}), la validación clínica prospectiva
-sobre cohorte real (sección~\ref{sec:linea-prospectivo}) y un análisis
-de equidad sobre fototipo cutáneo más representativo de la
-población atendida por el sistema sanitario español que el
-disponible en Fitzpatrick17k.
+hasta $0{,}926$) y el \emph{fine-tuning} multitarea produce inferencia
+simultánea de melanoma y los siete criterios en una pasada (AUROC
+$0{,}891$). La línea genuinamente abierta es extender el diccionario
+conceptual a los $15$ conceptos adicionales propuestos por la
+Dra.~R.~Taberner (Anexo~\ref{cap:anexof}), condicionada a la anotación de
+$\sim 200$ imágenes por concepto.
 
 \subsection{Validación clínica prospectiva}
 \label{sec:linea-prospectivo}
 
 La validación clínica prospectiva del prototipo DermApIxel
-(Anexo~\ref{cap:anexoh}) sobre cohorte hospitalaria real
-del HUSLL requiere un protocolo aprobado por CEIC-IB con cuatro
-elementos: definición de \emph{endpoints} clínicos primarios
-(\emph{recall} de melanoma, tasa de derivaciones evitadas) y
-secundarios (concordancia inter-observador, tiempo de
-diagnóstico, valoración subjetiva del clínico); cálculo
-muestral basado en los \emph{recall} preliminares de
-$\sim 0{,}97$ obtenidos sobre HAM10000 con M1+SigLIP y un
-\emph{estándar de oro} conservador; reclutamiento de dermatólogos
-revisores independientes para arbitraje en casos de discrepancia;
-y plan de análisis estadístico preregistrado.
+(Anexo~\ref{cap:anexoh}) sobre cohorte hospitalaria real del HUSLL
+requiere un protocolo aprobado por CEIC-IB con cuatro elementos:
+\emph{endpoints} primarios (\emph{recall} de melanoma, derivaciones
+evitadas) y secundarios (concordancia inter-observador, tiempo de
+diagnóstico); cálculo muestral basado en los \emph{recall} preliminares de
+$\sim 0{,}97$ obtenidos sobre HAM10000 con M1+SigLIP; revisores
+independientes para arbitraje; y un plan de análisis estadístico
+preregistrado. La cifra de \emph{recall} del $100\%$ sobre melanoma
+reportada en sección~\ref{sec:ensemble-results} es prueba de concepto
+sobre material de archivo, no resultado clínico validado: su extrapolación
+al flujo asistencial real exige esta validación, requisito de cualquier
+despliegue operativo.
 
-La cifra de \emph{recall} del $100\%$ sobre melanoma reportada
-en sección~\ref{sec:ensemble-results} es prueba de concepto sobre
-material de archivo, no resultado clínico validado. Su
-extrapolación al flujo asistencial real requiere la validación
-prospectiva aquí esbozada, identificada como prerrequisito de
-cualquier despliegue operativo más allá del prototipo.
-
-\subsection{Auditoría sistemática de leakage extensible}
-\label{sec:linea-leakage}
-
-La auditoría por hash MD5 desarrollada para Derm1M
-(sección~\ref{sec:auditoria}) es directamente extensible a los demás
-datasets de preentrenamiento del ecosistema dermatológico (SkinGPT-4,
-MONET, MM-Skin, SkinFM, entre otros). La línea abierta consiste en
-aplicar el mismo procedimiento sobre los \emph{splits} de evaluación
-canónicos y publicar las cardinalidades de intersección, con su
-script auditable, como recurso de referencia que permita recalibrar
-las cifras zero-shot publicadas sobre esos datasets.
-
-\subsection{Recuperación visual densa como sistema de apoyo}
+\paragraph{Recuperación visual densa como sistema de apoyo.}
 \label{sec:linea-rag}
+La recuperación visual densa basada en FAISS sobre los \emph{embeddings}
+de Derm1M ($\sim 421\,000$ imágenes preindexadas) ya opera en el prototipo
+(sección~\ref{sec:dermapixel-m4} del Anexo~\ref{cap:anexoh}) con latencia
+inferior a $150$\,ms. La línea abierta es evaluar su valor clínico
+mediante un estudio mixto sobre cohorte HUSLL (\emph{precision@k} sobre
+L1/L2 y valoración de la utilidad de los casos recuperados), con la
+integración en la historia clínica electrónica como prerrequisito técnico.
 
-La recuperación visual densa basada en FAISS sobre los
-\emph{embeddings} de Derm1M ($\sim 421\,000$ imágenes preindexadas)
-ya opera como componente del prototipo DermApIxel
-(sección~\ref{sec:dermapixel-m4} del Anexo~\ref{cap:anexoh}) con
-latencia inferior a $150$\,ms por consulta. La línea abierta es
-evaluar su valor clínico mediante un estudio mixto sobre cohorte
-HUSLL ---\emph{precision@k} sobre L1/L2 y valoración subjetiva de la
-utilidad de los casos recuperados como referencia diferencial---, con
-la integración en la historia clínica electrónica como prerrequisito
-técnico pendiente.
+\paragraph{Selección de arquitectura para segmentación promptable.}
+\label{sec:linea-seg-arquitectura}
+La comparativa pareada de arquitecturas promptables
+(sección~\ref{sec:seg-arquitecturas}) ya está ejecutada y delimita una
+pauta de selección reproducible: la generación SAM2 domina sobre SAM~v1,
+el factor determinante es la caja-\emph{prompt} y no el segmentador, y
+MedSAM2-tiny (Dice~$0{,}9556$, $26$\,ms) es candidata de referencia para
+despliegues con restricciones de cómputo. La línea abierta se reduce a dos
+elementos: un detector de lesión extremo a extremo que sustituya la caja
+manual y la validación prospectiva sobre adquisición clínica no
+dermatoscópica.
 
-\subsection{IA agéntica para razonamiento clínico estructurado}
+\subsection{IA agéntica y modelos multimodales en español}
 \label{sec:linea-agentica}
 
-A medio plazo, la combinación de los componentes desarrollados
-(encoder PanDerm, ontología L1/L2/L3, dataset DermapixelAI,
-recuperación visual densa y LLM multimodal en local) habilita la
-construcción de un agente clínico orquestado bajo control del
-facultativo, que incorpore evidencia estructurada externa y
-auditable. Frente al uso directo de un LLM multimodal generalista
-(sección~\ref{sec:disc-llm}), este esquema reduciría el sesgo
-léxico documentado y facilitaría la justificación clínica de la
-salida. Su desarrollo es condicional a la disponibilidad de pesos
-abiertos con capacidad de razonamiento estructurado y se detalla en
-el Anexo~\ref{cap:anexoh}.
+A medio plazo, la combinación de los componentes desarrollados (encoder
+PanDerm, ontología L1/L2/L3, dataset DermapixelAI, recuperación visual
+densa y LLM multimodal en local) habilita un agente clínico orquestado
+bajo control del facultativo, que incorpore evidencia estructurada externa
+y auditable. Frente al uso directo de un LLM multimodal generalista
+(sección~\ref{sec:disc-llm}), este esquema reduciría el sesgo léxico
+documentado y facilitaría la justificación clínica de la salida; su
+desarrollo es condicional a pesos abiertos con capacidad de razonamiento
+estructurado y se detalla en el Anexo~\ref{cap:anexoh}.
 
-\subsection{Reentrenamiento multilingüe de la rama lingüística}
+\paragraph{Reentrenamiento multilingüe de la rama lingüística.}
 \label{sec:linea-multilingual}
-
-La sensibilidad documentada al tokenizador
-(sección~\ref{sec:disc-zs}) sugiere que un reentrenamiento dirigido del
-encoder textual de DermLIP sobre texto clínico en español aportaría
-mejoras apreciables sobre el rendimiento zero-shot en el ámbito
-hispanohablante. La estrategia mínima viable consiste en aplicar
-\emph{continued pretraining} del encoder textual sobre los
-$669$ casos clínicos de DermapixelAI~1.0 con el razonamiento
-narrativo asociado, manteniendo congelado el encoder visual de
-DermLIP. La estrategia ampliada requiere un dataset de pares
-imagen-texto en español de mayor escala, no disponible en la fecha
-de cierre del trabajo y condicional al escalado descrito en
-sección~\ref{sec:linea-husll}.
+La sensibilidad documentada al tokenizador (sección~\ref{sec:disc-zs})
+sugiere que reentrenar el encoder textual de DermLIP sobre texto clínico
+en español aportaría mejoras apreciables sobre el rendimiento
+\emph{zero-shot} hispanohablante. La estrategia mínima viable aplica
+\emph{continued pretraining} del encoder textual sobre los $669$ casos
+clínicos de DermapixelAI~1.0 con su razonamiento narrativo, manteniendo
+congelado el encoder visual; la ampliada requiere un dataset de pares
+imagen-texto en español de mayor escala, condicional al escalado con el
+banco HUSLL (sección~\ref{sec:linea-husll}).
 
 \section{Cierre}
 \label{sec:cierre}
