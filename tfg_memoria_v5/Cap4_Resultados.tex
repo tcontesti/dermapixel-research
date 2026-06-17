@@ -361,62 +361,38 @@ $100\%$         & $1\,493$             & $\mathbf{0{,}772}$ & $\mathbf{0{,}642}$
 \end{tabular}
 \end{table}
 
-La AUROC satura muy pronto (figura~\ref{fig:label-efficiency}). Sobre HAM10000, con solo el $1\%$ del
-entrenamiento ($82$ imágenes), PanDerm Large recupera $0{,}850$ de
-accuracy y $0{,}918$ de AUROC, a $3{,}8$\,pp y $3{,}6$\,pp del
-rendimiento con el conjunto completo. Con el $5\%$ ($410$ imágenes)
-la AUROC llega a $0{,}932$, el $97{,}7\%$ del máximo. A diferencia
-de la AUROC, la \emph{balanced accuracy} continúa mostrando
-sensibilidad al incremento del volumen de entrenamiento y alcanza su
-mejor valor observado con el $50\%$ de los datos ($0{,}589$). El
-patrón se repite sobre PAD-UFES-20: con $14$ imágenes de
-entrenamiento el modelo obtiene $0{,}740$ de accuracy y $0{,}907$ de
-AUROC, el $95{,}5\%$ de la AUROC con el conjunto completo. Este
-patrón es coherente con que gran parte del conocimiento visual
-relevante ya está codificado en las representaciones del
-preentrenamiento, de modo que la cabeza lineal requiere pocos
-ejemplos para alcanzar una fracción elevada del rendimiento máximo.
+La AUROC muestra una saturación temprana en ambos datasets. En
+HAM10000, el $1\%$ de las imágenes de entrenamiento ($82$) ya recupera
+una AUROC de $0{,}918$, mientras que el $5\%$ ($410$) alcanza el
+$97{,}7\%$ del rendimiento máximo observado. Un comportamiento similar
+aparece en PAD-UFES-20, donde $14$ imágenes permiten recuperar el
+$95{,}5\%$ de la AUROC final. La \emph{balanced accuracy}, en cambio,
+continúa mejorando con el aumento del conjunto de entrenamiento, lo que
+refleja una mayor sensibilidad a las clases minoritarias.
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.88\textwidth]{fig_label_efficiency.png}
-\caption{Eficiencia en etiquetas con PanDerm Large sobre HAM10000
-y PAD-UFES-20. La curva AUROC satura tempranamente: con
-$1\%$ del conjunto de entrenamiento se recupera más del
-$95\%$ del rendimiento alcanzable con el conjunto completo
-en ambos datasets.}
-\label{fig:label-efficiency}
-\end{figure}
-
-En el régimen evaluado, las representaciones de PanDerm Large resultan,
-por tanto, eficientes en etiquetas: la mayor parte de la capacidad
-discriminativa reside ya en el encoder preentrenado, lo que reduce la
-dependencia de grandes volúmenes etiquetados en escenarios clínicos.
-Las cifras proceden de una única partición y semilla por nivel de
-submuestreo, por lo que delimitan una tendencia y no un margen con
-cierre estadístico.
+Este comportamiento sugiere que gran parte del conocimiento visual
+relevante ya ha sido adquirido durante el preentrenamiento, de modo
+que el aprendizaje supervisado posterior actúa principalmente como un
+mecanismo de calibración de la frontera de decisión: la mayor parte de
+la capacidad discriminativa reside ya en el encoder preentrenado, lo
+que reduce la dependencia de grandes volúmenes etiquetados en
+escenarios clínicos. Las cifras proceden de una única partición y
+semilla por nivel de submuestreo, por lo que delimitan una tendencia y
+no un margen con cierre estadístico.
 
 \section{Segmentación binaria de lesión}
 \label{sec:seg-results}
 
 Este bloque evalúa si un modelo fundacional de segmentación adaptado
 al dominio dermatológico alcanza una delimitación de lesión de calidad
-clínica y qué factores la determinan. La evaluación se articula en
-tres niveles: una referencia mediante la adaptación de SAM2.1-Large
-al dominio; una comparación pareada de cinco arquitecturas
-\emph{promptables} bajo protocolo homogéneo para aislar arquitectura,
-preentrenamiento médico y tamaño del \emph{backbone}; y análisis
-complementarios sobre la dependencia del \emph{prompt} (control
-automático sin caja basado en U-Net), la estabilidad del
-entrenamiento y el límite impuesto por la variabilidad
-inter-anotador.
-
-La tabla~\ref{tab:seg} reporta la segmentación binaria sobre
-ISIC2018 con SAM2.1-Large adaptado mediante \emph{fine-tuning} de su
-decodificador, junto a tres referencias: SAM2 sin adaptación
-(\emph{zero-shot}), \emph{Convolutional AutoEncoder} con backbone
-PanDerm Large entrenado desde cero (CAE-seg) y la cifra publicada
-por Yan et~al.~\cite{panderm2025}.
+clínica y qué factores la determinan. La tabla~\ref{tab:seg} compara
+SAM2.1-Large adaptado al dominio mediante \emph{fine-tuning} del
+decodificador frente a SAM2 sin adaptar (\emph{zero-shot}), un
+autoencoder convolucional sobre PanDerm Large (CAE-seg) y la
+referencia publicada por Yan et~al.~\cite{panderm2025}, analizando
+además su generalización fuera de dominio sobre ISIC2017 y PH2; las
+subsecciones posteriores aíslan el efecto de la arquitectura, del
+\emph{prompt} y de la variabilidad inter-anotador.
 
 \begin{table}[H]
 \centering
@@ -439,39 +415,28 @@ PanDerm \cite{panderm2025} (ref.)     & $0{,}921$     & ---           & --- \\
 \end{tabular}
 \end{table}
 
-La tabla~\ref{tab:seg-detalle} amplía la información con la
-desviación estándar y el IoU sobre los datasets de transferencia.
-
-\begin{table}[H]
-\centering
-\footnotesize
-\setlength{\tabcolsep}{4pt}
-\caption{Generalización fuera de dominio: Dice e IoU (media $\pm$
-desv.~estándar) sobre ISIC2017 ($N = 600$) y PH2 ($N = 200$).}
-\label{tab:seg-detalle}
-\begin{tabular}{llrr}
-\hline
-Modelo                              & Dataset      & Dice              & IoU \\
-\hline
-SAM2 \emph{zero-shot} (bbox)        & ISIC2017     & $0{,}797 \pm 0{,}158$ & $0{,}686 \pm 0{,}183$ \\
-SAM2 \emph{zero-shot} (bbox)        & PH2          & $0{,}886 \pm 0{,}199$ & $0{,}830 \pm 0{,}198$ \\
-SAM2.1-L (decoder FT) ISIC2018      & ISIC2017     & $0{,}945 \pm 0{,}046$ & $0{,}898 \pm 0{,}065$ \\
-SAM2.1-L (decoder FT) ISIC2018      & PH2          & $0{,}960 \pm 0{,}022$ & $0{,}925 \pm 0{,}039$ \\
-CAE-seg (PanDerm-L) FT ISIC2018     & ISIC2017     & $0{,}879 \pm 0{,}139$ & $0{,}803 \pm 0{,}166$ \\
-CAE-seg (PanDerm-L) FT ISIC2018     & PH2          & $0{,}924 \pm 0{,}066$ & $0{,}865 \pm 0{,}098$ \\
-\hline
-\end{tabular}
-\end{table}
+El detalle con la desviación estándar y el IoU sobre los datasets de
+transferencia (ISIC2017 y PH2) figura en el Anexo~\ref{cap:anexob}
+(tabla~\ref{tab:seg-detalle}).
 
 SAM2.1-L con \emph{fine-tuning} del decodificador alcanza Dice
 $0{,}947$ sobre ISIC2018, $+2{,}6$\,pp sobre la cifra publicada por
-Yan et~al.~\cite{panderm2025} ($0{,}921$) y $+5{,}3$\,pp sobre el
-CAE-seg. La transferencia fuera de dominio es mínima (Dice $0{,}945$
-en ISIC2017, $0{,}960$ en PH2 por su mayor limpieza visual), y la
-adaptación del decodificador aporta frente a SAM2 sin adaptar
-$+14{,}8$\,pp en ISIC2017 ($0{,}797 \to 0{,}945$) y $+7{,}4$\,pp en
-PH2 ($0{,}886 \to 0{,}960$), cuantificando el aporte de la adaptación
-de dominio (figura~\ref{fig:seg-generalization}).
+Yan et~al.~\cite{panderm2025} y $+5{,}3$\,pp sobre el CAE-seg: supera,
+por tanto, la referencia previa. Su generalización fuera de dominio es
+prácticamente nula (Dice $0{,}945$ en ISIC2017 y $0{,}960$ en PH2,
+este último superior por su mayor limpieza visual). Y, sobre todo, la
+adaptación del decodificador aporta $+14{,}8$\,pp en ISIC2017
+($0{,}797 \to 0{,}945$) y $+7{,}4$\,pp en PH2 ($0{,}886 \to 0{,}960$)
+frente a SAM2 sin adaptar (figura~\ref{fig:seg-generalization}): es la
+adaptación al dominio, y no el tamaño bruto del modelo, lo que explica
+la mayor parte de la mejora.
+
+Desde una perspectiva aplicada, este resultado anticipa una lectura
+que las subsecciones siguientes confirman: una vez disponible una caja
+que \emph{localice} la lesión, la calidad del contorno depende poco
+del segmentador concreto (sección~\ref{sec:seg-control-automatico}),
+de modo que localizar la lesión puede importar más que la precisión
+absoluta de la máscara.
 
 \begin{figure}[H]
 \centering

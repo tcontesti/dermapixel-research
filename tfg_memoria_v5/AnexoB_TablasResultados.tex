@@ -299,3 +299,31 @@ HIBA               & $1\,635$ \\
 \hline
 \end{tabular}
 \end{table}
+
+\section{Segmentación: generalización fuera de dominio (Dice e IoU)}
+\label{sec:anexob-seg-ood}
+
+La tabla~\ref{tab:seg-detalle} amplía el resultado de segmentación de
+la sección~\ref{sec:seg-results} con la desviación estándar y el IoU
+sobre los dos datasets de transferencia (ISIC2017 y PH2).
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{Generalización fuera de dominio: Dice e IoU (media $\pm$
+desv.~estándar) sobre ISIC2017 ($N = 600$) y PH2 ($N = 200$).}
+\label{tab:seg-detalle}
+\begin{tabular}{llrr}
+\hline
+Modelo                              & Dataset      & Dice              & IoU \\
+\hline
+SAM2 \emph{zero-shot} (bbox)        & ISIC2017     & $0{,}797 \pm 0{,}158$ & $0{,}686 \pm 0{,}183$ \\
+SAM2 \emph{zero-shot} (bbox)        & PH2          & $0{,}886 \pm 0{,}199$ & $0{,}830 \pm 0{,}198$ \\
+SAM2.1-L (decoder FT) ISIC2018      & ISIC2017     & $0{,}945 \pm 0{,}046$ & $0{,}898 \pm 0{,}065$ \\
+SAM2.1-L (decoder FT) ISIC2018      & PH2          & $0{,}960 \pm 0{,}022$ & $0{,}925 \pm 0{,}039$ \\
+CAE-seg (PanDerm-L) FT ISIC2018     & ISIC2017     & $0{,}879 \pm 0{,}139$ & $0{,}803 \pm 0{,}166$ \\
+CAE-seg (PanDerm-L) FT ISIC2018     & PH2          & $0{,}924 \pm 0{,}066$ & $0{,}865 \pm 0{,}098$ \\
+\hline
+\end{tabular}
+\end{table}
