@@ -491,27 +491,22 @@ MedSAM v1~\cite{medsam}   & SAM~\cite{sam2023} & médico   & $94$\,M  & $0{,}945
 \end{tabular}
 \end{table}
 
-La comparativa deja tres regularidades. Primero, la generación de
-arquitectura es el factor dominante: los tres modelos SAM2 superan a
-los dos de SAM v1 incluso con preentrenamiento médico; SAM2.1-tiny
-\emph{general} ($0{,}9517$) supera a MedSAM v1 \emph{médico}
-($0{,}9458$) por $+0{,}59$\,pp ($p = 2{,}5\times10^{-42}$). Segundo,
-el preentrenamiento médico ayuda solo dentro de la misma generación:
-MedSAM2-tiny supera a SAM2.1-tiny por $+0{,}39$\,pp
-($p = 9{,}5\times10^{-23}$), mientras que en SAM v1 no compensa la
-arquitectura más antigua. Tercero, el tamaño de \emph{backbone} no
-aporta nada en este régimen \emph{box-prompted}: SAM2.1-tiny iguala o
-supera a SAM2.1-Large ($+0{,}14$\,pp, $p = 1{,}6\times10^{-7}$) con
-$5{,}7$ veces menos parámetros y $3{,}7$ veces menos latencia. La
+Tres conclusiones emergen de la comparación (todos los contrastes
+pareados son significativos al test de Wilcoxon, $p < 10^{-6}$;
+tabla~\ref{tab:seg-arquitecturas}). \textit{Primero}, la generación
+SAM2 aporta más que el preentrenamiento médico: los tres modelos SAM2
+superan a los basados en SAM v1, incluso a los de preentrenamiento
+médico. \textit{Segundo}, el preentrenamiento médico ofrece una mejora
+adicional, pero solo dentro de la misma generación y de menor
+magnitud. \textit{Tercero}, el tamaño del \emph{backbone} aporta poco
+en régimen \emph{box-prompted}: SAM2.1-tiny iguala o supera a
+SAM2.1-Large con $5{,}7$ veces menos parámetros y menor latencia. La
 mejor configuración es MedSAM2-tiny ($0{,}9556$, $26$\,ms), que
 combina generación SAM2 y preentrenamiento médico en el
-\emph{backbone} más compacto. Todos los contrastes pareados son
-significativos sobre las $1\,000$ imágenes del test pese a las
-magnitudes absolutas moderadas por el techo del régimen
-\emph{box-prompted}. Que la arquitectura pese más que el
+\emph{backbone} más compacto. Que la arquitectura pese más que el
 preentrenamiento médico matiza la hipótesis central del trabajo: en
 este régimen, el diseño del segmentador domina sobre la
-especialización dermatológica. Los tres análisis siguientes acotan
+especialización dermatológica. Las tres subsecciones siguientes acotan
 cuánto del resultado depende del \emph{prompt}, su estabilidad y su
 techo real.
 
@@ -549,12 +544,14 @@ U-Net (ResNet-101) & automático        & $0{,}8811$ & $0{,}804$ & $0{,}856$ & $
 \end{table}
 
 El control automático alcanza Dice $0{,}8811$, $7{,}5$\,pp por debajo
-del mejor modelo \emph{box-prompted} ($0{,}9556$). Frente a la
-dispersión intra-régimen ($\sim 1{,}0$\,pp entre las cinco
-arquitecturas de la tabla~\ref{tab:seg-arquitecturas}), retirar el
-\emph{prompt} cuesta entre seis y siete veces más: el factor dominante
-no es la arquitectura ni el preentrenamiento, sino la disponibilidad
-de la caja. El perfil de error del modo automático lo confirma
+del mejor modelo \emph{box-prompted} ($0{,}9556$). La comparación de
+magnitudes es reveladora: la arquitectura mueve $\sim 1{,}0$\,pp de
+Dice (tabla~\ref{tab:seg-arquitecturas}) y el preentrenamiento médico
+$\sim 0{,}4$\,pp, pero retirar la caja cuesta $7{,}5$\,pp ---entre
+seis y siete veces más que cualquiera de los otros dos factores---. El
+factor dominante de la segmentación dermatoscópica no es, por tanto,
+ni la arquitectura ni el preentrenamiento, sino la disponibilidad de
+una localización razonable de la lesión. El perfil de error del modo automático lo confirma
 ---recall alto ($0{,}942$) pero precisión desplomada ($0{,}856$) y
 Hausdorff~95 entre $2{,}5$ y $3$ veces peor (desv.\ $0{,}121$), señal
 de fallos catastróficos puntuales que la caja elimina---. El control
@@ -566,16 +563,11 @@ reflejan el segmentador y no la información de localización.
 \label{sec:seg-robustez}
 
 La cifra de $0{,}9556$ procede de una única partición. Una validación
-cruzada de cinco pliegues sobre MedSAM2-tiny (estratificados por
-dataset, reentrenando el decodificador y evaluando sobre el test
-canónico blindado) arroja Dice $0{,}9554 \pm 0{,}0010$ (IC95\%
-$[0{,}9543,\, 0{,}9564]$): la cifra principal cae dentro del intervalo
-y la desviación inter-pliegue ($8\times 10^{-4}$) descarta dependencia
-de una partición afortunada. Una ablación del rango de \emph{LoRA}
-($r\in\{4,8,16,32\}$) arroja una amplitud de $0{,}24$\,pp sin tendencia
-monótona, por debajo del ruido inter-pliegue: el ajuste de bajo rango
-iguala al ajuste denso del decodificador sin ahorro de parámetros ni
-latencia relevantes.
+cruzada de cinco pliegues sobre MedSAM2-tiny confirma su robustez:
+Dice $0{,}9554 \pm 0{,}0010$ (IC95\% $[0{,}9543,\, 0{,}9564]$), con la
+cifra principal dentro del intervalo y una desviación inter-pliegue
+($8\times 10^{-4}$) que descarta dependencia de una partición
+afortunada.
 
 La estabilidad frente a la calidad del \emph{prompt} es crítica en
 despliegue, donde la caja procede de un anotador o detector y no de la
@@ -599,35 +591,35 @@ aflojarla.}
 \label{fig:seg-box-robustness}
 \end{figure}
 
-El resto de comprobaciones de robustez confirman un modelo bien
-comportado. La calibración a nivel de píxel es buena (error de
-calibración esperado $0{,}0082$ frente a la máscara de referencia).
-La equidad por fototipo, estimada sobre el ángulo tipológico
-individual (ITA) como aproximación a la escala Fitzpatrick, muestra
-una brecha de solo $1{,}1$\,pp entre el grupo más y menos favorecido,
-con un descenso leve en los fototipos más oscuros. El aumento en test
-(TTA) y el \emph{ensemble} de los cinco pliegues aportan mejoras
-marginales ($+0{,}13$ y $+0{,}14$\,pp), que no compensan su coste, de
-modo que la recomendación se mantiene en un único modelo.
+El resto de comprobaciones confirman un modelo bien comportado y no
+alteran la conclusión: el ajuste de bajo rango (LoRA
+$r\in\{4,8,16,32\}$) iguala al ajuste denso del decodificador; la
+calibración a nivel de píxel es buena (ECE $0{,}0082$); la equidad por
+fototipo (ITA) muestra una brecha de solo $1{,}1$\,pp entre fototipos
+extremos; y el aumento en test y el \emph{ensemble} de pliegues aportan
+mejoras marginales ($+0{,}13$/$+0{,}14$\,pp) que no compensan su coste,
+por lo que se recomienda un único modelo.
 
 \subsection{El techo de la métrica: acuerdo inter-anotador}
 \label{sec:seg-techo-anotador}
 
-El Dice se mide contra una máscara de referencia trazada por una
-persona, y el contorno de una lesión es intrínsecamente ambiguo. Para
-situar el resultado frente a ese límite se emplea el subconjunto de
-IMA++ con anotación múltiple ($312$ imágenes de test con dos o más
-máscaras independientes, reservado y nunca usado en entrenamiento). El
-acuerdo inter-anotador (Dice promedio de una máscara contra otra) es
-de solo $0{,}728$, mientras que el modelo concuerda con el consenso en
-$0{,}915$ y cae dentro de la envolvente de las máscaras humanas el
-$97{,}8\%$ de las veces: coincide con el consenso mejor de lo que los
-humanos coinciden entre sí.
+El hallazgo más relevante de este bloque no es la cifra absoluta de
+Dice, sino su relación con el límite humano. El Dice se mide contra
+una máscara de referencia trazada por una persona, y el contorno de
+una lesión es intrínsecamente ambiguo: sobre el subconjunto de IMA++
+con anotación múltiple ($312$ imágenes con dos o más máscaras
+independientes, reservado y nunca usado en entrenamiento), el acuerdo
+\emph{inter-anotador} es de solo $0{,}728$, mientras que el modelo
+concuerda con el consenso en $0{,}915$ ---es decir, coincide con el
+consenso mejor de lo que los propios humanos coinciden entre sí--- y
+cae dentro de la envolvente de las máscaras humanas el $97{,}8\%$ de
+las veces.
 
-El $0{,}9556$ se sitúa, por tanto, en el techo de acuerdo que la tarea
-permite, y las diferencias de $\sim 1$\,pp entre arquitecturas
-(tabla~\ref{tab:seg-arquitecturas}) son menores que el desacuerdo
-inter-anotador, lo que recomienda no sobreinterpretarlas. El modelo es
+La consecuencia es interpretativa y profunda: las diferencias de
+$\sim 1$\,pp entre arquitecturas (tabla~\ref{tab:seg-arquitecturas})
+son menores que el desacuerdo entre anotadores humanos, de modo que
+perseguir mejoras de décimas de Dice tiene escaso sentido práctico ---
+el resultado ya se sitúa en el techo que la propia tarea permite. El modelo es
 algo sobreconfiado en bordes ambiguos: su error de calibración contra
 la máscara de consenso blanda sube a $0{,}094$, frente al $0{,}0082$
 contra una referencia binaria. Dentro del alcance evaluado
