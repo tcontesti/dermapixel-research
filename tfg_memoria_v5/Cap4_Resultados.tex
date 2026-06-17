@@ -1640,19 +1640,16 @@ larga se mantiene como cautela transversal.
 
 \subsection{Diseño experimental}
 
-La rama contrastiva sigue el patrón dual-encoder estilo
-CLIP~\cite{clip2021}: un encoder visual basado en PanDerm Large y un
-encoder textual multilingüe adaptado al lenguaje clínico castellano,
-en sustitución del encoder anglosajón de DermLIP (la justificación
-frente a un \emph{wrapper} inglés con traducción ES--EN, en el
-Anexo~\ref{cap:anexoi}). Se entrenan cinco iteraciones que aíslan por
-construcción tres palancas: adaptación textual, adaptación visual y
-aumento de escala con imágenes externas genéricas. El objetivo
-experimental, fijado a priori, es L3 \emph{accuracy}@1 $\geq 0{,}25$ en
-\emph{zero-shot} sobre las $54$ clases L3 representadas en el test. La
-arquitectura completa, los hiperparámetros, las particiones
-\emph{case-aware} y los detalles de generación de \emph{captions},
-costes y tiempos figuran en los Anexos~\ref{cap:anexoa}
+La rama contrastiva es un sistema dual-encoder estilo
+CLIP~\cite{clip2021} (encoder visual PanDerm Large $+$ encoder textual
+multilingüe adaptado al castellano clínico). Se entrenan cinco
+iteraciones diseñadas para aislar tres factores: adaptación textual,
+adaptación visual y aumento de escala mediante datos externos
+genéricos; el objetivo, fijado a priori, es L3 \emph{accuracy}@1
+$\geq 0{,}25$ en \emph{zero-shot}. La arquitectura, los hiperparámetros,
+las particiones \emph{case-aware}, la justificación frente a un
+\emph{wrapper} inglés con traducción ES--EN y la generación de
+\emph{captions} figuran en los Anexos~\ref{cap:anexoa}
 (tabla~\ref{tab:spanderm-config}), \ref{cap:anexoc}
 y~\ref{cap:anexoi}.
 
@@ -1697,13 +1694,11 @@ L2 acc@1 ($23$ cls)           & $0{,}043$ & ---                 & ---           
 \end{table}
 
 Las tres primeras iteraciones quedan empatadas en
-$[0{,}1782,\,0{,}1980]$ ($\pm 2$ imágenes sobre $N = 101$). La cuarta
-alcanza $0{,}2475$, a $0{,}0025$ del umbral objetivo ($0{,}25$, una
-imagen de test, dentro del ruido). La quinta, ablación deliberada de
-escala bajo idéntica LoRA que v4, desciende a $0{,}2079$ ($-4{,}0$\,pp).
-El barrido de épocas que ilustra la estabilidad de v1$\to$v3 y la
-síntesis tabular completa de las cinco iteraciones figuran en el
-Anexo~\ref{cap:anexoi}
+$[0{,}1782,\,0{,}1980]$. La cuarta alcanza $0{,}2475$, a una imagen de
+test del objetivo predefinido ($0{,}25$). La quinta, ablación
+deliberada de escala bajo idéntica LoRA que v4, reduce el rendimiento a
+$0{,}2079$ ($-4{,}0$\,pp). El barrido de épocas y la síntesis tabular
+completa figuran en el Anexo~\ref{cap:anexoi}
 (figura~\ref{fig:spanderm-epoch-sweep},
 tabla~\ref{tab:spanderm_iteraciones}).
 
@@ -1714,62 +1709,48 @@ El experimento arroja tres conclusiones diferenciadas.
 
 \paragraph{(1) La adaptación textual aporta mejoras limitadas.}
 Las iteraciones v1$\to$v3, que actúan sobre el codificador textual y
-las \emph{captions} ricas, quedan empatadas en
-$[0{,}1782,\,0{,}1980]$. El techo de \emph{Linear Probing} sobre las
-\emph{features} $1\,024$-D del encoder visual congelado
-($0{,}079$--$0{,}089$ en L3) ya es inferior al \emph{zero-shot} L3 de
-v1/v2/v3 ($\sim 0{,}13$): ninguna intervención textual puede extraer
-información que las \emph{features} visuales no contienen. El diagnóstico
-mecanístico completo figura en el Anexo~\ref{cap:anexoi}
-(tabla~\ref{tab:spanderm-lp-ceiling}).
+las \emph{captions} ricas, quedan empatadas ($0{,}178 \to 0{,}198$,
+ruido experimental): ninguna intervención textual extrae información que
+las \emph{features} visuales no contengan ya (el diagnóstico de techo
+\emph{Linear Probing} figura en el Anexo~\ref{cap:anexoi},
+tabla~\ref{tab:spanderm-lp-ceiling}).
 
 \paragraph{(2) La adaptación visual es la principal fuente de mejora.}
-El salto $+4{,}95$\,pp entre v3 y v4 bajo idéntico régimen \emph{H6}
-($0{,}1980 \to 0{,}2475$) se atribuye a la ampliación de capacidad del
-codificador visual (LoRA $r=32$ sobre doce bloques frente a $r=16$
-sobre cuatro). El cuello de botella no reside en la formulación textual
-ni en las \emph{captions} ricas, sino en la capacidad visual para
-reesculpir las \emph{features} \emph{fine-grained} castellanas. Es la
-palanca de mayor efecto del experimento.
+El salto $+4{,}95$\,pp entre v3 y v4 ($0{,}198 \to 0{,}248$, idéntico
+régimen \emph{H6}) se atribuye a la ampliación de capacidad del
+codificador visual (LoRA $r=32$ sobre doce bloques frente a $r=16$ sobre
+cuatro). El cuello de botella era visual, no textual: es la palanca de
+mayor efecto del experimento.
 
-\paragraph{(3) Ampliar con imágenes externas genéricas no mejora
-(resultado negativo).} La quinta iteración, que añade $15\,128$
-imágenes externas genéricas (PAD-UFES-20~\cite{padufes},
-DermNet~\cite{dermnet}) con \emph{captions} sintéticas, reduce la
-\emph{accuracy}@1 L3 a $0{,}2079$ ($-4{,}0$\,pp), resultado
-\emph{flat-to-negative}. El encoder visual mejora aisladamente en
-régimen visual puro (\emph{H1} $0{,}168 \to 0{,}238$, $+41{,}2\%$
-relativo) y el techo \emph{Linear Probing} L2 sube $+54{,}4\%$ relativo,
-pero el régimen híbrido L3 se degrada porque las \emph{captions}
-externas no preservan el registro discursivo del archivo y erosionan la
-alineación castellana sobre la que se calibra \emph{H6}. La cola larga
-no se rellena: las $327$ clases L3 con $\leq 5$ imágenes permanecen sin
-cobertura adicional (sólo ocho ganan cobertura). Superar el
-\emph{zero-shot} L3 $\sim 0{,}25$ requiere anotación experta dirigida
-\emph{in-domain} sobre las clases peor cubiertas, no escala genérica
-(sección~\ref{sec:linea-active-learning}). El hallazgo es convergente
-con la sensibilidad de DermLIP al tokenizador
-(sección~\ref{sec:zs-results}): la alineación cross-modal de un dominio
-clínico de alta especificidad lingüística es un recurso frágil.
+\paragraph{(3) Ampliar con datos externos genéricos no mejora
+(resultado negativo).} La quinta iteración añade $15\,128$ imágenes
+externas (PAD-UFES-20~\cite{padufes}, DermNet~\cite{dermnet}) con
+\emph{captions} sintéticas y \emph{reduce} la \emph{accuracy}@1 L3 a
+$0{,}2079$ ($-4{,}0$\,pp): aunque el encoder visual mejora aislado
+(\emph{H1} $0{,}168 \to 0{,}238$), las \emph{captions} externas no
+preservan el registro del archivo y erosionan la alineación castellana
+sobre la que se calibra \emph{H6}. La cola larga tampoco se rellena
+($327$ clases L3 con $\leq 5$ imágenes; sólo ocho ganan cobertura):
+superar el \emph{zero-shot} L3 $\sim 0{,}25$ exige anotación experta
+\emph{in-domain}, no escala genérica
+(sección~\ref{sec:linea-active-learning}). Convergente con la
+sensibilidad de DermLIP al tokenizador
+(sección~\ref{sec:zs-results}), el hallazgo confirma que \textbf{la
+alineación cross-modal de un dominio clínico de alta especificidad
+lingüística es un recurso frágil}.
 
-Una ablación independiente con el modelo fundacional inglés DermLIP v2
-($\approx 403\,000$ pares Derm1M~\cite{derm1m}) confirma que la palanca
-limitante era la escala de la alineación cross-modal y no la
-formulación textual: alcanza \emph{accuracy}@1 L3 $= 0{,}2871$ en
-régimen \emph{H6} comparable ($+3{,}96$\,pp sobre el $0{,}2475$ de v4).
-El análisis completo, con el eje idioma puro y el \emph{trade-off}
-operativo (rendimiento bruto frente a privacidad, especificidad y
-autonomía), figura en el Anexo~\ref{cap:anexoi}.
-
-La diferencia entre regímenes es la esperada: la cabeza supervisada
-cerrada con LoRA (sección~\ref{sec:dermapixel-spanderm-v0}) alcanza
-Acc@1 $0{,}250$ sobre L2, frente a $0{,}133$ de la rama contrastiva
-\emph{zero-shot open-class} (v2) sobre las $23$ clases efectivas del
-test per-case (comparativa detallada en el Anexo~\ref{cap:anexoi},
-tabla~\ref{tab:spanderm-l2-ceiling}). La ventaja operativa de la rama
-contrastiva es aceptar consultas textuales libres en castellano sin
-fijar el vocabulario, propiedad explotada en el módulo RAG del
-prototipo (Anexo~\ref{cap:anexoh}).
+Una ablación con el modelo inglés DermLIP v2 ($\approx 403\,000$ pares
+Derm1M~\cite{derm1m}) refuerza el diagnóstico: alcanza
+\emph{accuracy}@1 L3 $= 0{,}287$ ($+3{,}96$\,pp sobre v4), de modo que
+la palanca limitante es la \emph{escala} de la alineación cross-modal y
+no la formulación textual (eje idioma puro y \emph{trade-off} operativo
+en el Anexo~\ref{cap:anexoi}). La cabeza supervisada cerrada con LoRA
+(sección~\ref{sec:dermapixel-spanderm-v0}) alcanza Acc@1 $0{,}250$ en L2
+frente a $0{,}133$ de la rama contrastiva \emph{zero-shot open-class}
+(v2): la ventaja de la rama no es la exactitud, sino aceptar consultas
+textuales libres en castellano sin vocabulario fijo, propiedad explotada
+en el módulo RAG del prototipo (Anexo~\ref{cap:anexoh}; comparativa en
+tabla~\ref{tab:spanderm-l2-ceiling}).
 
 \subsection{Recuperación multimodal}
 
@@ -1812,17 +1793,16 @@ v5      & $0{,}505$           & $0{,}047$       & $10{,}8\times$           \\
 \end{tabular}
 \end{table}
 
-La alineación cross-modal castellano-imagen alcanza su pico en v2:
-i2t R@$5 = 0{,}654$ frente a la referencia aleatoria $0{,}047$ sobre
-\emph{pool} de $107$, un \emph{lift} de $\mathbf{14{,}0\times}$
-(figura~\ref{fig:spanderm-retrieval}), contribución empírica favorable
-del experimento que sustenta el uso de la rama como módulo de
-recuperación semántica. Las iteraciones posteriores conservan
-\emph{lift} sustancial (v4 $12{,}4\times$, v5 $10{,}8\times$) pero
-descienden respecto al pico, coherente con la degradación del régimen
-híbrido (tabla~\ref{tab:spanderm-zs}): la LoRA visual añadida (v4) y las
-\emph{captions} externas (v5) desplazan el espacio embebido respecto al
-óptimo \emph{rich-caption} castellano de v2.
+La recuperación cross-modal alcanza su pico en v2: i2t R@$5 = 0{,}654$,
+un \emph{lift} de $\mathbf{14{,}0\times}$ sobre el azar
+(figura~\ref{fig:spanderm-retrieval}), y desciende en las iteraciones
+posteriores (v4 $12{,}4\times$, v5 $10{,}8\times$). El dato relevante es
+la tensión que revela: v4 es la mejor versión \emph{clasificando}
+($0{,}2475$ en L3) pero v2 es la mejor \emph{recuperando}. Optimizar la
+clasificación y optimizar la búsqueda semántica no son, por tanto, el
+mismo problema: la LoRA visual (v4) y las \emph{captions} externas (v5)
+reesculpen el espacio embebido a favor de la primera y en contra de la
+segunda.
 
 \begin{figure}[H]
 \centering
