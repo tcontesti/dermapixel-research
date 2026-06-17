@@ -296,7 +296,12 @@ el \emph{test}, lo que es compatible con sobreajuste a la
 distribución de entrenamiento pese a las augmentaciones empleadas.
 Sobre MSKCC ($N_{\mathrm{train}} = 6\,189$), la mejora de BAcc es
 marginal ($+3{,}0$\,pp) y la AUROC desciende ligeramente
-($-2{,}7$\,pp).
+($-2{,}7$\,pp). La asimetría admite una explicación común: el ajuste
+fino sólo rentabiliza su mayor capacidad cuando el conjunto de
+entrenamiento basta para estimar los nuevos pesos sin memorizar la
+distribución; por debajo de ese umbral, congelar el encoder actúa como
+regularización implícita y preserva la capacidad de \emph{ranking}
+heredada del preentrenamiento.
 
 Estos tres casos delimitan un régimen operativo cuantificable. Para
 datasets con $N_{\mathrm{train}} \lesssim 500$ imágenes, el sondeo
@@ -319,6 +324,16 @@ implicación de diseño es directa y se materializa en la decisión
 arquitectónica de Dermapixel R0 (sección~\ref{sec:dermapixel-spanderm-v0}),
 que adopta LoRA sobre los últimos bloques de PanDerm Large en lugar de un
 ajuste fino denso sobre el mismo encoder.
+
+En conjunto, la evidencia ordena las tres estrategias en una regla
+escalonada por volumen de datos: con $N_{\mathrm{train}} \lesssim 500$
+imágenes, sondeo lineal sobre el encoder congelado; en el régimen
+intermedio, adaptación de bajo rango (LoRA), preferible al ajuste denso
+por su menor exposición al sobreajuste a igualdad o mejora de
+rendimiento; y sólo con $N_{\mathrm{train}} \gtrsim 5\,000$ imágenes y
+clases minoritarias clínicamente relevantes, ajuste fino denso con la
+receta original. La capacidad del modelo a desplegar debe escalarse, por
+tanto, con los datos disponibles, no fijarse a priori.
 
 \subsection{Segmentación promptable y adaptación de bajo coste}
 \label{sec:disc-segmentacion}
@@ -360,6 +375,17 @@ el peso decisivo del preentrenamiento de dominio observado en
 clasificación (sección~\ref{sec:disc-especializacion}) e invita a
 tratar por separado ambas familias de tareas.
 
+Este resultado sugiere que la segmentación constituye un caso
+particular dentro de los modelos fundacionales médicos. Mientras que
+en clasificación la especialización de dominio emerge como el principal
+determinante del rendimiento (sección~\ref{sec:disc-especializacion}),
+en segmentación la capacidad de la arquitectura parece dominar sobre el
+origen del preentrenamiento. Dicho de otro modo, reconocer \emph{qué}
+lesión aparece en una imagen sigue dependiendo en gran medida del
+conocimiento dermatológico adquirido durante el preentrenamiento,
+mientras que delimitar \emph{dónde} termina la lesión parece depender
+principalmente de mecanismos geométricos y espaciales más generales.
+
 El control automático sin caja
 (sección~\ref{sec:seg-control-automatico}) reordena, sin embargo,
 esta jerarquía de factores. Si las cinco arquitecturas
@@ -371,7 +397,13 @@ diseño es directa ---el esfuerzo de ingeniería rinde más en el
 detector que produce la caja que en sustituir un segmentador por
 otro--- y conecta con la decisión de producto de ofrecer un modo
 interactivo, en el que el clínico aporta la caja, junto a uno
-automático. Para este último, el análisis de robustez
+automático. Desde una perspectiva metodológica, este hallazgo obliga
+además a reinterpretar las comparaciones habituales entre segmentadores:
+cuando la diferencia entre arquitecturas es del orden de un punto
+porcentual y la calidad del \emph{prompt} modifica el rendimiento en más
+de siete, una parte sustancial de la literatura comparativa puede estar
+midiendo indirectamente diferencias en localización más que diferencias
+reales entre segmentadores. Para este último, el análisis de robustez
 (sección~\ref{sec:seg-robustez}) deja una especificación poco
 habitual pero accionable: dado que apretar la caja degrada el Dice
 mucho más que aflojarla, el detector debe sesgarse hacia cajas
@@ -391,7 +423,12 @@ arquitecturas son inferiores al desacuerdo inter-anotador y el «error»
 residual frente a una referencia única es, en buena medida, ruido de
 etiqueta. La salvedad pertinente es que esa consistencia convive con
 una ligera sobreconfianza en los bordes dudosos, donde el modelo traza
-una frontera nítida que los humanos no comparten.
+una frontera nítida que los humanos no comparten. En consecuencia, el
+valor de Dice debe interpretarse como una aproximación al consenso
+humano más que como una medida absoluta de verdad geométrica: una vez
+alcanzado el entorno de $0{,}95$ frente a una referencia única, el
+margen de mejora técnica disponible pasa a estar condicionado por la
+propia incertidumbre de la anotación clínica.
 
 \subsection{Sensibilidad al tokenizador en zero-shot multimodal}
 \label{sec:disc-zs}
@@ -407,6 +444,16 @@ Derm1M). Es un rango de $48{,}8$\,pp para variaciones que no tocan
 los pesos visuales, sino sólo la rama lingüística y la formulación
 textual de las clases.
 
+A diferencia de los clasificadores supervisados convencionales, donde
+la etiqueta final se obtiene a partir de una cabeza entrenada
+explícitamente para la tarea, los sistemas \emph{vision}-lenguaje
+\emph{zero-shot} realizan una comparación geométrica entre
+\emph{embeddings} visuales y textuales. En consecuencia, la calidad de
+la predicción depende simultáneamente de ambos espacios y, sobre todo,
+de su alineamiento mutuo: un encoder visual excelente puede producir
+resultados mediocres si las representaciones textuales no ocupan la
+región adecuada del espacio compartido.
+
 El valor AUROC $<0{,}5$ de la configuración inicial es diagnóstico de un
 desalineamiento entre el espacio textual proyectado por PubMedBERT y el
 espacio visual del encoder de DermLIP v1/v2, hasta el punto de invertir la
@@ -418,14 +465,22 @@ evidencia disponible permita aislar una causa única de forma concluyente,
 puesto que ambos operan sobre la misma rama textual. La lectura no debe,
 por tanto, formularse como causalidad absoluta de un único componente,
 sino como el efecto conjunto del tokenizador, los \emph{prompts} y el
-alineamiento texto-imagen resultante. La rama textual no es un componente
-accesorio del modelo multimodal: puede determinar el rendimiento final
-tanto como la representación visual. De aquí se sigue una implicación
-práctica directa: todo despliegue \emph{zero-shot} debe validar
+alineamiento texto-imagen resultante. Los resultados sugieren que, en
+régimen \emph{zero-shot}, la rama textual deja de ser un mecanismo de
+entrada y pasa a formar parte efectiva del modelo de decisión: desde
+esta perspectiva, el tokenizador, los \emph{prompts} y el encoder
+textual no son hiperparámetros externos, sino componentes funcionales
+del clasificador. De aquí se sigue una implicación práctica directa: todo despliegue \emph{zero-shot} debe validar
 empíricamente, sobre un conjunto del dominio, no sólo el modelo sino
 también su tokenizador y la formulación de los \emph{prompts}, porque la
 transferencia desde la configuración publicada por los autores no está
-garantizada.
+garantizada. El experimento cuestiona, además, una práctica habitual en
+la literatura multimodal: reportar resultados \emph{zero-shot} utilizando
+una única configuración de \emph{prompts}. Sobre los datos de este
+trabajo, la variabilidad inducida por la formulación textual supera
+ampliamente la diferencia entre algunas arquitecturas visuales, lo que
+sugiere que las comparaciones entre modelos sin controlar el espacio de
+\emph{prompts} pueden resultar difíciles de interpretar.
 
 La evaluación adicional sobre DermapixelAI~1.0
 (sección~\ref{sec:dermapixel-zs}, tabla~\ref{tab:dermapixel-zs})
@@ -438,7 +493,14 @@ $= 0{,}389$ en ambos idiomas. Esto sitúa la penalización por
 castellano como dependiente del dataset textual de preentrenamiento.
 La magnitud de la caída motiva, como línea futura inmediata,
 construir modelos vision-lenguaje contrastivos con rama textual
-entrenada sobre material clínico en castellano.
+entrenada sobre material clínico en castellano. Esta penalización
+proporciona, además, una posible explicación mecanística para parte de
+los resultados obtenidos posteriormente con Dermapixel R0
+(sección~\ref{sec:disc-especializacion}): si una simple traducción del
+vocabulario diagnóstico reduce el rendimiento entre $11$ y $14$\,pp,
+resulta razonable esperar que una adaptación explícita de la rama
+textual al lenguaje clínico castellano aporte beneficios incluso cuando
+la representación visual permanece inalterada.
 
 \subsection{Brecha entre modelos específicos y LLMs multimodales}
 \label{sec:disc-llm}
@@ -454,7 +516,12 @@ gradiente de accuracy entre el mejor especialista ajustado (PanDerm
 Base con ajuste fino y \emph{test-time augmentation}) y el mejor LLM
 multimodal \emph{zero-shot} (GPT-4o) supera los $43$\,pp; la
 tabla~\ref{tab:llm-comparativa} desglosa la escala completa de
-configuraciones intermedias.
+configuraciones intermedias. La magnitud de la diferencia observada
+sugiere que, al menos en dermatología visual, el conocimiento específico
+del dominio continúa siendo más determinante que la escala general del
+modelo: la disponibilidad de miles de millones de parámetros y de
+grandes capacidades lingüísticas no compensa la ausencia de una
+representación dermatológica especializada.
 
 Tres observaciones cualitativas, detalladas en
 sección~\ref{sec:llm-results}, matizan esta brecha sin reducirla.
@@ -465,7 +532,12 @@ y no agregado. Segundo, GPT-4o y GPT-4o-mini exhiben un sesgo de error
 hacia clases minoritarias del \emph{prompt} ---con sobreproducción de
 predicciones de dermatofibroma y melanoma muy por encima de su prevalencia
 real---, lo que sugiere que responden al espacio léxico de la consigna
-tanto como a la evidencia visual. Tercero, BLIP-2 e InstructBLIP con
+tanto como a la evidencia visual. Este patrón es compatible con un
+razonamiento guiado parcialmente por asociaciones semánticas aprendidas
+durante el preentrenamiento generalista y no exclusivamente por evidencia
+visual, por lo que la interpretación de las respuestas de los LLM
+multimodales requiere cautela cuando se aplican a taxonomías clínicas
+especializadas. Tercero, BLIP-2 e InstructBLIP con
 \emph{Q-Former} preentrenado producen una accuracy incompatible con
 cualquier uso clínico, atribuible a la falta de adaptación al vocabulario
 dermatológico. Las tres observaciones convergen en que la distancia entre
@@ -477,6 +549,15 @@ fecha de evaluación (sección~\ref{sec:lim-pesos}): no afirma el techo
 teórico de estos modelos, sino su rendimiento en el régimen de uso
 evaluado.
 
+De forma consistente con otros experimentos del trabajo, la escala del
+modelo no emerge como la variable dominante. En segmentación el principal
+determinante fue la disponibilidad del \emph{prompt} espacial
+(sección~\ref{sec:disc-segmentacion}); en \emph{zero-shot} multimodal, la
+alineación texto-imagen (sección~\ref{sec:disc-zs}); y en clasificación
+dermatológica, el preentrenamiento de dominio
+(sección~\ref{sec:disc-especializacion}). La capacidad paramétrica por sí
+sola no explica el rendimiento observado en ninguno de los tres regímenes.
+
 La brecha tiene además una vertiente de coste. La evaluación con
 APIs comerciales sobre los tres datasets cuesta unos \$4{,}07.
 MedGemma~27B, en cambio, opera localmente en BF16 sobre los
@@ -484,7 +565,13 @@ $128$\,GB de memoria unificada de la DGX Spark sin cuantización,
 con latencia media de $1{,}49$ segundos por imagen. La diferencia
 operativa importa para un despliegue hospitalario: los modelos
 cerrados añaden coste recurrente y dependencia de un proveedor
-externo, sin mejora apreciable de rendimiento clínico.
+externo, sin mejora apreciable de rendimiento clínico. Desde una
+perspectiva hospitalaria, el resultado desplaza el criterio de selección
+desde la popularidad del modelo hacia su adecuación al dominio: bajo las
+condiciones evaluadas, los modelos fundacionales dermatológicos ofrecen
+simultáneamente mejor rendimiento, menor coste operativo y mayor
+soberanía tecnológica que las alternativas multimodales cerradas de
+propósito general.
 
 \subsection{Equidad por fototipo cutáneo}
 \label{sec:disc-equidad}
@@ -508,13 +595,28 @@ inferior ($0{,}699$). BiomedCLIP exhibe el \emph{gap} mínimo
 
 Esta última asimetría ---\emph{gap} mínimo con BAcc global
 inferior--- ilustra que la métrica de equidad aislada no es
-decisional. Un modelo uniformemente malo entre subgrupos puede
+decisional. \textbf{Un modelo uniformemente malo entre subgrupos puede
 mostrar baja desigualdad aritmética sin ser equitativo en sentido
-sustantivo, porque su rendimiento es bajo en todos los fototipos por
-igual. Por eso BAcc global y \emph{gap} deben leerse de forma
-conjunta. El mejor compromiso entre ambas variables es PanDerm
-Large, seguido de DermLIP v2 cuando se ponderan el rendimiento sobre
+sustantivo}, porque su rendimiento es bajo en todos los fototipos por
+igual. El \emph{gap} mínimo de BiomedCLIP no señala, por tanto, un
+modelo más justo, sino uno uniformemente peor: la equidad no puede
+medirse al margen del rendimiento que reparte. Por eso BAcc global y
+\emph{gap} deben leerse de forma conjunta. Considerando conjuntamente
+rendimiento global y magnitud del \emph{gap}, PanDerm Large presenta el
+equilibrio más favorable entre ambas dimensiones dentro de los modelos
+evaluados, seguido de DermLIP v2 cuando se ponderan el rendimiento sobre
 FST~I-IV y la AUROC global.
+
+Desde una perspectiva asistencial, el hallazgo implica que un modelo
+validado únicamente mediante métricas globales puede ocultar pérdidas
+relevantes de sensibilidad en pacientes con fototipos menos
+representados. La validación estratificada por fototipo debería
+considerarse, por tanto, un requisito de seguridad y no únicamente una
+evaluación complementaria de equidad. Esta exigencia adquiere además
+relevancia regulatoria: los marcos emergentes de evaluación de sistemas
+de IA sanitaria enfatizan la necesidad de identificar degradaciones
+sistemáticas del rendimiento entre subpoblaciones, especialmente cuando
+dichas diferencias pueden traducirse en desigualdades diagnósticas.
 
 El experimento cruzado \emph{Light}~$\leftrightarrow$~\emph{Dark}
 (tabla~\ref{tab:cross-eval}) añade una segunda lectura. La caída de
@@ -528,24 +630,60 @@ patrón es coherente con su dataset de preentrenamiento Derm1M,
 derivado de fuentes web abiertas con representación variable de
 fototipos.
 
+Este experimento cruzado es, en cierto sentido, más informativo que el
+\emph{gap}~I-VI descriptivo, porque responde a una pregunta causal:
+qué ocurre al entrenar con unos fototipos y desplegar sobre otros. La
+caída sistemática observada en el escenario L$\to$D confirma que el
+sesgo no se limita a diferencias de prevalencia entre grupos, sino que
+emerge incluso cuando el entrenamiento excluye explícitamente parte de
+la variabilidad fenotípica. El fenómeno es compatible con una
+dependencia real de las representaciones visuales respecto al tono
+cutáneo, y no con un mero artefacto de muestreo.
+
+Ninguno de los cinco encoders evaluados elimina completamente la
+degradación observada en fototipos elevados. La convergencia de
+resultados entre arquitecturas muy distintas sugiere que la limitación
+no reside exclusivamente en un modelo concreto, sino que refleja un
+problema más amplio de representación de fototipos oscuros en los datos
+disponibles para entrenamiento. Los resultados justifican, en
+consecuencia, la incorporación explícita de diversidad fenotípica en
+futuras versiones de DermapixelAI: la expansión del repositorio clínico
+del HUSLL (sección~\ref{sec:disc-dermapixel-contrib}) ofrece una
+oportunidad para aumentar la representación de fototipos
+infrarrepresentados y reducir la dependencia de distribuciones
+procedentes de datasets públicos.
+
 \subsection{El cuello de botella ya no es sólo el modelo}
 \label{sec:disc-cuello-botella}
 
-Los resultados de las subsecciones anteriores sugieren que la mejora
-del codificador visual, por sí sola, no garantiza mejoras equivalentes
-en rendimiento clínico. A lo largo de los distintos experimentos,
-factores como el nivel ontológico al que se evalúa y se reporta, la
-calidad y cobertura de las etiquetas, el tokenizador y la formulación
-de los \emph{prompts}, la estrategia de adaptación (sondeo lineal,
-LoRA o ajuste denso según el régimen de datos), el equilibrio entre
-BAcc y AUROC en presencia de desbalance, la validación por subgrupos
-de fototipo o la combinación selectiva de modelos condicionan el
-resultado final tanto o más que la arquitectura base. Estas
-decisiones, más que la elección aislada de un codificador, determinan
-el rendimiento alcanzable. La lectura desplaza parcialmente el foco
-desde el diseño del modelo hacia el diseño del sistema completo, y
-constituye el objeto de las implicaciones operativas que se desarrollan
-en la sección~\ref{sec:implicaciones}.
+La evidencia acumulada a lo largo del trabajo sugiere que el rendimiento
+dermatológico no está limitado principalmente por la arquitectura del
+modelo. En varios experimentos, modificaciones en el diseño del sistema
+---tokenización, \emph{prompts}, estrategia de adaptación, estructura
+ontológica, equilibrio de clases, recuperación por similitud o
+validación por subgrupos--- producen variaciones comparables o
+superiores a las obtenidas al sustituir el codificador visual. Estas
+decisiones, más que la elección aislada de un codificador, determinan el
+rendimiento alcanzable, y la lectura desplaza parcialmente el foco desde
+el diseño del modelo hacia el diseño del sistema completo.
+
+Esta evolución es coherente con la madurez progresiva de los modelos
+fundacionales. A medida que las representaciones visuales alcanzan
+niveles elevados de calidad, el margen de mejora se desplaza desde la
+arquitectura hacia aspectos tradicionalmente considerados periféricos:
+datos, ontologías, alineamiento multimodal, calibración, equidad e
+integración operativa. En este sentido, Dermapixel R0 no representa la
+construcción de un modelo mayor, sino de un sistema mejor adaptado al
+problema: la contribución no reside en la escala, sino en identificar
+qué componentes limitan realmente el rendimiento y actuar sobre ellos.
+
+Desde una perspectiva de despliegue clínico, la consecuencia es clara:
+optimizar exclusivamente el modelo puede producir retornos decrecientes
+si no se acompaña de mejoras equivalentes en los datos, la taxonomía
+diagnóstica, la estrategia de adaptación, la validación por subgrupos y
+la integración en el flujo asistencial. Esta lectura constituye el
+objeto de las implicaciones operativas que se desarrollan en la
+sección~\ref{sec:implicaciones}.
 
 \subsection{Estimación robusta del rendimiento sobre datasets de tamaño moderado}
 \label{sec:disc-cv-robustez}
