@@ -771,37 +771,32 @@ InstructBLIP (Flan-T5-XL)& ZS  & $0{,}024$     & $0{,}123$     & $0{,}171$     &
 Los resultados separan claramente especialistas y generalistas. El
 mejor sistema dermatológico (PanDerm Base ajustado con TTA) alcanza
 accuracy $0{,}920$ sobre HAM10000, frente a $0{,}485$ del mejor
-generalista \emph{zero-shot} (GPT-4o): una diferencia de $43{,}5$\,pp
-consistente en los datasets evaluados
-(figura~\ref{fig:llm-comparison}). En el extremo inferior, BLIP-2 e
-InstructBLIP descienden a accuracy $\sim 0{,}02$ sobre HAM10000. Las
-cifras de los modelos generalistas corresponden al \emph{prompt} y a
-la fecha de evaluación considerados; para los modelos accesibles por
-API comercial (GPT-4o, GPT-4o-mini, Gemini~2.5 Pro y Flash) la versión
-servida por el proveedor no es controlable, por lo que estas cifras
-documentan un punto de comparación reproducible sólo en su
-formulación, no el techo intrínseco de cada sistema. Bajo esa
-condición, el conocimiento visual especializado del preentrenamiento
-dermatológico resulta más relevante para clasificar lesiones que la
-mayor capacidad lingüística de los modelos multimodales generalistas.
+generalista \emph{zero-shot} (GPT-4o) ---una diferencia de $43{,}5$\,pp
+que se mantiene en PAD-UFES-20 y DDI
+(figura~\ref{fig:llm-comparison})---; en el extremo inferior, BLIP-2 e
+InstructBLIP caen a accuracy $\sim 0{,}02$ sobre HAM10000. La lectura
+no es que un modelo generalista sea deficiente, sino que, cuando el
+problema es extremadamente visual y especializado, el conocimiento
+dermatológico adquirido durante el preentrenamiento domina sobre la
+mayor capacidad lingüística de los modelos multimodales
+generalistas.\footnote{Las cifras de los modelos accesibles por API
+comercial corresponden al \emph{prompt} y a la versión del proveedor
+disponibles en la fecha de evaluación, no reproducible ante
+actualizaciones silenciosas (sección~\ref{sec:lim-pesos}); documentan
+un punto de comparación reproducible en su formulación, no el techo
+intrínseco de cada sistema.}
 
 \subsection{Ajuste supervisado de un LLM multimodal: MedGemma con LoRA}
 
-Adaptar el LLM al dominio reduce parcialmente la brecha. La adaptación
-con LoRA sobre MedGemma~27B, usando el \emph{split} de entrenamiento de
-HAM10000, mejora $+13{,}7$\,pp de accuracy sobre HAM10000 y
-$+18{,}3$\,pp sobre DDI respecto a su variante \emph{zero-shot},
-pero no aporta sobre PAD-UFES-20 ($-1{,}7$\,pp). El ajuste
-supervisado reduce, por tanto, parcialmente la distancia, pero no
-alcanza a los encoders especializados: incluso con LoRA, MedGemma~27B
-($0{,}802$ de accuracy sobre HAM10000) queda $11{,}8$\,pp por debajo
-del mejor especialista.
-
-El desglose de errores por clase de GPT-4o ---con patrones
-asimétricos como \emph{recall} $0{,}000$ sobre \emph{actinic
-keratosis} y un fuerte sesgo de predicción hacia categorías menos
-restringidas en el \emph{prompt}--- y el coste de inferencia de cada
-modelo (APIs comerciales y ejecución local) se detallan en el
+MedGemma es el único LLM multimodal que se acerca, y lo hace gracias a
+la adaptación al dominio: el ajuste con LoRA sobre MedGemma~27B mejora
+$+13{,}7$\,pp de accuracy sobre HAM10000 respecto a su variante
+\emph{zero-shot} ($0{,}665 \to 0{,}802$) ---un salto que vuelve a
+señalar que es la adaptación, y no la escala bruta, lo que cierra la
+brecha---. Aun así, incluso adaptado queda $11{,}8$\,pp por debajo del
+mejor especialista y la mejora no transfiere de forma sistemática
+(sin ganancia sobre PAD-UFES-20). El desglose por dataset, los
+patrones de error de GPT-4o y los costes de inferencia figuran en el
 Anexo~\ref{cap:anexog}.
 
 \begin{figure}[H]
