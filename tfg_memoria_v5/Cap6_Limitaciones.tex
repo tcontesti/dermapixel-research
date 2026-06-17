@@ -43,18 +43,30 @@ replicación por terceros.
 \subsection{Conjuntos de preentrenamiento no liberados}
 \label{sec:lim-preentrenamiento}
 
-Los conjuntos de preentrenamiento internos del grupo de la
-Universidad Monash empleados en PanDerm~\cite{panderm2025} no son
-accesibles para terceros. Esta restricción impide reproducir la
-fase de preentrenamiento del modelo y limita la verificación a los
-pesos liberados. La consecuencia metodológica es que cualquier
-afirmación sobre la composición del dataset de preentrenamiento
-(\emph{las cuatro modalidades dermatológicas}, \emph{$\sim 2{,}1$
-millones de imágenes}) descansa sobre la declaración de los autores
-y no sobre auditoría independiente. La misma restricción aplica al
-dataset Derm1M de la familia DermLIP, que se distribuye con
-\emph{embeddings} agregados pero sin acceso íntegro al material de
-imagen original.
+Los conjuntos de preentrenamiento internos del grupo de la Universidad
+Monash empleados en PanDerm~\cite{panderm2025} no son accesibles para
+terceros, lo que impide reproducir la fase de preentrenamiento y limita
+la verificación a los pesos liberados. En consecuencia, cualquier
+afirmación sobre la composición del dataset de preentrenamiento (las
+cuatro modalidades dermatológicas, $\sim 2{,}1$ millones de imágenes)
+descansa sobre la declaración de los autores y no sobre auditoría
+independiente. La misma restricción aplica al dataset Derm1M de la
+familia DermLIP, distribuido con \emph{embeddings} agregados pero sin
+acceso íntegro al material de imagen original.
+
+\subsection{Dependencia de modelos fundacionales externos}
+\label{sec:lim-dependencia-externa}
+
+El trabajo evalúa principalmente estrategias de adaptación,
+transferencia e integración sobre modelos fundacionales desarrollados
+por terceros (PanDerm, DermLIP, SAM2.1, SigLIP, BiomedCLIP). Por tanto,
+parte de las conclusiones depende de las decisiones de diseño y de los
+sesgos heredados de dichos modelos. Aunque esta situación refleja el
+escenario real de adopción clínica actual ---en el que una institución
+sanitaria parte de pesos preentrenados disponibles y no de un
+preentrenamiento propio a gran escala---, limita la capacidad de atribuir
+causalmente determinados comportamientos a componentes específicos del
+entrenamiento original.
 
 \section{Limitaciones de los datos}
 \label{sec:lim-datos}
@@ -235,38 +247,25 @@ la extensión natural de este protocolo.
 \subsection{Pruebas estadísticas y comparaciones múltiples}
 \label{sec:lim-estadistica}
 
-El protocolo declarado en sección~\ref{sec:estadistica} contempla
-intervalos de confianza al $95\%$ mediante \emph{bootstrap} sobre
-$1\,000$ remuestreos y el test de DeLong~\cite{delong1988} para
-contrastes pareados de AUROC. El test de DeLong se ha aplicado a los
-contrastes pareados entre los cinco encoders (PanDerm Large, PanDerm
-Base, DermLIP v2, DINOv2 y BiomedCLIP) sobre el endpoint binario de
-detección de malignidad en Fitzpatrick17k, con corrección de
-Bonferroni para las diez comparaciones
-(sección~\ref{sec:equidad-delong},
-tabla~\ref{tab:delong-pares}); la función \texttt{resample\_metric}
-del proyecto soporta además el \emph{bootstrap} estratificado por
-clase. Lo que permanece como refinamiento estadístico de la versión
-publicable es la presentación sistemática de cada cifra principal de
-las tablas \ref{tab:lp-panderm}, \ref{tab:ft-panderm} y
-\ref{tab:equidad-fototipo} como par (estimador, IC \emph{bootstrap})
-en lugar de valor puntual, y la extensión del contraste de DeLong y
-de la corrección por comparaciones múltiples (Bonferroni o
-Benjamini-Hochberg) al resto de \emph{endpoints} y tablas del
-capítulo.
+El test de DeLong~\cite{delong1988} se ha aplicado de forma sistemática
+a los contrastes pareados entre los cinco encoders sobre el
+\emph{endpoint} binario de detección de malignidad en Fitzpatrick17k,
+con corrección de Bonferroni para las diez comparaciones
+(sección~\ref{sec:equidad-delong}, tabla~\ref{tab:delong-pares}). Su
+extensión al resto de \emph{endpoints} y tablas del capítulo, junto con
+la presentación de cada cifra principal como par (estimador,
+IC~\emph{bootstrap}) en lugar de valor puntual, permanece como
+refinamiento estadístico de la versión publicable.
 
-La consecuencia operativa es que la superioridad entre encoders
-sobre la detección de malignidad queda establecida estadísticamente
-(sección~\ref{sec:equidad-delong}), mientras que el resto de
-hallazgos numéricos del capítulo~\ref{cap:resultados} son
-defendibles en términos descriptivos y de magnitud, pero las
-afirmaciones de \emph{superioridad estadísticamente significativa}
-de un modelo sobre otro en los demás \emph{endpoints} requieren la
-cuantificación pendiente. Los patrones
-cualitativos identificados en la discusión
-(sección~\ref{sec:disc-especializacion}, sección~\ref{sec:disc-eficiencia},
-sección~\ref{sec:disc-lp-vs-ft}) son robustos frente a esta limitación
-por la magnitud absoluta de los efectos cuantificados.
+La consecuencia operativa es que la superioridad entre encoders sobre la
+detección de malignidad queda establecida estadísticamente, mientras que
+el resto de hallazgos numéricos del capítulo~\ref{cap:resultados} deben
+interpretarse en términos descriptivos y de magnitud del efecto: las
+afirmaciones de \emph{superioridad estadísticamente significativa} en los
+demás \emph{endpoints} requieren la cuantificación pendiente. Los
+patrones cualitativos identificados en la discusión son, no obstante,
+robustos frente a esta limitación por la magnitud absoluta de los efectos
+cuantificados.
 
 \subsection{Sensibilidad al \emph{prompt} en zero-shot y LLMs}
 \label{sec:lim-prompts}
@@ -436,35 +435,34 @@ no contemplado.
 El conjunto de limitaciones declarado en este capítulo acota el
 dominio de validez de las cifras reportadas en el
 capítulo~\ref{cap:resultados} pero no invalida los patrones
-cualitativos identificados en la discusión. Cuatro afirmaciones
-cualitativas resisten al peor escenario combinado de las
-limitaciones anteriores y constituyen la respuesta empírica
-defendible del trabajo a la pregunta de investigación formulada
-en sección~\ref{sec:pregunta}.
+cualitativos identificados en la discusión. Cinco afirmaciones resisten
+al peor escenario combinado de muestreo, semilla, sensibilidad al
+\emph{prompt} y restricciones de modelos cerrados, y constituyen la
+respuesta empírica defendible del trabajo a la pregunta de investigación
+formulada en sección~\ref{sec:pregunta}:
 
-Estas afirmaciones son: la ventaja del preentrenamiento sobre el
-dominio clínico frente a encoders generalistas; la saturación
-temprana del sondeo lineal con $1$--$5\%$ de datos etiquetados; la
-brecha entre encoders específicos y LLMs multimodales generalistas;
-y el \emph{gap} sistemático por fototipo cutáneo, con sentido
-peor-en-fototipos-elevados. Las cuatro sobreviven al peor escenario
-combinado de muestreo, semilla, sensibilidad al \emph{prompt} y
-restricciones de modelos cerrados. Su cuantificación y su lectura
-como conclusiones se desarrollan en el
-capítulo~\ref{cap:conclusiones} (sección~\ref{sec:respuesta}).
+\begin{enumerate}
+  \item La \textbf{ventaja del preentrenamiento sobre el dominio
+  clínico} frente a codificadores generalistas.
+  \item La \textbf{saturación temprana del sondeo lineal}, que alcanza
+  el grueso de su rendimiento con $1$--$5\%$ de los datos etiquetados.
+  \item La \textbf{brecha entre codificadores específicos y LLMs
+  multimodales generalistas}, a favor de los primeros.
+  \item El \textbf{\emph{gap} sistemático por fototipo cutáneo}, con
+  sentido peor-en-fototipos-elevados y consistente entre encoders.
+  \item La \textbf{ausencia de un método óptimo único y la consiguiente
+  especialización por tarea} (sección~\ref{sec:disc-especializacion}),
+  lectura transversal que sintetiza las cuatro anteriores.
+\end{enumerate}
 
-A estas cuatro afirmaciones directas se añade una lectura transversal
-de orden superior, que no constituye un quinto resultado independiente
-sino la síntesis de leerlas en conjunto: la ausencia de un método
-óptimo único y la consiguiente especialización por tarea
-(sección~\ref{sec:disc-especializacion}), que culmina la respuesta a
-la pregunta de investigación (sección~\ref{sec:respuesta}). Esta
-lectura está igualmente acotada por las limitaciones declaradas en
-este capítulo. En particular, el tamaño moderado del dataset
-DermapixelAI~1.0 (sección~\ref{sec:lim-dermapixel}), su cola larga en
-el nivel L3 y el carácter exploratorio de varios de los contrastes por
-nivel ontológico condicionan la fuerza con que puede afirmarse la
-especialización por tarea: el patrón cualitativo es robusto, pero no
-constituye una ordenación cuantitativa cerrada entre métodos, cuya
-validación requeriría los tamaños muestrales y la cohorte prospectiva
-descritos en el capítulo~\ref{cap:conclusiones}.
+Las cuatro primeras son afirmaciones directas; la quinta es una lectura
+de orden superior que emerge de leerlas en conjunto. Su cuantificación y
+su lectura como conclusiones se desarrollan en el
+capítulo~\ref{cap:conclusiones} (sección~\ref{sec:respuesta}). La quinta
+está, además, acotada por el tamaño moderado del dataset
+DermapixelAI~1.0 (sección~\ref{sec:lim-dermapixel}), su cola larga en el
+nivel L3 y el carácter exploratorio de varios de los contrastes por
+nivel ontológico: el patrón cualitativo es robusto, pero no constituye
+una ordenación cuantitativa cerrada entre métodos, cuya validación
+requeriría los tamaños muestrales y la cohorte prospectiva descritos en
+el capítulo~\ref{cap:conclusiones}.
