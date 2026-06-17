@@ -327,3 +327,56 @@ CAE-seg (PanDerm-L) FT ISIC2018     & PH2          & $0{,}924 \pm 0{,}066$ & $0{
 \hline
 \end{tabular}
 \end{table}
+
+\section{Equidad por fototipo: tablas complementarias}
+\label{sec:anexob-equidad}
+
+Tablas de apoyo a la sección~\ref{sec:equidad-results}: el rendimiento
+global de los cinco encoders sobre Fitzpatrick17k
+(tabla~\ref{tab:equidad-global}) y la matriz completa de la evaluación
+cruzada \emph{Light}~$\leftrightarrow$~\emph{Dark}
+(tabla~\ref{tab:cross-eval}).
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Equidad sobre Fitzpatrick17k completo. Rendimiento global
+en las dos formulaciones. Mejor valor por columna en negrita.}
+\label{tab:equidad-global}
+\begin{tabular}{lrrrrrrrr}
+\hline
+                          & \multicolumn{4}{c}{$114$ patologías} & \multicolumn{4}{c}{$3$ clases malignidad} \\
+\cline{2-5}\cline{6-9}
+Modelo                    & Acc           & BAcc          & AUROC         & W-F1          & Acc           & BAcc          & AUROC         & W-F1 \\
+\hline
+PanDerm Large             & $\mathbf{0{,}581}$ & $0{,}549$     & $0{,}968$     & $\mathbf{0{,}576}$ & $0{,}835$     & $0{,}699$     & $0{,}908$     & $0{,}828$ \\
+PanDerm Base              & $0{,}500$     & $0{,}478$     & $0{,}955$     & $0{,}491$     & $0{,}819$     & $0{,}657$     & $0{,}882$     & $0{,}807$ \\
+DermLIP v2 (visual)       & $0{,}572$     & $\mathbf{0{,}549}$ & $\mathbf{0{,}971}$ & $0{,}569$ & $\mathbf{0{,}852}$ & $\mathbf{0{,}721}$ & $\mathbf{0{,}909}$ & $\mathbf{0{,}846}$ \\
+DINOv2 ViT-L/14           & $0{,}519$     & $0{,}485$     & $0{,}947$     & $0{,}516$     & $0{,}809$     & $0{,}656$     & $0{,}854$     & $0{,}801$ \\
+BiomedCLIP                & $0{,}334$     & $0{,}321$     & $0{,}910$     & $0{,}323$     & $0{,}799$     & $0{,}590$     & $0{,}830$     & $0{,}776$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{Evaluación cruzada \emph{Light}~$\leftrightarrow$~\emph{Dark}
+(BAcc, formulación de $3$ clases). \emph{L}: \emph{Light};
+\emph{D}: \emph{Dark}; \emph{All}: ambos grupos.}
+\label{tab:cross-eval}
+\begin{tabular}{lrrrrrr}
+\hline
+Modelo                    & L$\to$L       & L$\to$D       & D$\to$D       & D$\to$L       & All$\to$L     & All$\to$D \\
+\hline
+PanDerm Large             & $0{,}699$     & $0{,}589$     & $0{,}701$     & $0{,}667$     & $0{,}726$     & $0{,}627$ \\
+PanDerm Base              & $0{,}673$     & $0{,}557$     & $0{,}621$     & $0{,}629$     & $0{,}673$     & $0{,}594$ \\
+DermLIP v2 (visual)       & $\mathbf{0{,}729}$ & $\mathbf{0{,}651}$ & $0{,}667$ & $\mathbf{0{,}683}$ & $\mathbf{0{,}745}$ & $\mathbf{0{,}682}$ \\
+DINOv2 ViT-L/14           & $0{,}655$     & $0{,}523$     & $0{,}625$     & $0{,}569$     & $0{,}682$     & $0{,}589$ \\
+BiomedCLIP                & $0{,}595$     & $0{,}532$     & $0{,}571$     & $0{,}551$     & $0{,}594$     & $0{,}565$ \\
+\hline
+\end{tabular}
+\end{table}

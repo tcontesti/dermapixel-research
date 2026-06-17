@@ -818,38 +818,13 @@ Esta sección analiza si los modelos rinden de forma equitativa entre
 fototipos cutáneos y cómo distinguir una equidad real de una métrica
 engañosa: un \emph{gap} pequeño puede esconder un modelo
 uniformemente peor, de modo que la métrica aislada no decide, como
-establecen la comparación de cinco encoders y el test de DeLong. La
-tabla~\ref{tab:equidad-global} reporta el rendimiento global de
-cinco encoders sobre Fitzpatrick17k completo ($N = 16\,577$) en
-las dos formulaciones consideradas: clasificación a $114$
-patologías (grano fino del dataset) y clasificación a $3$ clases
-de malignidad (benigno / no~neoplásico / maligno).
-
-\begin{table}[H]
-\centering
-\footnotesize
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{0.95}
-\caption{Equidad sobre Fitzpatrick17k completo. Rendimiento global
-en las dos formulaciones. Mejor valor por columna en negrita.}
-\label{tab:equidad-global}
-\begin{tabular}{lrrrrrrrr}
-\hline
-                          & \multicolumn{4}{c}{$114$ patologías} & \multicolumn{4}{c}{$3$ clases malignidad} \\
-\cline{2-5}\cline{6-9}
-Modelo                    & Acc           & BAcc          & AUROC         & W-F1          & Acc           & BAcc          & AUROC         & W-F1 \\
-\hline
-PanDerm Large             & $\mathbf{0{,}581}$ & $0{,}549$     & $0{,}968$     & $\mathbf{0{,}576}$ & $0{,}835$     & $0{,}699$     & $0{,}908$     & $0{,}828$ \\
-PanDerm Base              & $0{,}500$     & $0{,}478$     & $0{,}955$     & $0{,}491$     & $0{,}819$     & $0{,}657$     & $0{,}882$     & $0{,}807$ \\
-DermLIP v2 (visual)       & $0{,}572$     & $\mathbf{0{,}549}$ & $\mathbf{0{,}971}$ & $0{,}569$ & $\mathbf{0{,}852}$ & $\mathbf{0{,}721}$ & $\mathbf{0{,}909}$ & $\mathbf{0{,}846}$ \\
-DINOv2 ViT-L/14           & $0{,}519$     & $0{,}485$     & $0{,}947$     & $0{,}516$     & $0{,}809$     & $0{,}656$     & $0{,}854$     & $0{,}801$ \\
-BiomedCLIP                & $0{,}334$     & $0{,}321$     & $0{,}910$     & $0{,}323$     & $0{,}799$     & $0{,}590$     & $0{,}830$     & $0{,}776$ \\
-\hline
-\end{tabular}
-\end{table}
-
-La tabla~\ref{tab:equidad-fototipo} reporta la BAcc por fototipo
-Fitzpatrick sobre la formulación de tres clases.
+establecen la comparación de cinco encoders y el test de DeLong. El rendimiento global de los cinco encoders sobre Fitzpatrick17k
+completo ($N = 16\,577$), en las dos formulaciones consideradas
+---$114$ patologías y $3$ clases de malignidad---, figura en el
+Anexo~\ref{cap:anexob} (tabla~\ref{tab:equidad-global}); el análisis
+de equidad se centra en la formulación de $3$ clases. La
+tabla~\ref{tab:equidad-fototipo} reporta la BAcc por fototipo
+Fitzpatrick sobre esa formulación.
 
 \begin{table}[H]
 \centering
@@ -873,48 +848,30 @@ BiomedCLIP                & $0{,}569$     & $0{,}602$     & $0{,}606$     & $0{,
 \end{tabular}
 \end{table}
 
-Los cinco modelos tienen \emph{gap}~I-VI positivo, es decir, rinden
-peor sobre fototipos elevados. Sobre el conjunto y la configuración
-evaluados (estimación puntual de una semilla; el contraste con cierre
-estadístico se reserva al test de DeLong de la
-sección~\ref{sec:equidad-delong}), DermLIP v2 logra la mejor BAcc
-global ($0{,}721$ sobre $3$ clases) y la mejor AUROC global
-($0{,}909$), pero su \emph{gap}~I-VI ($+0{,}281$) supera al de PanDerm
-Large ($+0{,}217$). BiomedCLIP tiene el \emph{gap} menor ($+0{,}124$),
-pero a costa de una BAcc global inferior ($0{,}590$). Este contraste
-muestra que el \emph{gap} aislado no decide nada: un modelo
-uniformemente peor entre subgrupos puede exhibir un \emph{gap} bajo
-sin ser equitativo en sentido sustantivo
-(figura~\ref{fig:fairness-5models}). La AUROC global de PanDerm
-Large sobre $3$ clases es $0{,}908$, con un \emph{gap} de AUROC
-entre fototipos extremos de $0{,}089$ (FST~IV: $0{,}919$ vs FST~VI:
-$0{,}830$).
+Los cinco modelos tienen \emph{gap}~I-VI positivo: todos rinden peor
+sobre los fototipos elevados (figura~\ref{fig:fairness-5models}). Pero
+el ranking de equidad no coincide con el de rendimiento. DermLIP v2
+logra la mejor BAcc global ($0{,}721$ sobre $3$ clases) y la mejor
+AUROC ($0{,}909$), pero con un \emph{gap}~I-VI ($+0{,}281$) mayor que
+el de PanDerm Large ($+0{,}217$); y BiomedCLIP exhibe el \emph{gap}
+menor ($+0{,}124$) pero la peor BAcc global ($0{,}590$).
 
-La tabla~\ref{tab:cross-eval} amplía la evaluación con un
-experimento cruzado \emph{Light}~$\leftrightarrow$~\emph{Dark}, donde
-\emph{Light} agrupa FST~I-III y \emph{Dark} agrupa FST~IV-VI.
+Este contraste encierra la principal aportación metodológica de la
+sección: \textbf{el \emph{gap} aislado no constituye una métrica
+suficiente de equidad}. Un modelo uniformemente peor entre subgrupos
+puede presentar una brecha reducida simplemente porque falla en todos
+ellos ---ser equitativamente malo no es ser equitativo en sentido
+sustantivo---. La interpretación debe además acotarse por el reducido
+tamaño muestral del fototipo~VI ($N = 73$, frente a $299$ en
+FST~I; sección~\ref{sec:lim-muestrales}), que ensancha los intervalos
+del \emph{gap} sobre los fototipos oscuros. El contraste con cierre
+estadístico se reserva al test de DeLong
+(sección~\ref{sec:equidad-delong}).
 
-\begin{table}[H]
-\centering
-\footnotesize
-\setlength{\tabcolsep}{4pt}
-\caption{Evaluación cruzada \emph{Light}~$\leftrightarrow$~\emph{Dark}
-(BAcc, formulación de $3$ clases). \emph{L}: \emph{Light};
-\emph{D}: \emph{Dark}; \emph{All}: ambos grupos.}
-\label{tab:cross-eval}
-\begin{tabular}{lrrrrrr}
-\hline
-Modelo                    & L$\to$L       & L$\to$D       & D$\to$D       & D$\to$L       & All$\to$L     & All$\to$D \\
-\hline
-PanDerm Large             & $0{,}699$     & $0{,}589$     & $0{,}701$     & $0{,}667$     & $0{,}726$     & $0{,}627$ \\
-PanDerm Base              & $0{,}673$     & $0{,}557$     & $0{,}621$     & $0{,}629$     & $0{,}673$     & $0{,}594$ \\
-DermLIP v2 (visual)       & $\mathbf{0{,}729}$ & $\mathbf{0{,}651}$ & $0{,}667$ & $\mathbf{0{,}683}$ & $\mathbf{0{,}745}$ & $\mathbf{0{,}682}$ \\
-DINOv2 ViT-L/14           & $0{,}655$     & $0{,}523$     & $0{,}625$     & $0{,}569$     & $0{,}682$     & $0{,}589$ \\
-BiomedCLIP                & $0{,}595$     & $0{,}532$     & $0{,}571$     & $0{,}551$     & $0{,}594$     & $0{,}565$ \\
-\hline
-\end{tabular}
-\end{table}
-
+Un experimento cruzado \emph{Light}~$\leftrightarrow$~\emph{Dark}
+(\emph{Light} agrupa FST~I-III; \emph{Dark}, FST~IV-VI; matriz completa
+en el Anexo~\ref{cap:anexob}, tabla~\ref{tab:cross-eval}) añade una
+segunda lectura, más fuerte que el simple \emph{gap}.
 Entrenar solo con fototipos claros y evaluar sobre oscuros (L$\to$D
 frente a L$\to$L) penaliza el rendimiento. La caída es mayor en
 DINOv2 ($\Delta = -0{,}132$\,pp BAcc) y menor en BiomedCLIP
