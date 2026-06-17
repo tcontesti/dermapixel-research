@@ -697,7 +697,12 @@ fundacionales sobre datasets de tamaño moderado: la diferencia entre la
 cifra puntual del \emph{split} fijo y la media de los \emph{folds} es
 sustancial sobre las métricas dependientes de umbral (BAcc) y casi nula
 sobre la AUROC \emph{one-vs-rest}. Esta observación matiza la lectura de
-toda cifra de BAcc puntual sobre un \emph{test} reducido. De aquí se siguen
+toda cifra de BAcc puntual sobre un \emph{test} reducido. La validación
+cruzada transforma así la interpretación del resultado desde una
+estimación puntual hacia una estimación de su variabilidad: la cifra
+puntual no es el rendimiento, sino una observación; el rendimiento es una
+distribución. En datasets clínicos de tamaño moderado, esta información
+resulta tan importante como la propia métrica central. De aquí se siguen
 dos lecturas operativas. \textit{Primero}, la cifra del \emph{split}
 publicado conserva validez como punto operativo de referencia ---y como
 base de la comparación cruzada con la evaluación \emph{zero-shot} sobre el
@@ -707,10 +712,41 @@ estimación cruzada para defender el rendimiento esperado del sistema.
 métrica primaria recomendable para comparar configuraciones de
 \emph{transfer learning} congelado, mientras que la BAcc y la
 \emph{accuracy} deben acompañarse de su intervalo de confianza o de su
-estimación cruzada por \emph{folds}.
+estimación cruzada por \emph{folds}. La estabilidad de la AUROC frente a
+las métricas dependientes de umbral explica además su uso recurrente a lo
+largo del trabajo como métrica primaria de comparación entre
+codificadores: mientras que la BAcc depende de una frontera de decisión
+concreta, la AUROC evalúa la capacidad de ordenación del modelo y resulta
+menos sensible a fluctuaciones muestrales en conjuntos reducidos.
+
+En consecuencia, los \emph{rankings} observados entre modelos sobre
+DermapixelAI~1.0 deben interpretarse como estimaciones sujetas a
+incertidumbre muestral y no como jerarquías absolutas. La validación
+cruzada agrupada por caso proporciona una aproximación más robusta al
+rendimiento esperado en despliegue que cualquier partición fija
+individual, y protege la lectura de las cifras de los niveles L2 y L3
+---los de \emph{test} más reducido--- frente a la sobreinterpretación de
+diferencias dentro del margen de error.
 
 \section{Comparación con la literatura}
 \label{sec:lit}
+
+Los resultados discutidos en la sección anterior adquieren significado
+únicamente en relación con la evidencia previa disponible. Por ello, esta
+sección contrasta los hallazgos obtenidos con los principales trabajos de
+referencia en modelos fundacionales dermatológicos, segmentación médica,
+aprendizaje multimodal, equidad por fototipo e interpretabilidad basada
+en conceptos.
+
+El objetivo no es únicamente verificar la reproducibilidad de resultados
+previamente publicados, sino también identificar los puntos de
+convergencia y divergencia que emergen al evaluar estos modelos sobre
+datasets externos, en castellano y bajo condiciones de despliegue
+diferentes a las descritas en los trabajos originales. Este contraste
+permite situar las contribuciones de DermapixelAI~1.0 y Dermapixel R0
+dentro del estado actual de la investigación, delimitando qué
+observaciones confirman la literatura existente, cuáles la matizan y
+cuáles aportan evidencia nueva.
 
 \subsection{Reproducción del benchmark de PanDerm}
 \label{sec:lit-panderm}
