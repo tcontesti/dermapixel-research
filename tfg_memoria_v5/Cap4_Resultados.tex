@@ -1848,17 +1848,15 @@ Anexo~\ref{cap:anexof} introduce un SAE Large de $16\,384$
 \emph{features} entrenado sobre las activaciones de PanDerm Large y
 validado sobre los $48$ conceptos visuales de SkinCon~\cite{skincon}.
 Esta sección extiende la validación a Derm7pt~\cite{kawahara2019}
-($1\,011$ lesiones dermatoscópicas) y explota las anotaciones del
-\emph{Seven-Point Checklist} (siete criterios por imagen) en tres
-experimentos sobre DGX Spark GB10: E1 alineamiento \emph{single-feature}
-entre las $16\,384$ activaciones y los siete criterios binarizados, E2
-\emph{Concept Bottleneck Model} (CBM) jerárquico para predicción
-melanoma/no-melanoma, y E3 cruce con los $16$ conceptos del Grupo A
-propuestos a la Dra.~R.~Taberner. Los tres comparten Derm7pt completo
-($N = 1\,011$, $24{,}5\%$ melanomas; \emph{splits} oficiales
-$413$/$203$/$395$, $100$ melanomas en test). La activación del SAE
-muestra $3\,214$ \emph{features} activas ($>5\%$), $2\,978$ inactivas
-y $2\,717$ muy activas ($>50\%$), coherente con la sparsidad nominal.
+($1\,011$ lesiones dermatoscópicas, \emph{splits} oficiales
+$413$/$203$/$395$, $24{,}5\%$ melanomas) y explota las anotaciones del
+\emph{Seven-Point Checklist}. Se realizan cuatro experimentos
+complementarios para evaluar si las representaciones del SAE codifican
+conceptos dermatoscópicos clínicamente relevantes (E1 alineamiento
+\emph{single-feature}; E3 cruce con el Grupo~A de la Dra.~R.~Taberner) y
+si dichos conceptos pueden sostener modelos interpretables sin penalizar
+el rendimiento (E2 \emph{Concept Bottleneck Model}; E4 \emph{fine-tuning}
+multitarea). Todos sobre DGX Spark GB10.
 
 E1 evalúa, para cada uno de los siete criterios binarizados, la AUROC
 efectiva $\max(\mathrm{AUROC}, 1-\mathrm{AUROC})$ de cada una de las
@@ -1895,15 +1893,12 @@ vascular\_structures     & $188$ & $823$ & $\mathbf{0{,}823}$ & $\mathbf{0{,}782
 \end{tabular}
 \end{table}
 
-Las siete \emph{features} más alineadas individualmente alcanzan
-AUROC efectivo en el intervalo $[0{,}681,\,0{,}823]$, con el
-máximo sobre \emph{vascular structures} ($0{,}823$) y mínimo sobre
-\emph{dots and globules} ($0{,}681$). La estabilidad entre el
-\emph{top-1} y el \emph{top-10} (diferencia $\leq 0{,}043$ en
-valor absoluto) indica que el alineamiento no se concentra en una
-única \emph{feature} aislada sino que el SAE codifica los
-conceptos mediante un pequeño subconjunto coherente de
-activaciones.
+Las mejores \emph{features} alcanzan AUROC efectivo entre $0{,}681$ y
+$0{,}823$ según el criterio evaluado (máximo sobre \emph{vascular
+structures}). La estabilidad entre el \emph{top-1} y el \emph{top-10}
+(diferencia $\leq 0{,}043$) indica que el alineamiento no se concentra
+en una \emph{feature} aislada: el SAE codifica los conceptos mediante un
+pequeño subconjunto coherente de activaciones.
 
 E2 construye un CBM jerárquico de dos etapas: una cabeza logística
 sobre las $16\,384$ activaciones estima la probabilidad de los siete
@@ -1934,33 +1929,25 @@ CBM (SAE $\to$ $7$ conceptos $\to$ melanoma) & $0{,}825$ & $0{,}681$ & $\mathbf{
 \end{tabular}
 \end{table}
 
-El paso de las activaciones crudas del SAE a través del cuello de
-botella conceptual reduce la AUROC binaria melanoma de $0{,}890$ a
-$0{,}832$ ($-5{,}8$\,pp), pérdida que documenta el compromiso entre
-interpretabilidad y precisión. Los pesos del meta-clasificador
-identifican \emph{blue whitish veil} y \emph{regression structures}
-como los conceptos dominantes para la decisión melanoma, jerarquía
-coherente con el peso clínico que el \emph{Seven-Point
-Checklist}~\cite{kawahara2019} asigna a ambos criterios (criterios
-mayores de $2$ puntos). El AUROC binario por concepto de la cabeza
-intermedia y los pesos completos del meta-clasificador figuran en el
+La pérdida de $5{,}8$\,pp de AUROC ($0{,}890 \to 0{,}832$) cuantifica el
+coste de obligar al modelo a razonar exclusivamente mediante conceptos
+explícitos. Los pesos del meta-clasificador identifican \emph{blue
+whitish veil} y \emph{regression structures} como conceptos dominantes
+para la decisión melanoma, jerarquía coherente con el peso que el
+\emph{Seven-Point Checklist}~\cite{kawahara2019} asigna a ambos
+(criterios mayores de $2$ puntos); el desglose completo figura en el
 Anexo~\ref{cap:anexof} (tabla~\ref{tab:sae-d7pt-cbm-coefs}).
 
-E3 cruza los $16$ conceptos dermatoscópicos del Grupo~A propuestos a
-la Dra.~R.~Taberner (sección~\ref{sec:dermapixel}) con los siete
-criterios del \emph{Seven-Point Checklist} sobre Derm7pt, reportando
-para cada concepto con \emph{mapping} la AUROC efectiva de la mejor
-\emph{feature} SAE (resultado completo en Anexo~\ref{cap:anexof},
-tabla~\ref{tab:sae-d7pt-cross-rosa}). De los $16$ conceptos, $11$
-admiten \emph{mapping} operativo y $7$ de ellos quedan cubiertos por al
-menos una \emph{feature} SAE con AUROC efectivo $\geq 0{,}70$ (máximo
-$0{,}926$ sobre vasos en horquilla, pese a sólo $15$ positivos sobre
-$1\,011$, lo que ilustra que el SAE captura conceptos poco frecuentes
-sin contaminación por la distribución mayoritaria). Los $5$ sin
-\emph{mapping} (empedrado, paralelos surcos/crestas, lagunas
-vasculares, vasos en corona) corresponden a estructuras no contempladas
-en la escala original y definen el contenido de la anotación clínica
-colaborativa.
+E3 cruza los $16$ conceptos del Grupo~A propuestos a la
+Dra.~R.~Taberner (sección~\ref{sec:dermapixel}) con el \emph{Seven-Point
+Checklist}: $11$ admiten \emph{mapping} operativo y $7$ quedan cubiertos
+por al menos una \emph{feature} SAE con AUROC efectivo $\geq 0{,}70$
+(incluido un concepto con sólo $15$ positivos, lo que sugiere que el SAE
+captura conceptos poco frecuentes sin contaminación por la clase
+mayoritaria). Los $5$ sin \emph{mapping} corresponden a estructuras no
+contempladas en la escala original y definen el contenido de la
+anotación clínica colaborativa (detalle completo en el
+Anexo~\ref{cap:anexof}, tabla~\ref{tab:sae-d7pt-cross-rosa}).
 
 \subsection*{Ajuste fino multitarea: cabezas conceptuales y
 melanoma}
@@ -2006,22 +1993,21 @@ E2 CBM (SAE $\to$ $7$ conceptos $\to$ mel)    & $\sim 120$    & $0{,}825$ & $0{,
 \end{tabular}
 \end{table}
 
-La cabeza melanoma del \emph{fine-tuning} multitarea alcanza AUROC
-test $= 0{,}891$ (IC95\% $[0{,}856,\,0{,}927]$), que iguala al sondeo
-lineal directo ($0{,}890$, $+0{,}1$\,pp, dentro del ruido del
-\emph{bootstrap}) y mejora el CBM jerárquico en $+5{,}9$\,pp AUROC,
-ofreciendo además predicción melanoma e inferencia sobre los siete
-criterios en una sola pasada sin coste discriminativo apreciable. El
-desglose por concepto (Anexo~\ref{cap:anexof},
-tabla~\ref{tab:sae-d7pt-e4-concepts}) muestra que las cabezas
-conceptuales del régimen multitarea pierden entre $1$ y $3$\,pp de
-AUROC frente al sondeo lineal separado en seis de los siete conceptos
-(máximo $-2{,}7$\,pp en \emph{regression structures}; dos mejoran
-ligeramente): que la cabeza melanoma no sufra penalización medible
-indica que el aprendizaje multitarea no degrada la tarea principal
-cuando los conceptos auxiliares son taxonómicamente coherentes con
-ella, como ocurre con el \emph{Seven-Point Checklist}, instrumento
-diagnóstico de melanoma por construcción~\cite{kawahara2019}.
+La cabeza melanoma del \emph{fine-tuning} multitarea alcanza AUROC test
+$= 0{,}891$ (IC95\% $[0{,}856,\,0{,}927]$), que iguala al sondeo lineal
+directo ($0{,}890$, dentro del ruido del \emph{bootstrap}) y mejora el
+CBM jerárquico en $+5{,}9$\,pp. \textbf{A diferencia del CBM jerárquico,
+el aprendizaje multitarea conserva la capacidad discriminativa del
+modelo mientras mantiene salidas conceptuales explícitas}: ofrece
+predicción de melanoma e inferencia sobre los siete criterios en una
+sola pasada sin coste apreciable. Las cabezas conceptuales pierden entre
+$1$ y $3$\,pp frente al sondeo lineal separado (Anexo~\ref{cap:anexof},
+tabla~\ref{tab:sae-d7pt-e4-concepts}), pero que la cabeza melanoma no
+sufra penalización medible indica que \emph{el aprendizaje multitarea no
+degrada la tarea principal cuando los conceptos auxiliares son
+taxonómicamente coherentes con ella}, como ocurre con el \emph{Seven-Point
+Checklist}, instrumento diagnóstico de melanoma por
+construcción~\cite{kawahara2019}.
 
 En síntesis, el SAE Large codifica conceptos dermatoscópicos clásicos
 sin supervisión explícita y generaliza a Derm7pt sin reentrenamiento
