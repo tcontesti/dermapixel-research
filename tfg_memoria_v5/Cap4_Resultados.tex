@@ -1453,38 +1453,43 @@ L3 (224 cls) & DermLIP v2    & es & $\mathbf{0{,}107}$ [$0{,}071$--$0{,}143$]
 \end{tabular}
 \end{table}
 
-Tres hallazgos estructuran la interpretación. \textit{Primero},
-DermLIP v2 obtiene el mejor o equivalente rendimiento en las cinco
-métricas sobre los tres niveles, salvo Acc@3 L1 (BiomedCLIP alcanza
-$0{,}944$ y $0{,}972$ en castellano e inglés frente a $0{,}861$ y
-$0{,}917$ de DermLIP v2), coherente con su preentrenamiento sobre
-Derm1M, el único dataset específicamente dermatológico de los
+La evaluación \emph{zero-shot} sobre DermapixelAI~1.0 arroja tres
+hallazgos principales: (1)~DermLIP v2 es el modelo más competitivo en
+los tres niveles ontológicos; (2)~el idioma del \emph{prompt} afecta
+significativamente a los modelos preentrenados mayoritariamente en
+inglés; y (3)~la necesidad de supervisión depende del nivel
+ontológico ---crítica en L1 y L3, pero mínima en L2---.
+
+\textit{Primero}, DermLIP v2 obtiene el mejor o equivalente
+rendimiento en las cinco métricas sobre los tres niveles (salvo
+Acc@3 L1, liderada por BiomedCLIP), coherente con su preentrenamiento
+sobre Derm1M, el único dataset específicamente dermatológico de los
 tres~\cite{derm1m}.
 
-\textit{Segundo}, el \emph{prompt} en castellano penaliza a los
-modelos preentrenados sobre datasets mayoritariamente anglófonos:
-sobre L1 Acc@1, DermLIP v2 cae de $0{,}500$ (inglés) a $0{,}361$
-(castellano, $-13{,}9$\,pp) y SigLIP-SO400M de $0{,}333$ a $0{,}222$
-($-11{,}1$\,pp), mientras que BiomedCLIP mantiene $0{,}389$ en ambos
-(\emph{gap} nulo). La penalización es consistente con el predominio
-del inglés en el preentrenamiento, aunque el diseño no permite
-atribuirla causalmente a ese único factor, y motiva la rama textual
-castellana de Dermapixel R0.
+\textit{Segundo}, traducir el \emph{prompt} del inglés al castellano
+reduce la Acc@1 en L1 entre $11$ y $14$ puntos porcentuales en los
+modelos anglófonos (DermLIP v2 $-13{,}9$\,pp, de $0{,}500$ a $0{,}361$;
+SigLIP-SO400M $-11{,}1$\,pp), mientras que BiomedCLIP mantiene su
+cifra en ambos idiomas. La penalización es consistente con el
+predominio del inglés en el preentrenamiento ---aunque el diseño no
+permite atribuirla causalmente a ese único factor--- y motiva
+directamente la rama textual castellana de Dermapixel R0: sin
+penalización lingüística, una rama en castellano no estaría
+justificada.
 
-\textit{Tercero}, la comparación con el sondeo lineal sobre el mismo
-test (tabla~\ref{tab:dermapixel-lp}) cuantifica la brecha entre un
-sistema entrenado y uno \emph{zero-shot}: sobre L1, $+29{,}4$\,pp BAcc
-a favor del LP ($0{,}735$ vs $0{,}441$ del mejor \emph{zero-shot},
-DermLIP v2 en inglés); sobre L3, $+10{,}5$\,pp BAcc ($0{,}184$ vs
-$0{,}079$) y $+7{,}3$\,pp AUROC ($0{,}813$ vs $0{,}740$). El
-comportamiento se invierte en L2, donde LP PanDerm Large
-(AUROC $0{,}793$) y DermLIP v2 \emph{zero-shot} en inglés ($0{,}794$)
-empatan dentro de los intervalos de confianza. Las \emph{features}
-preentrenadas son, así, competitivas a nivel de subcategoría L2 sin
-cabeza entrenada, mientras que el grano grueso L1 y la cola larga L3 sí
-requieren clasificador supervisado. La Acc@3 L1 entre $0{,}861$
-(DermLIP v2 castellano) y $0{,}972$ (BiomedCLIP inglés) es además
-operativamente relevante para cribado.
+\textit{Tercero}, la comparación con el sondeo lineal supervisado
+(tabla~\ref{tab:dermapixel-lp}) cuantifica la brecha entre un sistema
+entrenado y uno \emph{zero-shot}: $+29{,}4$\,pp BAcc en L1 y
+$+10{,}5$\,pp en L3 a favor del LP. El comportamiento se invierte, en
+cambio, en L2, y aquí aparece el resultado más llamativo de la
+sección: DermLIP v2 \emph{zero-shot} en inglés (AUROC $0{,}794$) iguala
+al mejor sondeo lineal supervisado (PanDerm Large, $0{,}793$) dentro de
+los intervalos de confianza. Esto sugiere que, a nivel de
+subcategorías dermatológicas, una parte sustancial del conocimiento
+discriminativo ya está codificada en el espacio multimodal
+preentrenado y puede recuperarse mediante texto, sin entrenamiento
+adicional; el grano grueso L1 y la cola larga L3 sí requieren, en
+cambio, clasificador supervisado.
 
 La tabla~\ref{tab:dermapixel-zs-gaps} resume las brechas
 cuantificadas en esta sección.
