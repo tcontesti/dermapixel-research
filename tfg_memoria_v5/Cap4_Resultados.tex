@@ -1543,44 +1543,28 @@ traducción inglesa validada para sus $224$ clases.
 % coherente con el resto del Cap4 y sin el nivel 0 espurio.
 \subsection{Diseño de Dermapixel R0}
 
-Frente a los experimentos anteriores, que evalúan modelos existentes
-como extractores congelados o \emph{zero-shot}, esta sección aborda la
-contribución propia: \textbf{Dermapixel R0}, una adaptación del modelo
-fundacional dermatológico PanDerm Large sobre DermapixelAI~1.0 mediante
-adaptación de bajo rango (\emph{Low-Rank Adaptation}, LoRA)~\cite{lora}.
-Se trata de una adaptación de un modelo fundacional preexistente, no de
-un preentrenamiento a escala. La denominación R0 designa una versión
-base sobre un corpus reducido. Con $524$\,K parámetros entrenables
-($0{,}17\%$ del total), Dermapixel R0 obtiene la mejor balanced accuracy
-(BAcc) L2 documentada sobre el dataset. Se reportan la cabeza
-supervisada L2 ($38$ clases efectivas tras consolidar las variantes
-ortográficas de queratinización) y el ranking L3 por prototipos coseno
-sobre las $250$ clases efectivas. La elección de L2 responde a su
-cardinalidad operativa ($3{,}5$ muestras/clase en
-$N_{\mathrm{train}} = 874$); la definición ontológica y las
-cardinalidades L1/L2/L3 se detallan en
-Métodos~(sección~\ref{sec:ontologia}) y en el Anexo~\ref{cap:anexoc}.
-La configuración completa (LoRA $r=16$, optimización, augmentaciones,
+Frente a los experimentos anteriores, que evalúan modelos existentes,
+esta subsección aborda la contribución propia: \textbf{Dermapixel R0},
+una adaptación mediante LoRA~\cite{lora} de PanDerm Large sobre
+DermapixelAI~1.0 ---una adaptación de un modelo fundacional
+preexistente, no un preentrenamiento a escala; la denominación R0
+designa una versión base sobre un dataset reducido---. Entrena
+únicamente $524$\,K parámetros ($0{,}17\%$ del modelo) y se orienta al
+nivel L2 ($38$ clases efectivas), donde la disponibilidad de muestras
+permite entrenamiento supervisado; el nivel L3 se evalúa mediante
+ranking por prototipos coseno por la extrema escasez de ejemplos por
+clase. La configuración completa (LoRA $r=16$, optimización,
 semillas) figura en el Anexo~\ref{cap:anexoa}
 (tabla~\ref{tab:dermapixel-spanderm-config}).
 
 \subsection{Resultados principales L2}
 
-Sobre el conjunto de test L2, Dermapixel R0 alcanza una BAcc de
-$0{,}363 \pm 0{,}007$ y una AUROC de $0{,}855 \pm 0{,}006$ (media
-$\pm$ desviación sobre tres semillas), con comportamiento estable
-entre ellas y sobreajuste leve. La tabla~\ref{tab:dermapixel-spanderm-comp}
-desglosa la comparación con el sondeo lineal y DermLIP v2; el análisis
-\emph{best-checkpoint} frente a las últimas épocas figura en el
-Anexo~\ref{cap:anexoi}.
-
-La tabla~\ref{tab:dermapixel-spanderm-comp} sitúa Dermapixel R0 frente
-a las referencias internas sobre el mismo test y nivel: sondeo lineal
-congelado bajo validación cruzada agrupada por caso
-(tabla~\ref{tab:dermapixel-cv}), sondeo lineal sobre el \emph{split}
+La tabla~\ref{tab:dermapixel-spanderm-comp} compara Dermapixel R0 con
+las referencias internas sobre el nivel L2 ($N_{\mathrm{test}} = 36$):
+el sondeo lineal congelado bajo validación cruzada agrupada por caso
+(tabla~\ref{tab:dermapixel-cv}), el sondeo lineal sobre el \emph{split}
 fijo (tabla~\ref{tab:dermapixel-lp}) y DermLIP v2 individual
-(sección~\ref{sec:dermapixel-ensemble}, mejor opción L2 sin cabeza
-entrenada).
+(sección~\ref{sec:dermapixel-ensemble}).
 
 \begin{table}[H]
 \centering
@@ -1609,40 +1593,34 @@ DermLIP v2 individual (sección~\ref{sec:dermapixel-ensemble}) & DermLIP $512$ (
 \end{tabular}}
 \end{table}
 
-Dermapixel R0 iguala o supera a las tres referencias internas sobre
-BAcc L2 ($0{,}363 \pm 0{,}007$ frente a $0{,}168 \pm 0{,}020$ del LP CV,
-$0{,}265$ del LP fijo y $0{,}279$ de DermLIP v2 individual): es la mejor
-BAcc L2 documentada sobre el dataset. Dado que la comparación se realiza
-sobre el test fijo ($N_{\mathrm{test}} = 36$), la referencia defendible
-del sondeo lineal congelado es la de validación cruzada agrupada por
-caso (tabla~\ref{tab:dermapixel-cv}); la ventaja de R0 se mantiene
-también frente a esa estimación más conservadora ($+19{,}5$\,pp BAcc).
-Su AUROC L2 ($0{,}855 \pm 0{,}006$) empata estadísticamente con la de
-DermLIP v2 nativo ($0{,}860$), de modo que la adaptación ligera de
-PanDerm Large alcanza el mismo techo discriminativo que el
-preentrenamiento contrastivo sobre Derm1M, con ventaja en las clases
-minoritarias.
+Dermapixel R0 alcanza la mejor BAcc L2 documentada sobre el dataset
+($0{,}363 \pm 0{,}007$, media $\pm$ desviación sobre tres semillas),
+superando tanto al sondeo lineal congelado como a DermLIP v2; la
+ventaja se mantiene frente a la estimación más conservadora por
+validación cruzada agrupada por caso ($+19{,}5$\,pp BAcc). En AUROC,
+R0 ($0{,}855 \pm 0{,}006$) empata con DermLIP v2 ($0{,}860$), lo que
+sugiere que la adaptación ligera de PanDerm Large recupera
+prácticamente todo el techo discriminativo del modelo contrastivo
+especializado, con ventaja en las clases minoritarias.
 
 \subsection{Adaptación eficiente frente a ajuste denso}
 
 La adaptación de bajo rango de Dermapixel R0 entrena $524$\,K
-parámetros frente a los $25{,}2$\,M del ajuste fino parcial denso de la
-sección~\ref{sec:dermapixel-ft-l1} (aproximadamente $48\times$ menos), y
-obtiene mejor BAcc L2. La adaptación eficiente de parámetros (PEFT)
-supera al ajuste fino parcial denso en este régimen de datos.
+parámetros frente a los $25{,}2$\,M del ajuste fino parcial denso
+(sección~\ref{sec:dermapixel-ft-l1}) y obtiene mejor BAcc L2:
+\textbf{Dermapixel R0 rinde mejor entrenando $48$ veces menos
+parámetros}. La adaptación eficiente de parámetros (PEFT) supera, por
+tanto, al ajuste fino parcial denso en este régimen de datos.
 
 \subsection{Limitaciones en L3}
 
-El nivel L3 se aborda mediante ranking por prototipos coseno, inviable
-como cabeza supervisada directa bajo $3{,}5$ muestras/clase. El ranking
-alcanza Acc@1 $= 0{,}167$ y Acc@5 $= 0{,}296$ ($\times 42$ y $\times 15$
-sobre el azar), pero permanece lejos del régimen clínico: $178$ de $250$
-clases con $\leq 5$ imágenes en \emph{train} producen prototipos
-ruidosos. Las cifras completas figuran en el Anexo~\ref{cap:anexoj}
-(sección~\ref{sec:anexoj-l3-prototipos},
-tabla~\ref{tab:dermapixel-spanderm-l3}). La progresión hacia una cabeza
-L3 directa queda condicionada a la incorporación del banco hospitalario
-del HUSLL (umbral $\geq 30$ imágenes/clase L3,
+El rendimiento cae notablemente en L3 (ranking por prototipos coseno,
+Acc@1 $= 0{,}167$, $\times 42$ sobre el azar), donde $178$ de las $250$
+clases disponen de cinco o menos imágenes de \emph{train}: la principal
+limitación deja de ser el modelo y pasa a ser la disponibilidad de
+datos. Las cifras completas figuran en el Anexo~\ref{cap:anexoj}
+(tabla~\ref{tab:dermapixel-spanderm-l3}); la cabeza L3 directa queda
+condicionada al banco hospitalario del HUSLL ($\geq 30$ imágenes/clase,
 sección~\ref{sec:dermapixel-futuro}).
 
 \section{Dermapixel R0: rama contrastiva multimodal castellano
