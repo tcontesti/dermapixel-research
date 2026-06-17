@@ -2080,8 +2080,11 @@ $k$-NN FAISS PanDerm Large         & Anx.~\ref{cap:anexoj} & $0{,}686$          
 \end{tabular}
 \end{table}
 
-El mejor método sobre DermapixelAI~1.0 depende del nivel
-ontológico y de la métrica. Las cifras de esta síntesis se reportan
+No existe un método universalmente superior sobre DermapixelAI~1.0: el
+rendimiento depende simultáneamente del nivel ontológico considerado
+(L1--L3) y del criterio de evaluación (clasificación equilibrada,
+discriminación probabilística o recuperación basada en similitud). Las
+cifras de esta síntesis se reportan
 sobre el test fijo ($N = 36$ en L1/L2, $N = 28$ en L3), por lo que las
 jerarquías entre métodos en L2 y L3 deben leerse como indicio y
 remitirse a la validación cruzada agrupada por caso
@@ -2095,13 +2098,20 @@ Large encabeza la BAcc ($0{,}210$) y CLIP-L-336 LP encabeza la
 AUROC ($0{,}827$). La discriminación binaria melanoma/no-melanoma
 sobre Derm7pt (sección~\ref{sec:sae-derm7pt}, fuera de
 DermapixelAI~1.0) alcanza AUROC $0{,}891$ con el \emph{fine-tuning}
-multitarea LoRA E4 sobre las activaciones del SAE. La ausencia de
-un método único óptimo refuerza la lectura interpretativa de la
-sección~\ref{sec:disc-especializacion}: la elección del
-codificador y del clasificador debe condicionarse al nivel
-ontológico objetivo y al criterio operativo predominante
-(discriminación robusta, ranking probabilístico o recuperación
-para soporte explicativo).
+multitarea LoRA E4 sobre las activaciones del SAE. En conjunto, los resultados del capítulo muestran tres regularidades.
+Primero, los modelos preentrenados específicamente sobre dermatología
+(PanDerm y DermLIP) superan de forma consistente a las alternativas
+generalistas cuando la tarea exige transferencia clínica fina. Segundo,
+la adaptación eficiente mediante LoRA permite especializar estos modelos
+a un dominio local en castellano con mejoras relevantes sobre las
+representaciones congeladas y sin necesidad de reajuste completo.
+Tercero, el rendimiento no depende únicamente de la escala del modelo o
+del volumen de datos, sino de la calidad de la alineación entre
+imágenes, etiquetas y lenguaje clínico. La elección de la arquitectura
+óptima queda así condicionada por el nivel ontológico objetivo y por el
+uso previsto del sistema (clasificación, recuperación o soporte
+explicativo), en línea con la lectura interpretativa de la
+sección~\ref{sec:disc-especializacion}.
 
 
 \section{Aplicación de seguridad: ensemble para detección de melanoma}
