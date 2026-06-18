@@ -728,6 +728,30 @@ individual, y protege la lectura de las cifras de los niveles L2 y L3
 ---los de \emph{test} más reducido--- frente a la sobreinterpretación de
 diferencias dentro del margen de error.
 
+Esta cautela enmarca también la lectura de los tres \emph{endpoints} de
+malignidad contrastados formalmente con el test de DeLong
+(sección~\ref{sec:equidad-delong}). El cierre estadístico se concentra
+en Fitzpatrick17k ---el único con potencia muestral suficiente, $226$
+positivos sobre $1\,658$---, donde los dos codificadores específicos de
+dermatología (PanDerm Large y DermLIP v2) empatan entre sí
+($\Delta\mathrm{AUROC} = 0{,}0036$, $p = 0{,}55$) y superan de forma
+significativa a los generalistas y a PanDerm Base. Sobre los dos
+\emph{endpoints} de menor tamaño ---HAM10000 ($70$ melanomas) y
+DermapixelAI~1.0 ($58$ malignos en validación cruzada)--- ningún
+contraste alcanza significación tras la corrección de Holm: las
+diferencias de AUROC son pequeñas ($\leq 0{,}006$ en HAM,
+$\leq 0{,}05$ en DermapixelAI) y los intervalos se solapan ampliamente,
+un patrón compatible con la falta de potencia y no con la ausencia de
+efecto. El titular sostenible es, por tanto, la jerarquía «específico de
+dominio $>$ generalista», con cierre estadístico en Fitzpatrick17k y
+corroboración descriptiva en los otros dos; el contraste no respalda una
+ordenación fina entre los dos líderes específicos. Reportar los tres
+\emph{endpoints} con su corrección por comparaciones múltiples ---y
+declarar cuál tiene potencia y cuál no--- es la práctica que las guías
+de reporte para inteligencia artificial en imagen médica (TRIPOD+AI)
+prescriben, y que distingue una afirmación de superioridad
+estadísticamente sostenida de una mera diferencia puntual.
+
 \section{Comparación con la literatura}
 \label{sec:lit}
 

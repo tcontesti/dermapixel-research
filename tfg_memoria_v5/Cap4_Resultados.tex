@@ -913,16 +913,24 @@ contraste formal mediante el test de DeLong.
 DeLong}
 \label{sec:equidad-delong}
 
-Las diferencias de AUROC entre encoders se contrastan mediante el test
-de DeLong~\cite{delong1988}, que controla la correlación de evaluar los
-cinco modelos sobre las mismas imágenes, sobre el endpoint binario de
-malignidad (\emph{maligno} frente al resto) en el test de
-Fitzpatrick17k ($N = 1\,658$, $226$ malignos), con regresión logística
-binaria por encoder sobre sus \emph{features} congeladas
-(sección~\ref{sec:lp}). La tabla~\ref{tab:delong-auroc} reporta la
-AUROC binaria con IC95\% por la varianza de DeLong; la matriz completa
-de $p$-valores pareados (dos colas) figura en el
-Anexo~\ref{cap:anexob} (tabla~\ref{tab:delong-pares}).
+El contraste estadístico formal mediante el test de
+DeLong~\cite{delong1988} ---que controla la correlación de evaluar
+varios modelos sobre las mismas imágenes--- se aplica a tres
+\emph{endpoints} binarios centrales de detección de lesión maligna:
+malignidad sobre Fitzpatrick17k, melanoma sobre HAM10000 y malignidad
+sobre DermapixelAI~1.0. En cada uno, la comparación entre modelos parte
+de una regresión logística binaria sobre sus \emph{features} congeladas
+(sección~\ref{sec:lp}) y los $p$-valores pareados se corrigen por el
+método de Holm dentro del \emph{endpoint}. Al tratarse de un análisis
+\emph{post-hoc}, las comparaciones se describen como centrales y no como
+preespecificadas.
+
+\paragraph{Endpoint 1: malignidad sobre Fitzpatrick17k.}
+Sobre el test de Fitzpatrick17k ($N = 1\,658$, $226$ malignos), la
+tabla~\ref{tab:delong-auroc} reporta la AUROC binaria con IC95\% por la
+varianza de DeLong; la matriz completa de $p$-valores pareados (dos
+colas) figura en el Anexo~\ref{cap:anexob}
+(tabla~\ref{tab:delong-pares}).
 
 \begin{table}[H]
 \centering
@@ -954,18 +962,110 @@ una jerarquía entre ambos sobre este \emph{endpoint}. Los dos superan,
 en cambio, de forma significativa a los encoders generalistas (DINOv2
 y BiomedCLIP) y a PanDerm Base ($p \leq 7{,}3\times 10^{-3}$ en los
 seis contrastes), lo que respalda cuantitativamente la ventaja del
-preentrenamiento específico de dominio. Tras corrección de Bonferroni
-(umbral $0{,}005$), la mayoría de estas diferencias se mantienen
-significativas, mientras que algunas comparaciones entre generalistas
-(DINOv2--BiomedCLIP, DINOv2--PanDerm~Base) dejan de ser concluyentes,
-delimitando qué distinciones del \emph{ranking} son señal y cuáles
-ruido muestral.
+preentrenamiento específico de dominio. Tras la corrección de Holm,
+siete de los diez contrastes se mantienen significativos, mientras que
+algunas comparaciones entre generalistas (DINOv2--BiomedCLIP,
+DINOv2--PanDerm~Base) dejan de ser concluyentes, delimitando qué
+distinciones del \emph{ranking} son señal y cuáles ruido muestral.
 
-La lectura que el contraste habilita es más sólida que coronar a un
-único modelo: los resultados no identifican un encoder dermatológico
-claramente superior, sino una \emph{familia} de encoders
+\paragraph{Endpoint 2: melanoma sobre HAM10000.}
+El mismo contraste se aplica al \emph{endpoint} binario melanoma frente
+al resto sobre el test de HAM10000 ($N = 1\,232$, $70$ melanomas),
+incorporando SigLIP-Large al conjunto de codificadores con AUROC
+publicada sobre este dataset. La tabla~\ref{tab:delong-ham} reporta las
+cifras.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{AUROC binaria de detección de melanoma (\emph{melanoma} frente
+al resto) sobre el test de HAM10000 ($N = 1\,232$, $70$ melanomas), con
+intervalo de confianza al $95\%$ por la varianza de DeLong. Ningún
+contraste pareado resulta significativo tras la corrección de Holm
+($p_{\mathrm{Holm}} = 1{,}0$ en los tres). Mejor valor en negrita.}
+\label{tab:delong-ham}
+\begin{tabular}{lrl}
+\hline
+Modelo          & AUROC               & IC95\% (DeLong) \\
+\hline
+PanDerm Large   & $\mathbf{0{,}9523}$ & $[0{,}9314,\, 0{,}9733]$ \\
+SigLIP-Large    & $0{,}9495$          & $[0{,}9245,\, 0{,}9745]$ \\
+DermLIP v2      & $0{,}9463$          & $[0{,}9246,\, 0{,}9681]$ \\
+\hline
+\end{tabular}
+\end{table}
+
+Los tres codificadores alcanzan AUROC en torno a $0{,}95$ con
+diferencias inferiores a $0{,}006$, y ningún contraste pareado resulta
+significativo tras la corrección de Holm (todos con $p_{\mathrm{Holm}} =
+1{,}0$): sobre este \emph{endpoint}, PanDerm Large, SigLIP-Large y
+DermLIP v2 son estadísticamente indistinguibles. Con sólo $70$
+positivos, la potencia es insuficiente para separar modelos cuyas AUROC
+se solapan ampliamente.
+
+\paragraph{Endpoint 3: malignidad sobre DermapixelAI~1.0 (protocolo
+distinto).} El tercer \emph{endpoint} ---malignidad frente al resto
+sobre DermapixelAI~1.0--- requiere una salvedad de protocolo. Sobre el
+\emph{split} de test canónico (sección~\ref{sec:dermapixel-results}) el
+conjunto está subdimensionado ($N = 36$, sólo $3$ positivos): las AUROC
+resultantes ($0{,}94$--$1{,}00$) y cualquier contraste de DeLong sobre
+ese test carecen de interpretación inferencial y no se reportan. Por
+ello, la estimación de la tabla~\ref{tab:delong-dermapixel} procede de
+una validación cruzada exploratoria de cinco pliegues
+\emph{out-of-fold} sobre el dataset completo ($N = 1\,062$, $58$
+malignos), con DeLong pareado sobre las predicciones agrupadas y
+corrección de Holm. Este protocolo difiere del de los dos
+\emph{endpoints} anteriores (train$\to$test) y se emplea precisamente
+por el subdimensionamiento del \emph{split} fijo.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{AUROC binaria de detección de malignidad sobre DermapixelAI~1.0
+estimada por validación cruzada \emph{out-of-fold} de cinco pliegues
+($N = 1\,062$, $58$ malignos), con intervalo de confianza al $95\%$ por
+la varianza de DeLong. Protocolo distinto del de los \emph{endpoints}
+train$\to$test por el subdimensionamiento del \emph{split} fijo. Ningún
+contraste pareado alcanza significación tras la corrección de Holm.
+Mejor valor en negrita.}
+\label{tab:delong-dermapixel}
+\begin{tabular}{lrl}
+\hline
+Modelo          & AUROC (OOF)         & IC95\% (DeLong) \\
+\hline
+DermLIP v2      & $\mathbf{0{,}8946}$ & $[0{,}8472,\, 0{,}9421]$ \\
+PanDerm Large   & $0{,}8632$          & $[0{,}8075,\, 0{,}9189]$ \\
+PanDerm Base    & $0{,}8630$          & $[0{,}8097,\, 0{,}9163]$ \\
+CLIP-L          & $0{,}8536$          & $[0{,}7926,\, 0{,}9146]$ \\
+DINOv2          & $0{,}8469$          & $[0{,}7980,\, 0{,}8958]$ \\
+\hline
+\end{tabular}
+\end{table}
+
+DermLIP v2 obtiene el mejor valor puntual (AUROC $= 0{,}8946$), por
+delante de PanDerm Large ($0{,}8632$) y del resto ($0{,}85$--$0{,}86$),
+pero ningún par de contrastes alcanza significación tras la corrección
+de Holm: con $58$ positivos el \emph{endpoint} no tiene potencia para
+ordenar los modelos. Dermapixel R0 se excluye de este contraste por no
+disponer de sus \emph{embeddings} en el momento de la ejecución.
+
+En conjunto, el cierre estadístico se concentra en Fitzpatrick17k ---el
+único \emph{endpoint} con potencia suficiente ($226$ positivos)---,
+donde la jerarquía «específico de dominio $>$ generalista» es
+significativa sin sostener una ordenación fina entre los dos líderes
+específicos. Los \emph{endpoints} de HAM10000 ($70$ melanomas) y
+DermapixelAI~1.0 ($58$ malignos) corroboran de forma descriptiva ese
+patrón ---AUROC elevadas y solapadas--- sin alcanzar significación, un
+resultado compatible con la falta de potencia y no con la ausencia de
+efecto. La lectura que habilita el contraste es, por tanto, más sólida
+que coronar a un único modelo: los resultados no identifican un encoder
+dermatológico claramente superior, sino una \emph{familia} de encoders
 dermatológicos que supera de forma consistente a los modelos
-generalistas ---conclusión que se retoma en la discusión
+generalistas, conclusión que se retoma en la discusión
 (sección~\ref{sec:disc-especializacion}).
 
 \section{Validación en castellano sobre DermapixelAI 1.0}

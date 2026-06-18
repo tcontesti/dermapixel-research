@@ -660,13 +660,14 @@ metodológica: ambos modelos se evalúan sobre las mismas imágenes, de
 modo que sus curvas ROC están correlacionadas; tratar las dos AUROC
 como muestras independientes subestima la varianza del contraste y
 sobrestima su significación. DeLong estima esa covarianza de forma
-no paramétrica y produce un contraste pareado válido. Se aplica a
-los contrastes pareados entre los cinco encoders sobre Fitzpatrick17k
+no paramétrica y produce un contraste pareado válido. Se aplica a los
+contrastes pareados entre codificadores sobre tres \emph{endpoints}
+binarios de malignidad ---Fitzpatrick17k, HAM10000 y DermapixelAI~1.0---
 (sección~\ref{sec:equidad-delong}, tabla~\ref{tab:delong-pares}).
 
 Los $p$-valores se reportan como nominales y, de forma
-complementaria, bajo corrección de Bonferroni para el número de
-comparaciones. Exponer ambos es intencionado: la corrección controla
+complementaria, bajo corrección por el método de Holm dentro de cada
+\emph{endpoint}. Exponer ambos es intencionado: la corrección controla
 la tasa de falsos positivos a costa de potencia estadística, y
 mostrar el valor nominal junto al corregido permite al lector juzgar
 la robustez de cada contraste sin imponer una única política de

@@ -247,24 +247,31 @@ la extensión natural de este protocolo.
 \subsection{Pruebas estadísticas y comparaciones múltiples}
 \label{sec:lim-estadistica}
 
-El test de DeLong~\cite{delong1988} se ha aplicado de forma sistemática
-a los contrastes pareados entre los cinco encoders sobre el
-\emph{endpoint} binario de detección de malignidad en Fitzpatrick17k,
-con corrección de Bonferroni para las diez comparaciones
-(sección~\ref{sec:equidad-delong}, tabla~\ref{tab:delong-pares}). Su
-extensión al resto de \emph{endpoints} y tablas del capítulo, junto con
-la presentación de cada cifra principal como par (estimador,
+El test de DeLong~\cite{delong1988} se ha aplicado a los contrastes
+pareados entre codificadores sobre tres \emph{endpoints} binarios
+centrales de detección de lesión maligna ---Fitzpatrick17k (malignidad),
+HAM10000 (melanoma) y DermapixelAI~1.0 (malignidad)---, con corrección
+de Holm dentro de cada \emph{endpoint} (sección~\ref{sec:equidad-delong},
+tabla~\ref{tab:delong-pares}). El cierre estadístico se concentra, no
+obstante, en Fitzpatrick17k, el único con potencia muestral suficiente
+($226$ positivos); en HAM10000 ($70$) y DermapixelAI~1.0 ($58$ en
+validación cruzada) ningún contraste alcanza significación, un patrón
+compatible con la falta de potencia y no con la ausencia de efecto. La
+extensión del contraste al resto de tablas multiclase del capítulo,
+junto con la presentación de cada cifra principal como par (estimador,
 IC~\emph{bootstrap}) en lugar de valor puntual, permanece como
 refinamiento estadístico de la versión publicable.
 
-La consecuencia operativa es que la superioridad entre encoders sobre la
-detección de malignidad queda establecida estadísticamente, mientras que
-el resto de hallazgos numéricos del capítulo~\ref{cap:resultados} deben
-interpretarse en términos descriptivos y de magnitud del efecto: las
-afirmaciones de \emph{superioridad estadísticamente significativa} en los
-demás \emph{endpoints} requieren la cuantificación pendiente. Los
-patrones cualitativos identificados en la discusión son, no obstante,
-robustos frente a esta limitación por la magnitud absoluta de los efectos
+La consecuencia operativa es que la superioridad de los codificadores de
+dominio sobre los generalistas queda establecida estadísticamente sobre
+el \emph{endpoint} con potencia (Fitzpatrick17k), mientras que el resto
+de hallazgos numéricos del capítulo~\ref{cap:resultados} ---y la
+ordenación fina entre los dos líderes específicos--- deben interpretarse
+en términos descriptivos y de magnitud del efecto: las afirmaciones de
+\emph{superioridad estadísticamente significativa} en los demás
+\emph{endpoints} requieren mayor tamaño muestral. Los patrones
+cualitativos identificados en la discusión son, no obstante, robustos
+frente a esta limitación por la magnitud absoluta de los efectos
 cuantificados.
 
 \subsection{Sensibilidad al \emph{prompt} en zero-shot y LLMs}
