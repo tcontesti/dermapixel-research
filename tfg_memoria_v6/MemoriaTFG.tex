@@ -1,0 +1,151 @@
+%% --------------------------------------------------------------------
+%% Documento preparado en codificación UTF-8.
+%% Plantilla oficial UIB EPS adaptada para el TFG (versión memoria v3).
+%% TFG EPS0270: "Evaluación de modelos fundacionales para Dermatología Clínica"
+%% --------------------------------------------------------------------
+
+\documentclass[spanish, GINF]{TFGEPSUIB}
+
+% --- Paquetes adicionales ---
+\usepackage{amsmath, amssymb}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{array}
+\usepackage{colortbl}
+\usepackage{adjustbox}
+
+% Numerar subsubsecciones (5.1.1.1); el cuerpo no usaba subsubsection antes
+\maxsecnumdepth{subsubsection}
+\setsecnumdepth{subsubsection}
+
+% Color para tablas
+\definecolor{rowgray}{gray}{0.93}
+
+% Ruta de figuras
+\graphicspath{{figures/}}
+
+% Hyperref al final
+\usepackage[backref, colorlinks=true, allcolors=black]{hyperref}
+\usepackage{cleveref}
+
+%----------------------------------------------
+% Datos de la portada
+%----------------------------------------------
+
+% Código oficial del TFG en la EPS-UIB: EPS0270
+
+\title{Dermapixel: Evaluación de modelos fundacionales para Dermatología Clínica}
+
+\author{Antonio Contestí Coll}
+
+\tutor{Dr.\ Javier Varona Gómez}
+
+\date{Año académico 2025--2026}
+
+\paraulesclau{modelos fundacionales, dermatología clínica, PanDerm, DermLIP, evaluación empírica, ontología, equidad, interpretabilidad}
+
+%----------------------------------------------
+
+\begin{document}
+
+\portada
+\portadainterior
+\frontmatter
+
+% Agradecimientos
+\cleartorecto \thispagestyle{empty}
+\vspace*{-3cm}
+\begin{agraiments}
+
+A la Dra.~Rosa Taberner, por su excepcional trabajo en Dermapixel y por su dilatada trayectoria en teledermatología, siendo un referente en el ámbito. Por la generosidad con la que me ha transmitido su conocimiento y por el tiempo que me ha dedicado de forma totalmente desinteresada a lo largo de este proyecto.
+
+\medskip
+
+A mi tutor, el Dr.\ Javier Varona, por transmitirme el conocimiento con tanta claridad y pasión, por contagiarme esa ilusión por aprender, por su apoyo constante, por saber guiarme y centrarme en cada momento, y, sobre todo, por ser mucho más que un tutor: un gran amigo.
+
+\medskip
+
+A todos los profesores de la Universitat de les Illes Balears que he tenido durante estos años, por su profesionalidad, dedicación y por el trato cercano y respetuoso que siempre me han brindado.
+
+\medskip
+
+A mis compañeros de clase (Marc, Jordi, Dylan, Andres, Josep, Xisco, Carlos, Jesus, David), por hacerme sentir uno más desde el primer día. Me llevo no solo grandes profesionales con ambición y talento, sino también excelentes personas y amigos.
+
+\medskip
+
+A Marc y a Jordi, compañeros de clase y también de prácticas, por haberse convertido en grandes amigos que sé que durarán toda la vida. Por todo lo que nos hemos ayudado mutuamente sin esperar nada a cambio, por el apoyo constante en los momentos difíciles y, en especial, por haber estado ahí en uno de los momentos más complicados del camino.
+
+\medskip
+
+A David, por ser un ejemplo de superación. Por su esfuerzo constante, por su capacidad de lucha día tras día y por su actitud siempre positiva ante las dificultades.
+
+\medskip
+
+A mis padres, por darme todo y por permitirme hoy devolverles, con este logro, una pequeña parte de lo que me han dado. Esta meta también es vuestra.
+
+\medskip
+
+A mi hermano, y a mis sobrinos Albert y Marta, con la ilusión de poder transmitirles que, con humildad, esfuerzo y constancia, cualquier objetivo es alcanzable.
+
+\medskip
+
+A Bruno, Marta y Jaume, los hijos de mi mujer y también mis hijos, por el apoyo, la comprensión y el cariño que me han demostrado en casa durante todo este tiempo.
+
+\medskip
+
+A mi mujer, por su apoyo incondicional, por su paciencia infinita y por todo lo que ha sacrificado durante estos años, renunciando a muchos momentos juntos para que yo pudiera seguir adelante. Este trabajo es tanto suyo como mío.
+
+\medskip
+
+Y, finalmente, a todos los pacientes, que son la verdadera razón de este camino.
+
+\end{agraiments}
+
+% Sumario
+\cleartorecto \tableofcontents
+
+% Lista de acrónimos
+\include{Acronims}
+
+% Resumen + Abstract
+\include{Resum}
+
+\mainmatter\pagestyle{ruled}
+
+%%%%%% CUERPO DEL TRABAJO (estructura artículo) %%%%%%%%%%%%
+% 1. Introducción
+% 2. Estado del arte
+% 3. Materiales y métodos
+% 4. Resultados
+% 5. Discusión
+% 6. Limitaciones
+% 7. Conclusiones
+
+\include{Cap1_Introduccion}
+\include{Cap2_EstadoArte}
+\include{Cap3_MaterialesMetodos}
+\include{Cap4_Resultados}
+\include{Cap5_Discusion}
+\include{Cap6_Limitaciones}
+\include{Cap7_Conclusiones}
+
+%%%%%%% Fin cuerpo del trabajo %%%%%%%%%%%
+
+% Bibliografía
+\include{Bibliografia}
+
+%%%%%%% Apéndice
+% El material complementario (antiguos anexos A-J: tareas y
+% reproducibilidad, tablas extendidas, pipeline y datasheet del
+% dataset, declaración de uso de IA, Sparse Autoencoders, modelos
+% de lenguaje multimodales, prototipo DermApIxel y ablaciones) se
+% publica en un repositorio reproducible y se describe en un único
+% anexo-puntero.
+\appendix
+\include{AnexoRepo_MaterialComplementario}
+
+\backmatter
+
+\end{document}

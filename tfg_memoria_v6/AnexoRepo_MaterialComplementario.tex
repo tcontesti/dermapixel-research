@@ -1,0 +1,177 @@
+%!TeX root=MemoriaTFG.tex
+
+\chapter{Material complementario y repositorio reproducible}
+\label{cap:repo}
+
+El cuerpo de esta memoria se circunscribe a la pregunta de
+investigación central: el rendimiento agregado y la capacidad de
+generalización de los modelos fundacionales para imagen
+dermatológica. El material instrumental, las tablas extendidas de
+resultados, los análisis complementarios y los artefactos de
+software derivados del trabajo se publican de forma estructurada en
+un repositorio reproducible público, con el fin de no fragmentar la
+argumentación del documento principal y de habilitar la
+verificación independiente de las cifras reportadas en el
+capítulo~\ref{cap:resultados}.
+
+\section{Repositorio público}
+\label{sec:repo-general}
+
+El conjunto del material complementario se distribuye en el
+repositorio \texttt{dermapixel-tfg-EPS0270}, accesible a través de
+la página de documentación
+
+\begin{center}
+\url{https://tcontesti.github.io/dermapixel-tfg-EPS0270/}
+\end{center}
+
+\noindent que actúa como portada e índice navegable del contenido.
+El repositorio contiene el código de los experimentos, el
+\emph{datasheet} del dataset DermapixelAI~1.0, las tablas detalladas
+de resultados, la descripción del prototipo, las ablaciones
+complementarias, el material de interpretabilidad y la declaración
+de uso de herramientas de inteligencia artificial. Todas las cifras
+publicadas en el repositorio coinciden de forma exacta con las
+reportadas en el cuerpo de la memoria; no se introduce ningún
+resultado adicional que altere las conclusiones del documento
+principal.
+
+\section{Estructura de carpetas}
+\label{sec:repo-estructura}
+
+El repositorio se organiza en directorios de responsabilidad
+disjunta. La tabla~\ref{tab:repo-estructura} sintetiza su
+contenido.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.05}
+\caption{Estructura de directorios del repositorio reproducible.}
+\label{tab:repo-estructura}
+\begin{tabular}{ll}
+\hline
+Directorio & Contenido \\
+\hline
+\texttt{code/} & Pipelines de \emph{linear probing}, \emph{fine-tuning}, segmentación con LoRA y evaluación \emph{zero-shot}. \\
+\texttt{datasheet/} & \emph{Datasheet} y documento de entrega del dataset DermapixelAI~1.0. \\
+\texttt{tables/} & Tablas detalladas de resultados por dataset (equidad, evaluación cruzada, segmentación). \\
+\texttt{ablations/} & Ablaciones complementarias sobre DermapixelAI~1.0 y rama contrastiva SpanDerm. \\
+\texttt{sae/} & Diccionario de conceptos y modelos de interpretabilidad (\emph{Sparse Autoencoders}, CBM). \\
+\texttt{llm/} & Comparación extendida de modelos de lenguaje multimodales. \\
+\texttt{prototype/} & Descripción del prototipo DermApIxel y de sus componentes. \\
+\texttt{repro/} & Mapa de tareas experimentales, recetas de entrenamiento, semillas y \emph{checkpoints}. \\
+\texttt{ai-statement/} & Declaración sobre el uso de herramientas de inteligencia artificial. \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Índice de correspondencia}
+\label{sec:repo-indice}
+
+La tabla~\ref{tab:repo-indice} establece la correspondencia entre el
+material complementario y su ubicación en el repositorio. Cada
+entrada puede consultarse a través de la página de documentación
+indicada en la sección~\ref{sec:repo-general}.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.1}
+\caption{Índice de correspondencia entre el material complementario y el repositorio.}
+\label{tab:repo-indice}
+\begin{tabular}{lll}
+\hline
+Material complementario & Ubicación en el repositorio & Sección \\
+\hline
+Mapa de tareas y reproducibilidad & \texttt{repro/} & \ref{sec:repo-reproducibilidad} \\
+Tablas detalladas de resultados & \texttt{tables/} & \ref{sec:repo-tablas} \\
+Pipeline y caracterización del dataset & \texttt{datasheet/}, \texttt{ablations/} & \ref{sec:repo-ablaciones} \\
+Declaración de uso de IA & \texttt{ai-statement/} & \ref{sec:repo-ia} \\
+Documento de entrega del dataset & \texttt{datasheet/} & \ref{sec:repo-datasheet} \\
+\emph{Sparse Autoencoders} y conceptos & \texttt{sae/} & \ref{sec:repo-sae} \\
+Modelos de lenguaje multimodales & \texttt{llm/} & \ref{sec:repo-llm} \\
+Prototipo DermApIxel & \texttt{prototype/} & \ref{sec:repo-prototipo} \\
+Ablaciones complementarias & \texttt{ablations/} & \ref{sec:repo-ablaciones} \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Datasheet del dataset DermapixelAI 1.0}
+\label{sec:repo-datasheet}
+
+El repositorio incluye el \emph{datasheet} completo del dataset
+DermapixelAI~1.0 y el documento formal de entrega, con la
+identidad, la procedencia, la licencia CC-BY-NC-SA~4.0, las
+condiciones de disponibilidad, la composición, las
+recomendaciones de uso responsable y el plan de mantenimiento del
+recurso. La caracterización resumida del dataset figura en el
+capítulo~\ref{cap:metodos}.
+
+\section{Tablas detalladas de resultados}
+\label{sec:repo-tablas}
+
+El repositorio recoge las tablas extendidas de resultados que
+desagregan, por dataset y por modelo, las cifras sintetizadas en el
+capítulo~\ref{cap:resultados}: el desglose de equidad por fototipo,
+la matriz de evaluación cruzada entre conjuntos, los resultados de
+segmentación por arquitectura y las tareas de transferencia
+adicionales.
+
+\section{Ablaciones complementarias}
+\label{sec:repo-ablaciones}
+
+El repositorio documenta las ablaciones complementarias sobre el
+dataset DermapixelAI~1.0, el pipeline de construcción y
+caracterización del dataset, la ablación del modelo fundacional
+inglés con traducción ES--EN y las iteraciones de la rama
+contrastiva en castellano, incluyendo configuración de
+entrenamiento, barridos de épocas, techos de sondeo lineal y
+calibración.
+
+\section{Sparse Autoencoders y diccionario de conceptos}
+\label{sec:repo-sae}
+
+El repositorio contiene el material de interpretabilidad: la
+configuración de los \emph{Sparse Autoencoders} sobre el modelo
+fundacional, el diccionario de conceptos clínicos, los modelos de
+cuello de botella conceptual (\emph{Concept Bottleneck Models}) y
+los coeficientes derivados de las anotaciones \emph{Seven-Point
+Checklist}.
+
+\section{Modelos de lenguaje multimodales}
+\label{sec:repo-llm}
+
+El repositorio presenta la comparación extendida de modelos de
+lenguaje multimodales evaluados como sistemas de razonamiento
+clínico, con el detalle de los \emph{prompts}, los proveedores y las
+métricas que sintetiza el capítulo~\ref{cap:resultados}.
+
+\section{Prototipo DermApIxel}
+\label{sec:repo-prototipo}
+
+El repositorio describe el prototipo DermApIxel, que integra los
+componentes derivados del trabajo en un entorno operativo. Su
+evaluación operativa queda fuera del alcance del presente documento;
+el repositorio recoge la descripción de sus módulos, los resultados
+de \emph{ensemble} y los análisis de recuperación visual y
+codificadores adicionales.
+
+\section{Declaración de uso de inteligencia artificial}
+\label{sec:repo-ia}
+
+El repositorio incluye la declaración sobre el uso de herramientas
+de inteligencia artificial durante la elaboración del trabajo, con
+el alcance, las herramientas empleadas y las responsabilidades del
+autor.
+
+\section{Reproducibilidad}
+\label{sec:repo-reproducibilidad}
+
+El repositorio documenta el mapa de tareas experimentales, las
+recetas de entrenamiento, las semillas, las normalizaciones y los
+\emph{checkpoints} necesarios para reproducir de forma independiente
+las cifras del capítulo~\ref{cap:resultados} a partir del código
+publicado.

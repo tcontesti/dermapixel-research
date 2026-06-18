@@ -1,0 +1,442 @@
+%!TeX root=MemoriaTFG.tex
+
+\chapter{Sparse Autoencoders y diccionario de conceptos clínicos}
+\label{cap:anexof}
+
+Este anexo documenta el módulo de interpretabilidad conceptual del
+trabajo, basado en Sparse Autoencoders (SAE) sobre las
+representaciones de PanDerm Large, su evaluación frente al
+diccionario SkinCon~\cite{skincon} y la propuesta de extensión
+con conceptos clínicos adicionales validados por la
+Dra.~R.~Taberner. El módulo se incorpora al prototipo DermApIxel
+como componente M3 (sección~\ref{sec:dermapixel-m3}) y constituye una
+contribución complementaria del trabajo
+(sección~\ref{sec:contrib-anexos}).
+
+\section{Motivación}
+\label{sec:anexof-motivacion}
+
+La interpretabilidad de los modelos fundacionales constituye un
+requisito creciente en escenarios clínicos donde la trazabilidad
+del razonamiento es necesaria para la aceptación profesional. Los
+encoders auto-supervisados como PanDerm producen representaciones
+densas (vectores de $1\,024$ dimensiones para la variante
+\emph{Large}) cuyos componentes individuales no admiten
+interpretación directa. Los Sparse
+Autoencoders~\cite{templeton2024} descomponen estas
+representaciones en un diccionario disperso de \emph{features},
+con la propiedad de que cada \emph{feature} puede asociarse, en
+buena parte de los casos, a un concepto clínicamente
+identificable. DermFM-Zero~\cite{dermfmzero2026} adopta este
+mecanismo de interpretabilidad como contribución de su diseño,
+pero sus pesos no son públicos (sección~\ref{sec:lim-pesos}). El
+presente trabajo replica el procedimiento sobre PanDerm Large con
+pesos liberados y lo valida sobre SkinCon como ground-truth
+conceptual.
+
+\section{Arquitectura del SAE}
+\label{sec:anexof-arquitectura}
+
+La arquitectura del SAE empleado en el trabajo se compara con la
+descrita por los autores de DermFM-Zero sobre PanDerm Base. La
+tabla~\ref{tab:anexof-config} resume ambas configuraciones.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Configuración comparada del SAE entrenado en el trabajo
+(``SAE Large'') y del SAE publicado por DermFM-Zero
+(``SAE Base'').}
+\label{tab:anexof-config}
+\adjustbox{max width=\textwidth}{%
+\begin{tabular}{lll}
+\hline
+Parámetro                  & SAE Base (DermFM-Zero)             & SAE Large (este trabajo) \\
+\hline
+Encoder visual base        & PanDerm Base (ViT-B/16)            & PanDerm Large (ViT-L/16) \\
+Dimensión de entrada       & $768$                              & $1\,024$ \\
+\emph{Features} aprendidas & $6\,144$ ($8\times$)               & $16\,384$ ($16\times$) \\
+Arquitectura               & TiedBias + UnitNormDecoder         & Pre/PostBias + Linear + UnitNormDecoder \\
+Pérdida                    & $L_1$ ($3\times 10^{-5}$) + $L_2$  & $L_1$ ($1\times 10^{-3}$) + MSE \\
+Datos de entrenamiento     & No especificado (pipeline DermFM-Zero) & $50\,454$ imágenes ($7$ datasets) \\
+Épocas                     & $200$                              & $100$ (convergido) \\
+Sparsity media observada   & ---                                & $16{,}5\%$ ($2\,753 \pm 112$ activas) \\
+\hline
+\end{tabular}}
+\end{table}
+
+Los siete datasets de entrenamiento del SAE Large son HAM10000
+($10\,015$ imágenes), BCN20000 ($12\,413$),
+Dermnet ($19\,559$), PAD-UFES-20 ($2\,298$),
+Fitzpatrick17k ($3\,887$), DDI ($647$) e HIBA
+($1\,635$), con un total de $50\,454$ imágenes. La
+composición exacta se documenta en el Anexo~\ref{cap:anexob}
+(tabla~\ref{tab:anexob-sae-train}). La elección de
+$L_1$ ($1\times 10^{-3}$) en lugar del valor publicado por
+DermFM-Zero ($3\times 10^{-5}$) responde a la dimensión de entrada
+mayor: el factor $L_1$ relativo a la magnitud típica del
+\emph{embedding} se mantiene comparable.
+
+\section{Comportamiento del SAE Large frente a SAE Base}
+\label{sec:anexof-comparacion}
+
+La tabla~\ref{tab:anexof-auroc} compara la AUROC de cuatro tareas
+de discriminación binaria sobre los \emph{embeddings}
+crudos (sin SAE) y sobre las activaciones del SAE para ambas
+configuraciones. Las cifras corresponden a la media y desviación
+estándar sobre veinte particiones aleatorias del conjunto de
+evaluación.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Discriminación binaria sobre cuatro tareas con
+\emph{embeddings} crudos y con activaciones del SAE. Media
+$\pm$ desviación estándar sobre $20$ particiones aleatorias.}
+\label{tab:anexof-auroc}
+\begin{tabular}{lrrrr}
+\hline
+Tarea            & Raw $768$D (Base) & SAE Base ($6\,144$) & Raw $1\,024$D (Large) & SAE Large ($16\,384$) \\
+\hline
+Melanoma         & $0{,}906 \pm 0{,}020$ & $0{,}897 \pm 0{,}019$ & $0{,}897 \pm 0{,}020$ & $\mathbf{0{,}900 \pm 0{,}019}$ \\
+Sesgo pelo       & $0{,}888 \pm 0{,}025$ & $0{,}879 \pm 0{,}023$ & $0{,}884 \pm 0{,}023$ & $\mathbf{0{,}889 \pm 0{,}024}$ \\
+Sesgo tinta      & $\mathbf{0{,}848 \pm 0{,}024}$ & $0{,}836 \pm 0{,}025$ & $0{,}846 \pm 0{,}028$ & $0{,}851 \pm 0{,}028$ \\
+Sesgo regla      & $0{,}888 \pm 0{,}024$ & $0{,}889 \pm 0{,}026$ & $0{,}894 \pm 0{,}022$ & $\mathbf{0{,}908 \pm 0{,}022}$ \\
+\hline
+\end{tabular}
+\end{table}
+
+El SAE Base degrada consistentemente la AUROC respecto a los
+\emph{embeddings} crudos correspondientes (promedio
+$-0{,}008$\,pp), mientras que el SAE Large produce mejoras de
+$+0{,}007$\,pp de promedio sobre los \emph{embeddings} crudos
+de $1\,024$ dimensiones. La interpretación operativa es que el
+SAE Large preserva la información discriminativa relevante para
+clasificación binaria pese a la proyección al espacio disperso de
+$16\,384$ \emph{features}, comportamiento que justifica su
+uso como módulo de interpretabilidad sin pérdida de utilidad
+diagnóstica (figura~\ref{fig:anexof-sae}).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.82\textwidth]{fig_sae_comparison.png}
+\caption{Comparativa AUROC entre \emph{embeddings} crudos y
+activaciones del SAE sobre cuatro tareas binarias. El SAE Large
+(este trabajo, $1\,024 \to 16\,384$) preserva o mejora la
+información discriminativa frente al SAE Base
+($768 \to 6\,144$), que degrada consistentemente la AUROC.}
+\label{fig:anexof-sae}
+\end{figure}
+
+\section{Concept Bottleneck Model sobre SkinCon}
+\label{sec:anexof-cbm}
+
+La validación clínica del SAE Large se realiza mediante un
+\emph{Concept Bottleneck Model} (CBM) sobre el dataset
+SkinCon~\cite{skincon}, que anota densamente $3\,230$
+imágenes con $48$ conceptos clínicos por dermatólogos
+certificados. La hipótesis a contrastar es que las
+$16\,384$ \emph{features} del SAE Large contienen información
+suficiente para predecir los conceptos SkinCon mediante un
+clasificador lineal sobre cada concepto.
+
+El procedimiento es el siguiente: cada imagen de SkinCon se codifica
+mediante PanDerm Large; su \emph{embedding} de $1\,024$
+dimensiones se proyecta al espacio disperso del SAE Large; sobre
+las $16\,384$ activaciones se entrena un clasificador lineal
+binario por concepto (regresión logística L-BFGS con
+$C = 1{,}0$, \texttt{max\_iter}~$= 5\,000$,
+\texttt{random\_state}~$=42$). La métrica reportada es la AUROC
+del mejor \emph{feature} individual como predictor del concepto.
+
+\subsection{Conceptos con mejor predictor}
+\label{sec:anexof-cbm-top}
+
+La tabla~\ref{tab:anexof-cbm} reporta los conceptos SkinCon con
+mejor predictor entre las $16\,384$ \emph{features} del SAE
+Large, ordenados por AUROC del mejor \emph{feature} descendente.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Conceptos SkinCon con mejor predictor entre las
+\emph{features} del SAE Large. $n_+$: número de imágenes positivas
+para el concepto en SkinCon. AUROC: del mejor \emph{feature}
+individual del SAE como predictor binario del concepto.}
+\label{tab:anexof-cbm}
+\begin{tabular}{lrrr}
+\hline
+Concepto clínico             & $n_+$ & Mejor \emph{feature} & AUROC \\
+\hline
+Pedunculated                 & $26$  & \#1930 & $0{,}929$ \\
+Friable                      & $153$ & \#5973 & $0{,}913$ \\
+Exophytic/Fungating          & $42$  & \#10114 & $0{,}908$ \\
+Comedo                       & $24$  & \#7191 & $0{,}903$ \\
+Ulcer                        & $154$ & \#13908 & $0{,}897$ \\
+Exudate                      & $144$ & \#5973 & $0{,}884$ \\
+Wheal                        & $21$  & \#9552 & $0{,}884$ \\
+Black                        & $90$  & \#3926 & $0{,}846$ \\
+Telangiectasia               & $100$ & \#11172 & $0{,}828$ \\
+Nodule                       & $189$ & \#1930 & $0{,}818$ \\
+Umbilicated                  & $49$  & \#13783 & $0{,}810$ \\
+\hline
+\end{tabular}
+\end{table}
+
+Los conceptos con mejor predictor incluyen un núcleo de morfología
+elevada (\emph{pedunculated}, \emph{exophytic/fungating},
+\emph{nodule}: AUROC $0{,}818$--$0{,}929$), de
+superficie alterada (\emph{friable}, \emph{ulcer}, \emph{exudate}:
+AUROC $0{,}884$--$0{,}913$) y de estructura específica
+(\emph{telangiectasia}: AUROC $0{,}828$). Cada \emph{feature}
+del SAE puede actuar como predictor para más de un concepto
+relacionado (e.g.~\#1930 cubre \emph{pedunculated} y
+\emph{nodule}; \#5973 cubre \emph{friable} y \emph{exudate}), lo
+que sugiere que el espacio disperso del SAE codifica dimensiones
+clínicas de granularidad superior a la del concepto individual.
+
+\subsection{Rendimiento agregado del CBM}
+\label{sec:anexof-cbm-agregado}
+
+Sobre los $22$ conceptos de SkinCon con cobertura
+suficiente para el contraste, el protocolo \emph{CBM-Selected}
+(regresión logística entrenada sobre $134$ \emph{features}
+del SAE Large correlacionadas con cada concepto) alcanza AUROC
+media de $0{,}880$. El protocolo de comparación
+\emph{LP-Direct} (regresión logística sobre el \emph{embedding}
+crudo de $1\,024$ dimensiones de PanDerm Large, sin pasar por
+el SAE) alcanza AUROC media de $0{,}864$ sobre los mismos
+conceptos. CBM-Selected supera a LP-Direct en $16$ de los
+$22$ conceptos evaluados. El resultado indica que las
+\emph{features} dispersas del SAE preservan ---y en la mayoría de
+conceptos exceden--- el poder predictivo de la representación
+densa subyacente (figura~\ref{fig:anexof-cbm}), comportamiento que
+sostiene su uso como módulo
+de interpretabilidad en el prototipo descrito en la
+sección~\ref{sec:dermapixel-m3} del Anexo~\ref{cap:anexoh}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{fig_skincon_cbm.png}
+\caption{Concept Bottleneck Model sobre SkinCon: AUROC del mejor
+\emph{feature} individual del SAE Large como predictor binario
+por concepto. Once conceptos superan AUROC $0{,}80$, con
+máximos en \emph{pedunculated} ($0{,}929$) y \emph{friable}
+($0{,}913$).}
+\label{fig:anexof-cbm}
+\end{figure}
+
+\section{Propuesta de extensión: quince conceptos clínicos adicionales}
+\label{sec:anexof-propuesta}
+
+El diccionario SkinCon, construido en el contexto del estudio de
+Daneshjou et~al.~\cite{skincon}, prioriza conceptos visuales
+estructurales de detección automatizable. La revisión clínica
+realizada por la Dra.~R.~Taberner sobre el dataset
+DermapixelAI~1.0 ha identificado $15$ conceptos clínicos
+adicionales no contemplados por SkinCon que aparecen con
+frecuencia relevante en la práctica dermatológica hispanohablante
+y cuya inclusión enriquecería el diccionario operativo del
+prototipo. La tabla~\ref{tab:anexof-propuesta} enumera los
+conceptos propuestos.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Quince conceptos clínicos adicionales propuestos por la
+Dra.~R.~Taberner sobre la base del diccionario SkinCon.}
+\label{tab:anexof-propuesta}
+\begin{tabular}{lll}
+\hline
+Categoría                       & Concepto propuesto                & Relevancia clínica \\
+\hline
+Pigmentación                    & Pigmentación reticular            & Diagnóstico diferencial nevus \\
+Pigmentación                    & Pseudored                         & Lentigo solar \emph{vs.}\ lentigo maligno \\
+Vasculatura                     & Lagunas vasculares                & Hemangioma, angioqueratoma \\
+Vasculatura                     & Vasos en horquilla                 & Carcinoma basocelular \\
+Estructura epidérmica           & Hiperqueratosis                    & Queratosis seborreica \\
+Estructura epidérmica           & Comedo invertido                   & Queratosis seborreica adelgazada \\
+Patrón inflamatorio             & Eritema heliotropo                 & Dermatomiositis \\
+Patrón inflamatorio             & Patrón en \emph{papel de seda}     & Liquen escleroso \\
+Distribución                    & Distribución dermatomérica         & Herpes zóster \\
+Distribución                    & Distribución \emph{en alas}        & Lupus subagudo \\
+Superficie                      & Cráteres centrales                 & Molluscum contagioso \\
+Superficie                      & Anillos concéntricos               & Eritema multiforme \\
+Color                           & Coloración \emph{salmón}           & Psoriasis guttata \\
+Color                           & Halo blanco perilesional           & Nevus halo \\
+Otros                           & Bordes geográficos                 & Vitíligo segmentario \\
+\hline
+\end{tabular}
+\end{table}
+
+La incorporación de estos quince conceptos al diccionario operativo
+del prototipo DermApIxel constituye una línea de continuación
+inmediata, condicionada al muestreo de aproximadamente
+$200$ imágenes anotadas por concepto para entrenar el
+clasificador lineal correspondiente sobre las activaciones del SAE
+Large. El protocolo de anotación previsto utiliza la interfaz
+autocontenida descrita en la sección~\ref{sec:lineas-abiertas} del
+capítulo~\ref{cap:conclusiones}.
+
+\section{Limitaciones del módulo SAE}
+\label{sec:anexof-limitaciones}
+
+El módulo SAE presenta tres limitaciones declaradas. Primero, la
+asociación entre \emph{feature} y concepto se establece sobre la
+base del mejor predictor individual, sin garantía de que la
+\emph{feature} sea \emph{monosemántica} en el sentido estricto del
+término (la misma \emph{feature} puede correlacionarse con varios
+conceptos relacionados, como se observa en
+sección~\ref{sec:anexof-cbm-top}). Segundo, el rendimiento del SAE Large
+sobre tareas de discriminación binaria
+(tabla~\ref{tab:anexof-auroc}) es ligeramente superior al de los
+\emph{embeddings} crudos correspondientes, pero esta mejora es del
+orden de la desviación estándar inter-partición, lo que limita la
+afirmación de \emph{superioridad estadísticamente significativa}
+sin las pruebas pendientes (sección~\ref{sec:lim-estadistica}).
+Tercero, la validación sobre conceptos clínicos se realiza sobre
+SkinCon, dataset con sesgo de selección hacia patología
+dermatoscópica documentada, lo que condiciona la transferencia a
+otros contextos clínicos.
+
+\section{Tablas de detalle del experimento Derm7pt}
+\label{sec:anexof-d7pt-detalle}
+
+Este apartado recoge tres tablas de detalle de los experimentos de
+interpretabilidad sobre Derm7pt descritos en la
+sección~\ref{sec:sae-derm7pt}, separadas del cuerpo por su carácter
+de soporte cuantitativo: los pesos por concepto del \emph{Concept
+Bottleneck Model} (E2), el cruce de los conceptos del Grupo~A con el
+\emph{Seven-Point Checklist} (E3) y la comparativa concepto a
+concepto entre sondeo lineal y \emph{fine-tuning} multitarea (E4).
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Cabeza intermedia del CBM: AUROC binario sobre el conjunto
+de test Derm7pt ($N_{\mathrm{test}} = 395$) por concepto del
+\emph{Seven-Point Checklist}, y peso aprendido por el
+meta-clasificador logístico para la predicción binaria
+melanoma/no-melanoma. Pesos ordenados de mayor a menor
+importancia relativa.}
+\label{tab:sae-d7pt-cbm-coefs}
+\begin{tabular}{lrr}
+\hline
+Concepto                & AUROC concepto & Peso meta-LP \\
+\hline
+blue\_whitish\_veil     & $0{,}895$ & $+2{,}54$ \\
+regression\_structures  & $0{,}818$ & $+2{,}07$ \\
+streaks                 & $0{,}829$ & $+1{,}78$ \\
+vascular\_structures    & $0{,}906$ & $+1{,}65$ \\
+pigmentation            & $0{,}792$ & $+1{,}44$ \\
+dots\_and\_globules     & $0{,}723$ & $+1{,}41$ \\
+pigment\_network        & $0{,}901$ & $+1{,}04$ \\
+\hline
+\end{tabular}
+\end{table}
+
+La AUROC binaria de la cabeza intermedia se sitúa en el intervalo
+$[0{,}723,\,0{,}906]$ sobre los siete conceptos, con
+\emph{vascular structures} ($0{,}906$), \emph{pigment network}
+($0{,}901$) y \emph{blue whitish veil} ($0{,}895$) como las
+predicciones conceptuales más fiables. Los pesos del
+meta-clasificador identifican \emph{blue whitish veil} y
+\emph{regression structures} como los conceptos con mayor peso
+relativo para la decisión final melanoma/no-melanoma ($+2{,}54$ y
+$+2{,}07$ respectivamente), jerarquía que coincide cualitativamente
+con el peso clínico asignado a estos criterios en el
+\emph{Seven-Point Checklist}.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{Cruce de los $16$ conceptos dermatoscópicos del
+Grupo~A propuestos a la Dra.~R.~Taberner con los siete criterios del
+\emph{Seven-Point Checklist} sobre Derm7pt ($N = 1\,011$).
+Para los conceptos con \emph{mapping} se reporta la AUROC efectiva
+de la mejor \emph{feature} SAE Large sobre la binarización
+correspondiente. Conceptos cubiertos (AUROC $\geq 0{,}70$) en
+negrita.}
+\label{tab:sae-d7pt-cross-rosa}
+\adjustbox{max width=\textwidth}{%
+\begin{tabular}{rlllrl}
+\hline
+\# & Concepto Rosa (Grupo~A)                & \emph{Mapping} Derm7pt       & $N_{+}$ & AUROC eff           & Cobertura \\
+\hline
+$1$  & Red dermatoscópica regular           & pigment\_network=typical            & $381$ & $\mathbf{0{,}748}$  & $\checkmark$ \\
+$2$  & Red dermatoscópica atípica           & pigment\_network=atypical           & $230$ & $\mathbf{0{,}732}$  & $\checkmark$ \\
+$3$  & Glóbulos pigmentarios                & dots\_and\_globules                 & $782$ & $0{,}681$           & --- \\
+$4$  & Puntos pigmentarios                  & dots\_and\_globules                 & $782$ & $0{,}681$           & --- \\
+$5$  & Estrías radiales                     & streaks                             & $358$ & $0{,}688$           & --- \\
+$6$  & Pseudopodios                         & streaks=irregular                   & $251$ & $\mathbf{0{,}729}$  & $\checkmark$ \\
+$7$  & Velo azul-blanquecino                & blue\_whitish\_veil=present         & $195$ & $\mathbf{0{,}746}$  & $\checkmark$ \\
+$8$  & Estructuras de regresión             & regression\_structures $\neq$ absent& $253$ & $0{,}687$           & --- \\
+$9$  & Patrón empedrado                     & ---                                  & ---   & ---                 & --- \\
+$10$ & Patrón paralelo de surcos            & ---                                  & ---   & ---                 & --- \\
+$11$ & Patrón paralelo de crestas           & ---                                  & ---   & ---                 & --- \\
+$12$ & Lagunas vasculares                   & ---                                  & ---   & ---                 & --- \\
+$13$ & Vasos polimorfos                     & vascular\_structures (agregado)     & $140$ & $\mathbf{0{,}810}$  & $\checkmark$ \\
+$14$ & Vasos en horquilla                   & vascular\_structures=hairpin        & $15$  & $\mathbf{0{,}926}$  & $\checkmark$ \\
+$15$ & Vasos en corona                      & ---                                  & ---   & ---                 & --- \\
+$16$ & Patrón homogéneo desestructurado     & pigmentation (\emph{diffuse})       & $380$ & $\mathbf{0{,}704}$  & $\checkmark$ \\
+\hline
+\end{tabular}}
+\end{table}
+
+De los $16$ conceptos del Grupo~A, $11$ admiten \emph{mapping}
+operativo a un criterio o subcategoría del \emph{Seven-Point
+Checklist} (directo en tres casos, por subcategoría en ocho), y
+los $5$ restantes (patrón empedrado, patrón paralelo de surcos,
+patrón paralelo de crestas, lagunas vasculares, vasos en corona)
+corresponden a estructuras dermatoscópicas no contempladas en la
+escala original. Sobre los $11$ conceptos mapeados, $7$ quedan
+cubiertos por al menos una \emph{feature} SAE con AUROC efectivo
+$\geq 0{,}70$, con un máximo absoluto de $0{,}926$ sobre vasos en
+horquilla (sólo $15$ positivos sobre $1\,011$ imágenes).
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.95}
+\caption{AUROC binaria \emph{present}/\emph{absent} por concepto
+del \emph{Seven-Point Checklist} sobre el conjunto de test
+Derm7pt ($N_{\mathrm{test}} = 395$). Comparativa entre sondeo
+lineal separado por concepto sobre las activaciones SAE Large
+(E2 LP separado, una regresión logística por concepto) y las
+siete cabezas conceptuales del \emph{fine-tuning} multitarea
+LoRA (E4). $\Delta$ en puntos porcentuales.}
+\label{tab:sae-d7pt-e4-concepts}
+\begin{tabular}{lrrr}
+\hline
+Concepto                & E2 LP separado & E4 multitarea & $\Delta$ \\
+\hline
+pigment\_network        & $0{,}901$ & $0{,}889$ & $-1{,}2$\,pp \\
+vascular\_structures    & $0{,}906$ & $0{,}880$ & $-2{,}6$\,pp \\
+blue\_whitish\_veil     & $0{,}895$ & $0{,}879$ & $-1{,}6$\,pp \\
+streaks                 & $0{,}829$ & $0{,}818$ & $-1{,}1$\,pp \\
+pigmentation            & $0{,}792$ & $0{,}793$ & $+0{,}1$\,pp \\
+regression\_structures  & $0{,}818$ & $0{,}791$ & $-2{,}7$\,pp \\
+dots\_and\_globules     & $0{,}723$ & $0{,}725$ & $+0{,}2$\,pp \\
+\hline
+\end{tabular}
+\end{table}
+
+Las cabezas conceptuales del régimen multitarea (E4) pierden entre
+$1$ y $3$\,pp de AUROC binaria frente al sondeo lineal separado
+(E2) en seis de los siete conceptos, con un máximo de $-2{,}7$\,pp
+en \emph{regression structures}: una degradación menor que confirma
+que el aprendizaje conjunto de melanoma y conceptos no compromete la
+calidad conceptual.

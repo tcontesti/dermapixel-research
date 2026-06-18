@@ -1,0 +1,491 @@
+%!TeX root=MemoriaTFG.tex
+
+\chapter{Limitaciones}
+\label{cap:limitaciones}
+
+El estudio presenta limitaciones de cinco órdenes que conviene
+declarar explícitamente. La presente sección las desarrolla por
+familia, cuantifica su magnitud cuando es posible y acota su
+impacto sobre la interpretación de los resultados del
+capítulo~\ref{cap:resultados} y de la discusión del
+capítulo~\ref{cap:discusion}.
+
+\section{Limitaciones de disponibilidad}
+\label{sec:lim-disponibilidad}
+
+\subsection{Modelos sin pesos públicos}
+\label{sec:lim-pesos}
+
+Los pesos de DermFM-Zero~\cite{dermfmzero2026} no son públicos en
+la fecha de cierre del presente trabajo. Esta restricción impide
+su evaluación empírica directa sobre los doce datasets externos
+contrastados y restringe su tratamiento al marco conceptual del
+capítulo~\ref{cap:sota}. La comparación entre PanDerm Large y
+DermFM-Zero, que la publicación original reporta a favor del
+segundo, no puede verificarse de forma independiente con los mismos
+protocolos. La disponibilidad eventual de los pesos permitiría esa
+comparación directa con los hallazgos cuantitativos del trabajo
+(tabla~\ref{tab:lp-panderm}, tabla~\ref{tab:equidad-fototipo}).
+
+Los modelos cerrados accedidos vía API (GPT-4o, GPT-4o-mini,
+Gemini~2.5~Pro, Gemini~2.5~Flash) presentan una limitación
+estructural: no permiten controlar la versión exacta del modelo en
+el momento de la inferencia ni el posprocesado interno aplicado
+por el proveedor. Las cifras de la tabla~\ref{tab:llm-comparativa}
+son condicionales a la versión disponible en la fecha del
+experimento (marzo de 2026) y no son estrictamente reproducibles
+ante actualizaciones silenciosas del proveedor. El coste agregado
+de la evaluación (\$4{,}07 aproximadamente entre GPT-4o y
+GPT-4o-mini, sin desglose público de tarifa por token de entrada y
+salida) introduce una segunda dependencia que limita la
+replicación por terceros.
+
+\subsection{Conjuntos de preentrenamiento no liberados}
+\label{sec:lim-preentrenamiento}
+
+Los conjuntos de preentrenamiento internos del grupo de la Universidad
+Monash empleados en PanDerm~\cite{panderm2025} no son accesibles para
+terceros, lo que impide reproducir la fase de preentrenamiento y limita
+la verificación a los pesos liberados. En consecuencia, cualquier
+afirmación sobre la composición del dataset de preentrenamiento (las
+cuatro modalidades dermatológicas, $\sim 2{,}1$ millones de imágenes)
+descansa sobre la declaración de los autores y no sobre auditoría
+independiente. La misma restricción aplica al dataset Derm1M de la
+familia DermLIP, distribuido con \emph{embeddings} agregados pero sin
+acceso íntegro al material de imagen original.
+
+\subsection{Dependencia de modelos fundacionales externos}
+\label{sec:lim-dependencia-externa}
+
+El trabajo evalúa principalmente estrategias de adaptación,
+transferencia e integración sobre modelos fundacionales desarrollados
+por terceros (PanDerm, DermLIP, SAM2.1, SigLIP, BiomedCLIP). Por tanto,
+parte de las conclusiones depende de las decisiones de diseño y de los
+sesgos heredados de dichos modelos. Aunque esta situación refleja el
+escenario real de adopción clínica actual ---en el que una institución
+sanitaria parte de pesos preentrenados disponibles y no de un
+preentrenamiento propio a gran escala---, limita la capacidad de atribuir
+causalmente determinados comportamientos a componentes específicos del
+entrenamiento original.
+
+\section{Limitaciones de los datos}
+\label{sec:lim-datos}
+
+\subsection{Sesgo geográfico y lingüístico}
+\label{sec:lim-geografico}
+
+Los doce datasets externos contrastados provienen mayoritariamente
+de instituciones de Estados Unidos (DDI), Australia
+(HAM10000 parcial), Europa central (BCN20000 sobre Hospital Clínic
+de Barcelona; HAM10000 parcial; ISIC2018; Dermnet) y Brasil
+(PAD-UFES-20). HIBA procede del Hospital Italiano de Buenos Aires
+y MSKCC del Memorial Sloan Kettering Cancer Center. La población
+hispanohablante europea, con la distribución epidemiológica
+documentada en DIADERM~\cite{diaderm2018}, no está representada de
+forma específica en los conjuntos de evaluación. La consecuencia
+es que las cifras agregadas de la tabla~\ref{tab:lp-panderm} no
+son directamente extrapolables al espectro diagnóstico atendido en
+el Hospital Universitario Son Llàtzer
+(HUSLL)~\cite{taberner2010_motivos} sin validación adicional.
+
+La rama lingüística de los modelos vision-lenguaje contrastivos
+(DermLIP, BiomedCLIP) está preentrenada sobre dataset en inglés. La
+sensibilidad documentada al tokenizador (sección~\ref{sec:disc-zs},
+$48{,}8$\,pp AUROC entre la peor y la mejor configuración) se
+limita a las variantes evaluadas en inglés y no caracteriza el
+rendimiento sobre \emph{prompts} en español, idioma sobre el que
+no se han evaluado por la ausencia de validación de los
+tokenizadores con vocabulario clínico hispanohablante. El dataset
+DermapixelAI~1.0 publicado como contribución del trabajo
+(sección~\ref{sec:dermapixel}) aborda esta brecha para la fase
+posterior al periodo cubierto por este documento.
+
+\subsection{Heterogeneidad taxonómica entre datasets}
+\label{sec:lim-taxonomia}
+
+Las taxonomías diagnósticas nativas de los doce datasets son
+incompatibles entre sí. La formulación binaria
+melanoma/no-melanoma de Derm7pt clínico, Derm7pt dermo, HIBA y
+MSKCC contrasta con la multiclase de HAM10000 ($7$ clases),
+PAD-UFES-20 ($6$), DDI ($2$), Dermnet ($23$), BCN20000
+($9$), WSI~patches ($16$) y Fitzpatrick17k
+($114$ patologías). SkinCon emplea anotación basada en
+$48$ conceptos clínicos visuales, taxonomía incompatible con la
+diagnóstica de los demás datasets.
+
+La ontología jerárquica L1/L2/L3 introducida en
+sección~\ref{sec:ontologia} mitiga esta limitación al armonizar el
+dataset agregado sobre vocabulario común
+($72\,654$ imágenes etiquetadas, $4$ categorías L1, $43$
+subcategorías L2 con cinco entradas sin desagregación a L3, y
+$367$ diagnósticos L3 con codificación SNOMED~CT y CIE-10), pero
+no la elimina por completo. Las comparaciones inter-dataset son
+defendibles a nivel L1 (cuatro familias etiológicas) y L2
+($43$ entradas), pero a nivel L3 cada dataset conserva su cola
+larga propia y los contrastes directos requieren agregación
+adicional. Once de los doce datasets se mapean a la ontología;
+SkinCon queda fuera por el desajuste de granularidad ya
+mencionado.
+
+La consecuencia operativa para los hallazgos del
+capítulo~\ref{cap:resultados} es que el reporte por dataset de la
+tabla~\ref{tab:lp-panderm} mantiene fidelidad a la taxonomía
+nativa, y las cifras agregadas (filas \emph{Media} de la misma
+tabla) deben interpretarse como promedios sobre tareas heterogéneas
+no estrictamente comparables entre sí.
+
+\subsection{Solapamiento con el dataset de preentrenamiento Derm1M}
+\label{sec:lim-leakage}
+
+La auditoría descrita en sección~\ref{sec:auditoria} identifica un
+único dataset evaluado, \textbf{Dermnet}, con solapamiento exacto
+frente al dataset de preentrenamiento Derm1M empleado por la familia
+DermLIP: sus $18\,302$ imágenes están íntegramente contenidas en
+Derm1M ($100\%$ por hash MD5). HIBA y MSKCC, pese a su origen en el
+ISIC archive, no presentan ninguna coincidencia MD5 con Derm1M, por
+lo que la sospecha de procedencia no se confirma como solapamiento
+exacto (tabla~\ref{tab:datasets-resumen}).
+
+Las métricas obtenidas sobre Dermnet con modelos cuya rama visual
+deriva de Derm1M (DermLIP v1, v2 y original) deben interpretarse con
+\emph{caveat} y no son directamente comparables con las obtenidas
+sobre los datasets sin solapamiento. La sensibilidad de la métrica
+AUROC a la presencia de imágenes ya vistas en preentrenamiento puede
+inflar al alza las cifras zero-shot de DermLIP sobre Dermnet.
+
+Las cifras de PanDerm Base y Large, DINOv2 ViT-L/14,
+ConvNeXt-Large, EfficientNetV2-Large y SigLIP-Large SO400M no se
+ven afectadas por este solapamiento, dado que su preentrenamiento
+no incluye Derm1M. Por consiguiente, los hallazgos cuantitativos
+sobre la ventaja del preentrenamiento de dominio
+(sección~\ref{sec:disc-especializacion}), la eficiencia en etiquetas
+(sección~\ref{sec:disc-eficiencia}) y la comparación con CNNs
+(sección~\ref{sec:benchmark}) permanecen defendibles incluso bajo el
+peor escenario de la auditoría.
+
+La auditoría acota, no obstante, su propio alcance epistemológico. El
+hash MD5 detecta coincidencias \emph{exactas} a nivel de bytes, pero
+no identifica \emph{near-duplicates}: recortes, reescalados,
+recompresiones o alteraciones leves de una misma imagen. Lo que la
+auditoría sostiene es, por tanto, la ausencia de duplicación
+\emph{exacta} entre los datasets de evaluación y Derm1M, no la
+ausencia completa de contaminación visual. Las cifras declaradas
+libres de solapamiento deben leerse en sentido estricto como libres de
+\emph{solapamiento exacto}; la extensión natural ---\emph{perceptual
+hashing} o comparación por \emph{embeddings} visuales--- se identifica
+como refinamiento metodológico de la auditoría.
+
+\subsection{Tamaños muestrales por subgrupo en el experimento de equidad}
+\label{sec:lim-muestrales}
+
+Los tamaños muestrales del experimento de equidad sobre
+Fitzpatrick17k son asimétricos entre fototipos cutáneos: $299$
+imágenes para FST~I, $470$ para FST~II, $325$ para FST~III,
+$261$ para FST~IV, $169$ para FST~V y $73$ para FST~VI
+en el conjunto de test ($N$ total $=1\,597$ con fototipo
+asignado). El subgrupo FST~VI dispone de aproximadamente la cuarta
+parte de los ejemplos del subgrupo FST~I y supone el $4{,}6\%$
+del conjunto de test.
+
+La consecuencia estadística es que los intervalos de confianza al
+$95\%$ por \emph{bootstrap} sobre las cifras de
+BAcc por subgrupo de la tabla~\ref{tab:equidad-fototipo} son más
+amplios para FST~V-VI que para FST~I-IV, lo que limita la
+precisión cuantitativa del \emph{gap}~I-VI reportado. La
+interpretación cualitativa ---rendimiento inferior sobre fototipos
+elevados--- es robusta frente a esta asimetría muestral; la
+cuantificación exacta del \emph{gap}, en cambio, queda condicionada
+por la menor masa muestral de los fototipos oscuros, y su
+acompañamiento sistemático con intervalos de confianza por
+\emph{bootstrap} se identifica como refinamiento estadístico de la
+línea de trabajo.
+
+\section{Limitaciones del diseño experimental}
+\label{sec:lim-diseno}
+
+\subsection{Variabilidad inter-semilla}
+\label{sec:lim-semilla}
+
+Los protocolos de sondeo lineal, eficiencia en etiquetas y
+evaluación de equidad por fototipo operan con una única semilla
+(\texttt{random\_state}~$=42$); el protocolo de ajuste fino emplea
+también una única configuración de
+semillas (\texttt{torch}, \texttt{numpy}, \texttt{random} fijadas a
+$0$). La variabilidad inter-semilla no se reporta de forma
+sistemática en estos protocolos, lo que limita la cuantificación de
+la incertidumbre estadística asociada a la inicialización aleatoria
+del clasificador lineal y al orden de muestreo durante el
+entrenamiento. La segmentación constituye la excepción: el
+cifra principal de Dice se acompaña de una validación cruzada de
+cinco pliegues con su intervalo de confianza
+(sección~\ref{sec:seg-robustez}), por lo que en esa tarea la
+incertidumbre de partición sí queda acotada.
+
+La consecuencia es que las cifras de las tablas
+\ref{tab:lp-panderm}, \ref{tab:ft-panderm}, \ref{tab:label-eff} y
+\ref{tab:equidad-fototipo} son estimaciones puntuales sobre una
+trayectoria de optimización concreta y no incluyen su variabilidad
+esperable bajo distintas inicializaciones. Las heurísticas
+operativas extraídas en sección~\ref{sec:disc-lp-vs-ft}
+(régimen $N_{\mathrm{train}} \lesssim 500$ para preferencia de
+sondeo lineal) son cualitativas y robustas, pero los umbrales
+exactos pueden desplazarse bajo otras semillas.
+
+Esta limitación se acota por dos consideraciones. La semilla fija
+respondió al objetivo de comparar arquitecturas bajo un protocolo
+constante, aislando el efecto del modelo del de la inicialización. Y
+la magnitud de los efectos cualitativos sobre los que se sostienen las
+conclusiones ---del orden de $+9{,}0$\,pp en la ventaja del
+preentrenamiento de dominio o de $43{,}5$\,pp en la brecha entre
+encoders especializados y LLMs generalistas--- excede ampliamente la
+variabilidad inter-semilla esperable para un clasificador lineal sobre
+estos tamaños muestrales, por lo que no se anticipan cambios
+cualitativos en las conclusiones. El reporte sistemático de media y
+desviación estándar sobre múltiples semillas constituye, en todo caso,
+la extensión natural de este protocolo.
+
+\subsection{Pruebas estadísticas y comparaciones múltiples}
+\label{sec:lim-estadistica}
+
+El test de DeLong~\cite{delong1988} se ha aplicado a los contrastes
+pareados entre codificadores sobre tres \emph{endpoints} binarios
+centrales de detección de lesión maligna ---Fitzpatrick17k (malignidad),
+HAM10000 (melanoma) y DermapixelAI~1.0 (malignidad)---, con corrección
+de Holm dentro de cada \emph{endpoint} (sección~\ref{sec:equidad-delong};
+tabla detallada en el repositorio reproducible, \ref{sec:repo-tablas}). El cierre estadístico se concentra, no
+obstante, en Fitzpatrick17k, el único con potencia muestral suficiente
+($226$ positivos); en HAM10000 ($70$) y DermapixelAI~1.0 ($58$ en
+validación cruzada) ningún contraste alcanza significación, un patrón
+compatible con la falta de potencia y no con la ausencia de efecto. La
+extensión del contraste al resto de tablas multiclase del capítulo,
+junto con la presentación de cada cifra principal como par (estimador,
+IC~\emph{bootstrap}) en lugar de valor puntual, permanece como
+refinamiento estadístico de la versión publicable.
+
+La consecuencia operativa es que la superioridad de los codificadores de
+dominio sobre los generalistas queda establecida estadísticamente sobre
+el \emph{endpoint} con potencia (Fitzpatrick17k), mientras que el resto
+de hallazgos numéricos del capítulo~\ref{cap:resultados} ---y la
+ordenación fina entre los dos líderes específicos--- deben interpretarse
+en términos descriptivos y de magnitud del efecto: las afirmaciones de
+\emph{superioridad estadísticamente significativa} en los demás
+\emph{endpoints} requieren mayor tamaño muestral. Los patrones
+cualitativos identificados en la discusión son, no obstante, robustos
+frente a esta limitación por la magnitud absoluta de los efectos
+cuantificados.
+
+\subsection{Sensibilidad al \emph{prompt} en zero-shot y LLMs}
+\label{sec:lim-prompts}
+
+La evaluación zero-shot multimodal y la comparación con LLMs
+multimodales operan sobre formulaciones concretas de \emph{prompts}
+que condicionan los resultados reportados. La diferencia de
+$48{,}8$\,pp AUROC entre la peor y la mejor configuración de
+DermLIP sobre HAM10000 (sección~\ref{sec:zs-results}) cuantifica la
+magnitud de esta dependencia para la rama contrastiva. La
+generalización a otras formulaciones requiere validación
+específica.
+
+Para los LLMs multimodales, el \emph{prompt} clínico de
+aproximadamente $300$ palabras descrito en sección~\ref{sec:llm}
+introduce una formulación fija que no se ha auditado mediante
+barrido sistemático de longitud, orden de las clases candidatas o
+inclusión de descriptores anatómicos. El sesgo léxico documentado
+en sección~\ref{sec:disc-llm} (GPT-4o emite $284$ predicciones de
+dermatofibroma frente a $8$ muestras reales) sugiere que el
+modelo responde al espacio léxico del \emph{prompt}, lo que
+amplifica el efecto de la formulación. Las cifras de la
+tabla~\ref{tab:llm-comparativa} son condicionales a este
+\emph{prompt} y no caracterizan el rendimiento de los modelos bajo
+formulaciones alternativas. Una caracterización sistemática de la
+sensibilidad al \emph{prompt} en LLMs queda fuera del alcance del
+trabajo y se documenta como línea futura en el
+repositorio reproducible (\ref{cap:repo}, sección~\ref{sec:repo-llm}).
+
+\section{Limitaciones del dataset DermapixelAI 1.0}
+\label{sec:lim-dermapixel}
+
+El dataset DermapixelAI~1.0 entregado como contribución del trabajo
+presenta cuatro limitaciones específicas declaradas explícitamente
+en el repositorio reproducible (\ref{cap:repo}, sección~\ref{sec:repo-ablaciones}) y en el documento formal de entrega
+(sección~\ref{sec:repo-datasheet}).
+
+\paragraph{Desbalance estructural por modalidad.}
+La distribución por modalidad es $1\,036$ imágenes de fotografía
+clínica frente a $49$ imágenes dermatoscópicas, lo que limita
+el uso del dataset para entrenamiento o evaluación de tareas
+dermatoscópicas. El predominio clínico refleja la finalidad
+docente original del archivo Dermapixel, no una decisión de
+diseño del trabajo, pero condiciona la utilidad del dataset para
+benchmarks comparativos con HAM10000, BCN20000, ISIC2018 u otros
+conjuntos dermatoscópicos.
+
+\paragraph{Cobertura ontológica parcial.}
+El dataset contiene anotación L3 sobre $250$ diagnósticos
+distintos, sobre las $367$ entradas declaradas en la
+ontología, lo que corresponde a una cobertura efectiva del
+$68{,}1\%$ del vocabulario L3 con al menos una imagen. El
+diagnóstico L3 más frecuente concentra aproximadamente el
+$32\%$ del dataset, lo que reproduce la cola larga típica del
+material clínico. Esta cobertura parcial limita el uso del dataset
+para evaluación granular sobre L3 sin agregación a L2.
+
+\paragraph{Tres cifras de validación no intercambiables.}
+La distinción entre los tres campos de validación documentados en
+el repositorio reproducible (\ref{cap:repo}, sección~\ref{sec:repo-ablaciones}) es relevante para la interpretación
+correcta de las cifras de calidad. El $97{,}89\%$ del dataset
+con \texttt{label\_source = ontology} indica mapeo ontológico
+validado del vocabulario, no verificación visual caso-a-caso. El
+$84{,}39\%$ con \texttt{rosa\_verified} corresponde a la revisión
+visual explícita por la Dra.~R.~Taberner. La cifra de validación
+textual \texttt{diagnosis\_source = expert\_v3} ($98{,}38\%$) se
+refiere a la coherencia del razonamiento textual con el
+diagnóstico asignado, sin verificación visual de la imagen
+asociada. Las tres cifras deben declararse con precisión en
+cualquier comunicación derivada y no son intercambiables.
+
+\paragraph{Splits y tamaños reducidos.}
+La partición \emph{case-aware} del dataset
+($891 / 157 / 41$ imágenes en \emph{train/val/test}) es
+metodológicamente correcta para evitar fuga de información entre
+imágenes del mismo caso clínico, pero produce un conjunto de test
+reducido ($41$ imágenes en el \emph{split} de producción; los
+contrastes por nivel ontológico se evalúan sobre el subconjunto
+filtrado, $N = 36$ en L1/L2 y $N = 28$ en L3) que limita la potencia
+estadística de los contrastes realizados sobre él. La explotación experimental
+sistemática sobre DermapixelAI~1.0 se ha pospuesto al periodo
+posterior al cierre de este documento por esta razón. En consecuencia,
+las conclusiones comparativas sobre el dataset ---en particular la
+jerarquía entre métodos en L2 y L3 y la narrativa de Dermapixel R0---
+se anclan en la validación cruzada agrupada por caso
+(sección~\ref{sec:disc-cv-robustez}, tabla~\ref{tab:dermapixel-cv}) y
+no en la cifra puntual del \emph{split} fijo, que sobrestima la BAcc
+sobre este \emph{test} reducido.
+
+\section{Limitaciones de generalización clínica}
+\label{sec:lim-clinica}
+
+\subsection{Material de archivo frente a flujo asistencial real}
+\label{sec:lim-archivo}
+
+El estudio mide rendimiento sobre fotografías procedentes de
+archivos de investigación curados (HAM10000, BCN20000, ISIC2018) o
+de archivos clínicos con verificación posterior (HIBA, MSKCC, DDI,
+Fitzpatrick17k). El rendimiento sobre material adquirido en el
+flujo real de teledermatología, sobre fotografías de atención
+primaria con dispositivos heterogéneos (variabilidad de
+iluminación, distancia focal, encuadre, calibración cromática) o
+sobre material adquirido en consulta presencial sin estandarización
+no se aborda en este trabajo. La extrapolación de las cifras de la
+tabla~\ref{tab:lp-panderm} a estos escenarios requiere validación
+adicional sobre cohorte representativa del entorno de despliegue
+previsto, particularmente en el contexto del proyecto institucional
+de teledermatología con IB-Salut descrito en
+sección~\ref{sec:trabajo-previo}.
+
+\subsection{Sesgo de modalidad de los componentes evaluados}
+\label{sec:lim-modalidad-sistema}
+
+Varios de los protocolos evaluados se apoyan en dataset
+predominantemente dermatoscópicos: la clasificación adaptada sobre
+HAM10000, la segmentación promptable adaptada sobre ISIC2018
+(sección~\ref{sec:seg-results}) y la lista de comprobación de
+siete puntos, cuyos criterios son intrínsecamente dermatoscópicos.
+Dado que la entrada mayoritaria en un escenario de teledermatología
+real es la fotografía clínica ---como refleja la propia composición
+del dataset DermapixelAI~1.0, con $1\,036$ imágenes clínicas frente a
+$49$ dermatoscópicas (sección~\ref{sec:lim-dermapixel})---, la
+transferencia de estos componentes a fotografía clínica no
+estandarizada queda como limitación operativa conocida. Su
+mitigación ---clasificación previa de la modalidad de imagen y
+encaminamiento diferenciado por tipo--- se identifica como línea de
+continuación y no se aborda en este trabajo.
+
+\subsection{Ausencia de validación prospectiva}
+\label{sec:lim-prospectivo}
+
+El trabajo no aborda la validación clínica prospectiva sobre
+cohorte hospitalaria real con protocolo aprobado por Comité Ético
+de Investigación Clínica (CEIC). Esta limitación es estructural y
+se asume explícitamente como decisión de alcance en
+sección~\ref{sec:alcance}. La validación prospectiva del prototipo
+DermApIxel descrito en el repositorio reproducible (\ref{cap:repo}, sección~\ref{sec:repo-prototipo}) sobre cohorte del
+HUSLL requiere prerrequisitos administrativos y temporales
+(aprobación CEIC, definición de \emph{endpoints} clínicos
+primarios y secundarios, cálculo muestral, contratación de
+revisores independientes) que exceden el alcance del Trabajo de
+Fin de Grado y se identifican como línea de continuación inmediata
+en la sección~\ref{sec:lineas-abiertas} del capítulo~\ref{cap:conclusiones}.
+
+\subsection{Elementos no abordados por decisión de alcance}
+\label{sec:lim-fuera}
+\label{sec:alcance}
+
+Tres restricciones explícitas condicionan, además, el diseño
+experimental y la interpretación de los resultados. En cuanto al
+\textbf{hardware}, todas las ejecuciones se realizan sobre la NVIDIA
+DGX Spark descrita en la sección~\ref{sec:infraestructura}, cuya
+arquitectura aarch64 no coincide con el hardware x86\_64 dominante en
+la literatura. En cuanto al \textbf{acceso a datos}, los conjuntos
+internos del grupo de la Universidad Monash empleados en el
+preentrenamiento de PanDerm no son accesibles para terceros
+(sección~\ref{sec:lim-preentrenamiento}), lo que limita el trabajo a
+los pesos liberados y a la evaluación sobre datasets externos
+públicos. En cuanto al \textbf{acceso a modelos}, los pesos de
+DermFM-Zero no son públicos en la fecha de cierre
+(sección~\ref{sec:lim-pesos}), lo que impide su evaluación empírica
+directa y restringe su tratamiento a la discusión conceptual.
+
+Cuatro elementos quedan, por decisión de alcance, fuera del trabajo,
+y deben reconocerse como limitaciones del
+documento aunque sean por decisión deliberada: (i)~el
+preentrenamiento desde cero de un modelo fundacional propio, que
+requeriría acceso al material de las cuatro modalidades
+dermatológicas en volumen comparable al de PanDerm
+($\sim 2{,}1$ millones de imágenes); (ii)~la integración
+operativa con el sistema PACS y el visor radiológico del HUSLL,
+que excede el alcance técnico del trabajo experimental;
+(iii)~el reentrenamiento multilingüe de la rama lingüística sobre
+dataset en español de gran escala, condicionado a la disponibilidad
+futura de material en cantidad suficiente; (iv)~la certificación
+CE como producto sanitario (\emph{Software as a Medical Device}),
+que requiere un proceso regulatorio y de auditoría independiente
+no contemplado.
+
+\section{Síntesis: dominio de validez de los resultados}
+\label{sec:lim-sintesis}
+
+El conjunto de limitaciones declarado en este capítulo acota el
+dominio de validez de las cifras reportadas en el
+capítulo~\ref{cap:resultados} pero no invalida los patrones
+cualitativos identificados en la discusión. Cinco afirmaciones resisten
+al peor escenario combinado de muestreo, semilla, sensibilidad al
+\emph{prompt} y restricciones de modelos cerrados, y constituyen la
+evidencia empírica defendible del trabajo en relación con el
+planteamiento descrito en sección~\ref{sec:objetivos}:
+
+\begin{enumerate}
+  \item La \textbf{ventaja del preentrenamiento sobre el dominio
+  clínico} frente a codificadores generalistas.
+  \item La \textbf{saturación temprana del sondeo lineal}, que alcanza
+  el grueso de su rendimiento con $1$--$5\%$ de los datos etiquetados.
+  \item La \textbf{brecha entre codificadores específicos y LLMs
+  multimodales generalistas}, a favor de los primeros.
+  \item El \textbf{\emph{gap} sistemático por fototipo cutáneo}, con
+  sentido peor-en-fototipos-elevados y consistente entre encoders.
+  \item La \textbf{ausencia de un método óptimo único y la consiguiente
+  especialización por tarea} (sección~\ref{sec:disc-especializacion}),
+  lectura transversal que sintetiza las cuatro anteriores.
+\end{enumerate}
+
+Las cuatro primeras son afirmaciones directas; la quinta es una lectura
+de orden superior que emerge de leerlas en conjunto. Su cuantificación y
+su lectura como conclusiones se desarrollan en el
+capítulo~\ref{cap:conclusiones} (sección~\ref{sec:respuesta}). La quinta
+está, además, acotada por el tamaño moderado del dataset
+DermapixelAI~1.0 (sección~\ref{sec:lim-dermapixel}), su cola larga en el
+nivel L3 y el carácter exploratorio de varios de los contrastes por
+nivel ontológico: el patrón cualitativo es robusto, pero no constituye
+una ordenación cuantitativa cerrada entre métodos, cuya validación
+requeriría los tamaños muestrales y la cohorte prospectiva descritos en
+el capítulo~\ref{cap:conclusiones}.
