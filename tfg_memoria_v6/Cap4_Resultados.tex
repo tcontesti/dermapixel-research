@@ -156,7 +156,16 @@ protocolo de sondeo lineal.
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{0.95}
 \caption{Benchmark comparativo bajo sondeo lineal sobre HAM10000,
-PAD-UFES-20 y DDI. Mejor valor por columna en negrita.}
+PAD-UFES-20 y DDI. Mejor valor por columna en negrita. La AUROC del
+DDI de las líneas base convolucionales se calcula sobre $N = 220$
+(fusión de validación y test en el \emph{script} de extracción CNN),
+frente a $N = 137$ (solo test) en PanDerm~Large y SigLIP; la
+convención de promediado de la AUROC multiclase tampoco es homogénea
+entre filas (OvR-macro en las CNN, OvR-ponderada en SigLIP, OvO-macro
+en PanDerm). Ambas particularidades ---y el mismo desajuste de $N$ en
+las filas Gemini de la tabla~\ref{tab:llm-comparativa}--- se
+documentan celda a celda en el repositorio reproducible
+(\ref{cap:repo}, sección~\ref{sec:repo-bootstrap-ci}).}
 \label{tab:benchmark}
 \adjustbox{max width=\textwidth}{%
 \begin{tabular}{lrrrrrrr}
@@ -713,9 +722,33 @@ ellos ---ser equitativamente malo no es ser equitativo en sentido
 sustantivo---. La interpretación debe además acotarse por el reducido
 tamaño muestral del fototipo~VI ($N = 73$, frente a $299$ en
 FST~I; sección~\ref{sec:lim-muestrales}), que ensancha los intervalos
-del \emph{gap} sobre los fototipos oscuros. El contraste con cierre
-estadístico se reserva al test de DeLong
+del \emph{gap} sobre los fototipos oscuros (tabla~\ref{tab:equidad-gap-ci}).
+El contraste con cierre estadístico se reserva al test de DeLong
 (sección~\ref{sec:equidad-delong}).
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{\emph{Gap} de equidad I-VI (BAcc FST~I $-$ BAcc FST~VI) con
+intervalo de confianza al $95\%$ por \emph{bootstrap} ($B = 1\,000$,
+estratificado). El reducido tamaño de FST~VI ($N = 73$) ensancha los
+intervalos; el de BiomedCLIP incluye el cero, de modo que su
+\emph{gap} mínimo no es estadísticamente distinguible de la ausencia
+de disparidad. Intervalos por subgrupo en el repositorio reproducible
+(\ref{cap:repo}, sección~\ref{sec:repo-bootstrap-ci}).}
+\label{tab:equidad-gap-ci}
+\begin{tabular}{lc}
+\hline
+Modelo & \emph{Gap}~I-VI $[$IC$\,95\%]$ \\
+\hline
+PanDerm Large   & $0{,}217$ $[0{,}015,\, 0{,}387]$ \\
+PanDerm Base    & $0{,}269$ $[0{,}116,\, 0{,}389]$ \\
+DermLIP v2      & $0{,}281$ $[0{,}109,\, 0{,}430]$ \\
+DINOv2 ViT-L/14 & $0{,}306$ $[0{,}136,\, 0{,}426]$ \\
+BiomedCLIP      & $0{,}124$ $[-0{,}052,\, 0{,}280]$ \\
+\hline
+\end{tabular}
+\end{table}
 
 Un experimento cruzado \emph{Light}~$\leftrightarrow$~\emph{Dark}
 (\emph{Light} agrupa FST~I-III; \emph{Dark}, FST~IV-VI; matriz completa
@@ -827,6 +860,22 @@ significativo tras la corrección de Holm (todos con $p_{\mathrm{Holm}} =
 DermLIP v2 son estadísticamente indistinguibles. Con sólo $70$
 positivos, la potencia es insuficiente para separar modelos cuyas AUROC
 se solapan ampliamente.
+
+Sobre este mismo \emph{endpoint}, la discriminación es fuerte
+(AUROC $\sim 0{,}95$) \emph{y} la calibración de las probabilidades
+resulta razonable: reutilizando las mismas predicciones por muestra
+del contraste de DeLong (cabeza de regresión logística \emph{train}$\to$\emph{test},
+sin reentrenamiento), el error de calibración esperado
+(ECE, $15$ \emph{bins} de igual anchura sobre la probabilidad de la
+clase positiva) y el \emph{Brier score} son de
+ECE${}=0{,}017$ y \emph{Brier}${}=0{,}029$ para PanDerm Large,
+ECE${}=0{,}017$ y \emph{Brier}${}=0{,}030$ para SigLIP-Large, y
+ECE${}=0{,}018$ y \emph{Brier}${}=0{,}031$ para DermLIP v2 (curvas de
+fiabilidad por \emph{bin} en el repositorio reproducible,
+\ref{cap:repo}, sección~\ref{sec:repo-calibracion-ham}). El análisis
+sistemático de calibración entre tareas queda fuera del alcance de este
+trabajo (capítulo~\ref{cap:limitaciones}, sección de elementos no
+abordados).
 
 \paragraph{Endpoint 3: malignidad sobre DermapixelAI~1.0 (protocolo
 distinto).} El tercer \emph{endpoint} ---malignidad frente al resto

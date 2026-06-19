@@ -89,6 +89,7 @@ Material complementario & Ubicación en el repositorio & Sección \\
 Mapa de tareas y reproducibilidad & \texttt{repro/} & \ref{sec:repo-reproducibilidad} \\
 Tablas detalladas de resultados & \texttt{tables/} & \ref{sec:repo-tablas} \\
 Intervalos de confianza \emph{bootstrap} & \texttt{tables/} & \ref{sec:repo-bootstrap-ci} \\
+Calibración \emph{endpoint} melanoma HAM10000 & \texttt{tables/} & \ref{sec:repo-calibracion-ham} \\
 Pipeline y caracterización del dataset & \texttt{datasheet/}, \texttt{ablations/} & \ref{sec:repo-ablaciones} \\
 Declaración de uso de IA & \texttt{ai-statement/} & \ref{sec:repo-ia} \\
 Documento de entrega del dataset & \texttt{datasheet/} & \ref{sec:repo-datasheet} \\
@@ -137,6 +138,22 @@ lineal sobre los \emph{embeddings} congelados, o remuestreo directo
 sobre las predicciones guardadas, según el caso--- y declara
 abiertamente las celdas no cubiertas y las convenciones de cálculo
 empleadas por fila.
+
+\section{Calibración en el \emph{endpoint} de melanoma de HAM10000}
+\label{sec:repo-calibracion-ham}
+
+El repositorio publica el detalle de la calibración de los tres
+codificadores en el \emph{endpoint} binario melanoma frente al resto
+sobre el test de HAM10000 (sección~\ref{sec:equidad-delong},
+tabla~\ref{tab:delong-ham}): el error de calibración esperado
+(ECE, $15$ \emph{bins} de igual anchura sobre la probabilidad de la
+clase positiva) y el \emph{Brier score}, junto con las curvas de
+fiabilidad por \emph{bin} que los sustentan. Las probabilidades por
+muestra son exactamente las del test de DeLong de ese \emph{endpoint}
+---reajuste determinista de la misma cabeza lineal sobre los
+\emph{embeddings} congelados, sin reentrenamiento---; el cómputo
+verifica previamente, celda a celda, que la AUROC recomputada reproduce
+el valor publicado antes de admitir cualquier cifra de calibración.
 
 \section{Ablaciones complementarias}
 \label{sec:repo-ablaciones}
