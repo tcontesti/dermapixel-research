@@ -196,9 +196,10 @@ interpretación cualitativa ---rendimiento inferior sobre fototipos
 elevados--- es robusta frente a esta asimetría muestral; la
 cuantificación exacta del \emph{gap}, en cambio, queda condicionada
 por la menor masa muestral de los fototipos oscuros, y su
-acompañamiento sistemático con intervalos de confianza por
-\emph{bootstrap} se identifica como refinamiento estadístico de la
-línea de trabajo.
+acompañamiento con intervalos de confianza al $95\%$ por
+\emph{bootstrap} ---incluido el \emph{gap}~I-VI de cada codificador---
+se reporta en el repositorio reproducible (\ref{cap:repo},
+sección~\ref{sec:repo-bootstrap-ci}).
 
 \section{Limitaciones del diseño experimental}
 \label{sec:lim-diseno}
@@ -256,11 +257,12 @@ tabla detallada en el repositorio reproducible, \ref{sec:repo-tablas}). El cierr
 obstante, en Fitzpatrick17k, el único con potencia muestral suficiente
 ($226$ positivos); en HAM10000 ($70$) y DermapixelAI~1.0 ($58$ en
 validación cruzada) ningún contraste alcanza significación, un patrón
-compatible con la falta de potencia y no con la ausencia de efecto. La
-extensión del contraste al resto de tablas multiclase del capítulo,
-junto con la presentación de cada cifra principal como par (estimador,
-IC~\emph{bootstrap}) en lugar de valor puntual, permanece como
-refinamiento estadístico de la versión publicable.
+compatible con la falta de potencia y no con la ausencia de efecto. El
+acompañamiento de cada cifra principal con su intervalo de confianza
+al $95\%$ por \emph{bootstrap} se reporta en el repositorio
+reproducible (sección~\ref{sec:repo-bootstrap-ci}); la extensión del
+contraste pareado de DeLong al resto de tablas multiclase del capítulo
+queda como continuación natural del trabajo.
 
 La consecuencia operativa es que la superioridad de los codificadores de
 dominio sobre los generalistas queda establecida estadísticamente sobre

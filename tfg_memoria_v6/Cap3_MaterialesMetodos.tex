@@ -609,8 +609,63 @@ la robustez de cada contraste sin imponer una única política de
 corrección. Dada la magnitud de las diferencias observadas (con $p$
 varios órdenes por debajo de $0{,}05$), las conclusiones principales
 se mantienen bajo cualquier corrección estándar. Los tamaños
-muestrales por subgrupo del experimento de equidad se reportan junto
+muestrales por subgrupo ---por fototipo cutáneo y por nivel
+ontológico--- se consolidan en las tablas~\ref{tab:muestral-fst}
+y~\ref{tab:muestral-nivel}, lo que permite contextualizar la potencia
+de cada análisis por subgrupo; en particular, el reducido tamaño del
+fototipo~VI ($n = 73$ en test) y la cola larga diagnóstica L3 acotan la
+inferencia en esos subgrupos. El detalle por subgrupo acompaña además
 a sus cifras en el capítulo~\ref{cap:resultados}.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Tamaño muestral por fototipo cutáneo (Fitzpatrick17k),
+cohorte de los análisis de equidad y del test de DeLong de
+malignidad. La evaluación del \emph{gap}~I-VI usa los $1\,597$ casos
+de test con fototipo asignado; el \emph{endpoint} binario de
+malignidad emplea los $1\,658$ del test ($226$ malignos). El reducido
+tamaño del fototipo~VI ($n = 73$ en test) acota la potencia
+estadística en ese subgrupo.}
+\label{tab:muestral-fst}
+\begin{tabular}{lrr}
+\hline
+Fototipo (FST) & $N$ corpus & $N$ test \\
+\hline
+I    & $2\,947$ & $299$ \\
+II   & $4\,808$ & $470$ \\
+III  & $3\,308$ & $325$ \\
+IV   & $2\,781$ & $261$ \\
+V    & $1\,533$ & $169$ \\
+VI   & $635$    & $73$  \\
+Sin asignar & $565$ & $61$ \\
+\hline
+\textbf{Total} & $\mathbf{16\,577}$ & $\mathbf{1\,658}$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Tamaño muestral por nivel ontológico sobre DermapixelAI~1.0
+($1\,089$ imágenes, $669$ casos). El vocabulario común declara $4$
+categorías etiológicas L1, $43$ subcategorías clínicas L2 y $367$
+diagnósticos L3; el dataset armonizado de los doce externos aporta
+$72\,654$ imágenes mapeadas a ese vocabulario. La cola larga L3
+concentra $64$ clases con una sola imagen, $129$ con dos a cinco, $39$
+con seis a diez, $11$ con once a veinte y $7$ con veintiuna o más.}
+\label{tab:muestral-nivel}
+\begin{tabular}{lrr}
+\hline
+Nivel & Declarado & Representado \\
+\hline
+L1 & $4$   & $4$ \\
+L2 & $43$  & $38$ \\
+L3 & $367$ & $250$ \\
+\hline
+\end{tabular}
+\end{table}
 
 El alcance de este protocolo estadístico es, no obstante, heterogéneo
 entre bloques experimentales, y conviene declararlo de forma
