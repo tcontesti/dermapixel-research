@@ -436,7 +436,7 @@ DermFM-Zero no son públicos en la fecha de cierre
 (sección~\ref{sec:lim-pesos}), lo que impide su evaluación empírica
 directa y restringe su tratamiento a la discusión conceptual.
 
-Cuatro elementos quedan, por decisión de alcance, fuera del trabajo,
+Cinco elementos quedan, por decisión de alcance, fuera del trabajo,
 y deben reconocerse como limitaciones del
 documento aunque sean por decisión deliberada: (i)~el
 preentrenamiento desde cero de un modelo fundacional propio, que
@@ -450,7 +450,17 @@ dataset en español de gran escala, condicionado a la disponibilidad
 futura de material en cantidad suficiente; (iv)~la certificación
 CE como producto sanitario (\emph{Software as a Medical Device}),
 que requiere un proceso regulatorio y de auditoría independiente
-no contemplado.
+no contemplado; y (v)~el análisis sistemático de calibración
+(\emph{Brier score} y ECE en todas las tareas) y la evaluación de
+utilidad clínica mediante análisis de curva de decisión
+(\emph{decision curve analysis} y \emph{net benefit}), cuyo objeto
+---fijar umbrales operativos y cuantificar el beneficio neto de una
+decisión asistida--- excede el de este trabajo, centrado en la
+capacidad discriminativa y la adaptación de los modelos; la
+calibración se reporta de forma puntual donde resulta directamente
+relevante (ECE en segmentación y en \emph{zero-shot} L3), y su
+tratamiento sistemático queda como continuación natural hacia una
+eventual evaluación de despliegue.
 
 \section{Síntesis: dominio de validez de los resultados}
 \label{sec:lim-sintesis}
