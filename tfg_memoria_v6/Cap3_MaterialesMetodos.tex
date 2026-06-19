@@ -582,7 +582,12 @@ conjunto de evaluación, estratificado por clase, del que se derivan
 los intervalos de confianza al $95\%$. No requiere asumir
 normalidad ni varianza conocida, lo que es necesario sobre los
 conjuntos de test reducidos y desbalanceados de este trabajo, donde
-la aproximación asintótica de los estimadores no es fiable.
+la aproximación asintótica de los estimadores no es fiable. Los
+intervalos de confianza al $95\%$ por \emph{bootstrap}
+($B = 1\,000$, remuestreo estratificado por clase, percentil
+$2{,}5/97{,}5$) de las métricas \emph{headline} que no los
+incorporan en el cuerpo se reportan en el repositorio reproducible
+(\ref{cap:repo}, sección~\ref{sec:repo-bootstrap-ci}).
 
 Las comparaciones de AUROC entre dos modelos sobre el mismo conjunto
 emplean el test de DeLong~\cite{delong1988}. Su motivación es

@@ -88,6 +88,7 @@ Material complementario & Ubicación en el repositorio & Sección \\
 \hline
 Mapa de tareas y reproducibilidad & \texttt{repro/} & \ref{sec:repo-reproducibilidad} \\
 Tablas detalladas de resultados & \texttt{tables/} & \ref{sec:repo-tablas} \\
+Intervalos de confianza \emph{bootstrap} & \texttt{tables/} & \ref{sec:repo-bootstrap-ci} \\
 Pipeline y caracterización del dataset & \texttt{datasheet/}, \texttt{ablations/} & \ref{sec:repo-ablaciones} \\
 Declaración de uso de IA & \texttt{ai-statement/} & \ref{sec:repo-ia} \\
 Documento de entrega del dataset & \texttt{datasheet/} & \ref{sec:repo-datasheet} \\
@@ -119,6 +120,23 @@ capítulo~\ref{cap:resultados}: el desglose de equidad por fototipo,
 la matriz de evaluación cruzada entre conjuntos, los resultados de
 segmentación por arquitectura y las tareas de transferencia
 adicionales.
+
+\section{Intervalos de confianza por \emph{bootstrap}}
+\label{sec:repo-bootstrap-ci}
+
+El repositorio publica los intervalos de confianza al $95\%$ por
+\emph{bootstrap} ($B = 1\,000$, remuestreo estratificado por clase,
+percentil $2{,}5/97{,}5$, semilla $42$), celda a celda, de las
+métricas \emph{headline} que en el cuerpo se reportan como
+estimaciones puntuales: el sondeo lineal de PanDerm sobre los
+conjuntos externos, la comparativa de paradigmas de razonamiento
+clínico, el desglose de equidad por fototipo y el \emph{benchmark}
+frente a líneas base convolucionales. El material documenta el
+mecanismo de cómputo ---reajuste determinista de un clasificador
+lineal sobre los \emph{embeddings} congelados, o remuestreo directo
+sobre las predicciones guardadas, según el caso--- y declara
+abiertamente las celdas no cubiertas y las convenciones de cálculo
+empleadas por fila.
 
 \section{Ablaciones complementarias}
 \label{sec:repo-ablaciones}
