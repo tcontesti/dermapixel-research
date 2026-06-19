@@ -109,7 +109,18 @@ Sobre los diez datasets evaluados (estimación de semilla única,
 sección~\ref{sec:estadistica}), PanDerm Large supera a PanDerm Base en
 cuatro de las cinco métricas, con mejoras medias de $+4{,}1$\,pp en
 accuracy, $+9{,}0$\,pp en \emph{balanced accuracy} y $+3{,}6$\,pp en
-AUROC; la única excepción es la BAcc de MSKCC ($-1{,}0$\,pp).
+AUROC; la única excepción es la BAcc de MSKCC ($-1{,}0$\,pp;
+figura~\ref{fig:lp-per-dataset}).
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.92\textwidth]{fig_lp_per_dataset.png}
+\caption{Sondeo lineal con PanDerm Base y Large sobre los diez
+datasets externos contrastados. Diferencia absoluta en BAcc
+($+9{,}0$\,pp de promedio) y AUROC ($+3{,}6$\,pp de
+promedio) a favor de PanDerm Large.}
+\label{fig:lp-per-dataset}
+\end{figure}
 
 Las mayores ganancias aparecen en Dermnet, WSI~patches y PAD-UFES-20
 ---los escenarios más heterogéneos del benchmark---, lo que sugiere
@@ -457,8 +468,20 @@ máscara de referencia. Bajo perturbaciones controladas, el \emph{jitter}
 de esquinas ($\pm 20$ px) apenas resta $0{,}86$\,pp, pero la escala es
 crítica y asimétrica: apretar la caja es catastrófico ($-6{,}8$\,pp al
 $-10\%$, $-15{,}4$\,pp al $-20\%$, por recortar lesión real) mientras
-que aflojarla degrada poco ($-2{,}8$\,pp al $+10\%$). La lectura
+que aflojarla degrada poco ($-2{,}8$\,pp al $+10\%$;
+figura~\ref{fig:seg-box-robustness}). La lectura
 operativa se desarrolla en sección~\ref{sec:disc-cv-robustez}.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.82\textwidth]{fig_seg_box_robustness.png}
+\caption{Robustez de MedSAM2-tiny a la calidad de la caja-\emph{prompt}
+sobre el test canónico de ISIC2018 ($N = 1\,000$). El \emph{jitter}
+de esquinas es prácticamente inocuo ($-0{,}86$\,pp), pero la escala
+es crítica y asimétrica: apretar la caja degrada mucho más que
+aflojarla.}
+\label{fig:seg-box-robustness}
+\end{figure}
 
 El resto de comprobaciones confirman un modelo bien comportado y no
 alteran la conclusión: el ajuste de bajo rango (LoRA
@@ -586,7 +609,7 @@ Los resultados separan claramente especialistas y generalistas. El
 mejor sistema dermatológico (PanDerm Base ajustado con TTA) alcanza
 accuracy $0{,}920$ sobre HAM10000, frente a $0{,}485$ del mejor
 generalista \emph{zero-shot} (GPT-4o) ---una diferencia de $43{,}5$\,pp
-que se mantiene en PAD-UFES-20 y DDI---; en el extremo inferior, BLIP-2 e
+(figura~\ref{fig:llm-comparison}) que se mantiene en PAD-UFES-20 y DDI---; en el extremo inferior, BLIP-2 e
 InstructBLIP caen a accuracy $\sim 0{,}02$ sobre HAM10000. La lectura
 no es que un modelo generalista sea deficiente, sino que, cuando el
 problema es extremadamente visual y especializado, el conocimiento
@@ -598,6 +621,18 @@ disponibles en la fecha de evaluación, no reproducible ante
 actualizaciones silenciosas (sección~\ref{sec:lim-pesos}); documentan
 un punto de comparación reproducible en su formulación, no el techo
 intrínseco de cada sistema.}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.92\textwidth]{fig_llm_comparison.png}
+\caption{Comparativa de paradigmas sobre HAM10000. Gradiente
+de $43{,}5$\,pp accuracy entre el mejor especialista
+ajustado (PanDerm Base FT con TTA, $0{,}920$) y el mejor LLM
+multimodal generalista \emph{zero-shot} (GPT-4o,
+$0{,}485$). BLIP-2 e InstructBLIP descienden hasta accuracy
+$\sim 0{,}02$.}
+\label{fig:llm-comparison}
+\end{figure}
 
 \subsection{Ajuste supervisado de un LLM multimodal: MedGemma con LoRA}
 
@@ -649,13 +684,26 @@ BiomedCLIP                & $0{,}569$     & $0{,}602$     & $0{,}606$     & $0{,
 \end{tabular}
 \end{table}
 
-Los cinco modelos tienen \emph{gap}~I-VI positivo: todos rinden peor
+Los cinco modelos tienen \emph{gap}~I-VI positivo
+(figura~\ref{fig:fairness-5models}): todos rinden peor
 sobre los fototipos elevados. Pero el ranking de equidad no coincide
 con el de rendimiento. DermLIP v2
 logra la mejor BAcc global ($0{,}721$ sobre $3$ clases) y la mejor
 AUROC ($0{,}909$), pero con un \emph{gap}~I-VI ($+0{,}281$) mayor que
 el de PanDerm Large ($+0{,}217$); y BiomedCLIP exhibe el \emph{gap}
 menor ($+0{,}124$) pero la peor BAcc global ($0{,}590$).
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{figura_fairness_5models.png}
+\caption{Equidad por fototipo Fitzpatrick (formulación de tres
+clases de malignidad) sobre los cinco encoders evaluados. Los
+cinco presentan \emph{gap}~I-VI positivo (entre $+0{,}124$ y
+$+0{,}306$\,pp BAcc). Paradoja BiomedCLIP: \emph{gap} mínimo
+asociado a peor BAcc global, lo que demuestra el carácter no
+decisional de la métrica aislada.}
+\label{fig:fairness-5models}
+\end{figure}
 
 Este contraste encierra la principal aportación metodológica de la
 sección: \textbf{el \emph{gap} aislado no constituye una métrica
@@ -788,8 +836,8 @@ de tamaño limitado para inferencia binaria ($N = 36$, sólo $3$
 positivos), por lo que el contraste de DeLong se estima en su lugar
 mediante una validación cruzada de cinco pliegues
 \emph{out-of-fold} sobre el dataset completo ($N = 1\,062$, $58$
-malignos), con DeLong pareado sobre las predicciones agrupadas y
-corrección de Holm. Este protocolo difiere del de los dos
+malignos; tabla~\ref{tab:delong-dermapixel}), con DeLong pareado sobre
+las predicciones agrupadas y corrección de Holm. Este protocolo difiere del de los dos
 \emph{endpoints} anteriores (train$\to$test) y se emplea por el
 tamaño limitado del \emph{split} fijo.
 
@@ -1110,7 +1158,7 @@ sobre los tres niveles.
 DermapixelAI~1.0. Test fijo $N_{\mathrm{test}} = 36$ en L1/L2 y
 $N_{\mathrm{test}} = 28$ en L3. La cabeza L2 de este protocolo
 dimensiona $1\,024 \to 37$: son las $37$ clases L2 efectivas en el
-\emph{train} del ajuste fino, de las $38$ del corpus tras fusionar
+\emph{train} del ajuste fino, de las $38$ del dataset tras fusionar
 las dos variantes ortográficas de ``queratinización'' ($39$ en
 bruto); las $38$ clases son la cardinalidad nominal del nivel L2.
 Entre corchetes, IC95\% por \emph{bootstrap}

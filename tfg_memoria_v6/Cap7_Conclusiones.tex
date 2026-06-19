@@ -97,7 +97,11 @@ porque dispone de datos clínicos en castellano, y el nivel L3 queda
 limitado por la cola larga. El siguiente salto en rendimiento clínico no
 se espera de sustituir el codificador, sino de ampliar y mejorar los
 datos ---en cobertura diagnóstica, representación de fototipos y registro
-lingüístico--- sobre los que se adapta y evalúa.
+lingüístico--- sobre los que se adapta y evalúa. Esta lectura concuerda con
+la evidencia reciente en IA clínica conversacional, donde la ventaja que
+aporta el andamiaje agéntico sobre el modelo base se estrecha conforme este
+madura~\cite{amie2026}: alcanzada cierta madurez del componente central, el
+margen de mejora se desplaza desde la complejidad añadida hacia el sustrato.
 
 \section{Contribuciones reproducibles}
 \label{sec:contribuciones}
@@ -485,7 +489,12 @@ y auditable. Frente al uso directo de un LLM multimodal generalista
 (sección~\ref{sec:disc-llm}), este esquema reduciría el sesgo léxico
 documentado y facilitaría la justificación clínica de la salida; su
 desarrollo es condicional a pesos abiertos con capacidad de razonamiento
-estructurado y se detalla en el repositorio reproducible (\ref{cap:repo}, sección~\ref{sec:repo-prototipo}).
+estructurado y se detalla en el repositorio reproducible (\ref{cap:repo}, sección~\ref{sec:repo-prototipo}). En otro dominio clínico, los agentes
+conversacionales que fundamentan sus recomendaciones en guías mediante
+razonamiento de contexto largo ya han demostrado un rendimiento no inferior
+al de médicos de atención primaria en tareas de razonamiento de manejo
+dentro de estudios simulados~\cite{amie2026}, lo que sitúa esta línea como
+una continuación realista y no meramente especulativa.
 
 \paragraph{Reentrenamiento multilingüe de la rama lingüística.}
 \label{sec:linea-multilingual}
