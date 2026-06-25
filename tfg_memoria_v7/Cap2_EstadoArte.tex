@@ -23,6 +23,61 @@ taxonómica entre conjuntos públicos y la pérdida de rendimiento
 fuera del dominio de entrenamiento, particularmente acusada en
 fototipos cutáneos elevados~\cite{fitzpatrick17k,ddi}.
 
+\section{Inteligencia artificial en imagen dermatoscópica y clínica}
+\label{sec:sota-modalidades}
+
+La modalidad en la que la inteligencia artificial está más madura es
+la dermatoscopia aplicada al melanoma. El motivo es, en buena medida,
+la disponibilidad de datasets públicos amplios y bien anotados y de
+una serie de competiciones internacionales que han fijado un banco de
+pruebas común. Los retos de la \emph{International Skin Imaging
+Collaboration} (ISIC), celebrados de forma anual desde 2016 junto a
+congresos de visión por computador, se apoyan en un archivo público
+de más de medio millón de imágenes de lesiones cutáneas, en su
+mayoría dermatoscópicas~\cite{isicchallenge}. Sobre datasets de este tipo,
+como HAM10000~\cite{ham10000}, los modelos alcanzan un rendimiento
+comparable al del dermatólogo experto en la distinción entre melanoma
+y lesiones benignas; una revisión sistemática con meta-análisis
+reciente concluye que, para la clasificación de cáncer de piel, los
+algoritmos igualan a los dermatólogos expertos y superan a los
+clínicos no especializados~\cite{salinas2024}.
+
+Fuera del melanoma y del cáncer cutáneo queratinocítico, el avance es
+bastante menor. La mayoría de los datasets dermatoscópicos y de la
+literatura de evaluación se concentran en la detección de cáncer de
+piel ---una revisión sistemática de $232$ estudios circunscribe el
+grueso de las aplicaciones de IA en dermatología al melanoma y al
+carcinoma queratinocítico~\cite{jairath2024}---, y la extensión a
+tareas multiclase sobre el conjunto amplio de
+dermatosis es más reciente y está mucho menos consolidada. La propia
+tarea de segmentación de la lesión se ha formulado también sobre
+datasets dermatoscópicos de cáncer~\cite{isic2018}, lo que ilustra
+hasta qué punto la modalidad gravita en torno al problema oncológico.
+
+La fotografía clínica o macroscópica ---la obtenida con una cámara
+convencional o un teléfono, sin lente de contacto ni aumento--- está
+mucho menos explorada. El trabajo de Esteva et~al.~\cite{esteva2017}
+mostró que una red entrenada sobre imágenes clínicas podía clasificar
+cáncer de piel a nivel de dermatólogo, y sistemas posteriores como el
+de Liu et~al.~\cite{liu2020} ampliaron el alcance a las $26$
+dermatosis más frecuentes en atención primaria a partir de casos de
+teledermatología. Aun así, estos esfuerzos son escasos frente al
+volumen del trabajo dermatoscópico, se concentran en un número
+reducido de sistemas y siguen condicionados por problemas de
+generalización: el rendimiento cae sobre los fototipos cutáneos más
+oscuros y sobre los diagnósticos menos
+frecuentes~\cite{ddi,fitzpatrick17k,tjiu2025}.
+
+Esta asimetría delimita el terreno menos trabajado. La dermatoscopia
+para melanoma está relativamente resuelta, pero el resto del espectro
+de patologías ---y, en especial, la fotografía clínica--- sigue siendo
+poco explorado, y casi todo el material disponible está en inglés.
+Incluso los recursos más recientes que enriquecen imágenes con
+descripciones clínicas, como SkinCAP~\cite{skincap2024}, se construyen
+sobre datasets clínicos en inglés ya existentes. La parte menos
+explorada de este panorama es, por tanto, la fotografía clínica en
+lenguas distintas del inglés y con texto narrativo de caso real.
+
 \section{Modelos fundacionales: arquitectura y objetivos}
 \label{sec:fundacionales-base}
 
@@ -201,65 +256,59 @@ contrastes pareados de AUROC mediante el test de
 DeLong~\cite{delong1988}, y tamaños muestrales por subgrupo)
 constituye un requisito creciente en publicaciones de la disciplina.
 
-\section{Brechas operativas y posicionamiento}
-\label{sec:brecha}
+\section{Resumen del estado del arte}
+\label{sec:resumen-sota}
 
-Cinco brechas operativas delimitan el espacio en el que el presente
-trabajo aporta evidencia empírica. \textbf{(i)~Disponibilidad real
-de los modelos.} PanDerm y DermLIP liberan pesos y código;
-DermFM-Zero no lo hace. BiomedCLIP, DINOv2, SigLIP, SAM, SAM2 y
-BLIP-2 son abiertos. Los modelos generalistas ofrecen acceso parcial
-por API. Cualquier evaluación empírica externa queda condicionada
-por esta disponibilidad. \textbf{(ii)~Benchmarks no homogéneos entre
-familias.} Los benchmarks reportados por los autores se construyen
-sobre subconjuntos derivados del propio preentrenamiento y aplican
-protocolos no equivalentes entre familias. La comparación bajo un
-mismo protocolo y un mismo conjunto de datasets externos no está
-documentada. \textbf{(iii)~Heterogeneidad taxonómica.} La
-comparación inter-dataset exige un esquema de armonización que la
-literatura no proporciona de forma consolidada.
-\textbf{(iv)~Concentración geográfica y lingüística.} Los datasets
-proceden mayoritariamente de instituciones de Australia, Estados
-Unidos y Europa central, y los encoders textuales se preentrenan
-sobre datasets en inglés. La disponibilidad de material clínico en
-español con texto narrativo asociado es marginal. La aparición
-reciente de datasets dermatológicos multimodales con \emph{captions}
-clínicas ricas no reduce esta brecha, sino que la perfila con mayor
-nitidez. SkinCAP~\cite{skincap2024}, por ejemplo, anota con
-descripciones clínicas en inglés $4\,000$ imágenes procedentes de
-Fitzpatrick17k~\cite{fitzpatrick17k} y DDI~\cite{ddi} ---dos de los
-datasets que este trabajo también evalúa---: enriquece con lenguaje
-natural recursos en inglés ya existentes, pero no aporta material en
-castellano, texto narrativo de un archivo clínico real ni
-independencia respecto a los datasets de preentrenamiento. Un recurso
-en español con texto narrativo de caso y particionado \emph{case-aware}
-es, por tanto, complementario y no redundante frente a esa tendencia.
-\textbf{(v)~Distancia entre evaluación experimental e integración
-hospitalaria.} La evaluación sobre \emph{benchmarks} públicos no
-cubre las condiciones operativas asociadas al despliegue en un
-entorno sanitario real (hardware no estándar, restricciones de
-privacidad, trazabilidad, interacción con sistemas hospitalarios).
+El recorrido anterior puede resumirse en una idea. El aprendizaje
+profundo alcanzó un rendimiento comparable al del especialista en la
+detección de melanoma~\cite{esteva2017}, pero al precio de una
+arquitectura por tarea, una fuerte dependencia de anotación experta y
+una caída notable de rendimiento fuera del dominio de entrenamiento,
+especialmente sobre los fototipos cutáneos más
+oscuros~\cite{fitzpatrick17k,ddi}. Los \emph{modelos fundacionales}
+cambiaron esa lógica: un mismo codificador, preentrenado a gran
+escala, se reutiliza en muchas tareas mediante adaptación ligera. En
+dermatología, las referencias abiertas son PanDerm ---un codificador
+visual entrenado sobre las cuatro modalidades de la
+especialidad~\cite{panderm2025}--- y la familia DermLIP, que añade una
+rama de texto y la clasificación \emph{zero-shot}~\cite{derm1m}; el
+modelo más reciente con \emph{zero-shot} nativo, DermFM-Zero, no
+libera sus pesos~\cite{dermfmzero2026}. Alrededor de ellos conviven
+codificadores generalistas (DINOv2), modelos contrastivos
+imagen-texto (CLIP, SigLIP, BiomedCLIP), la segmentación
+\emph{promptable} de la familia SAM~\cite{sam2} y los grandes modelos
+de lenguaje multimodales como comparadores de contexto.
 
-Por \emph{benchmark independiente} se entiende aquí la evaluación de
-las familias de modelos bajo un protocolo común, ejecutada por un
-equipo ajeno al ecosistema que originó cada modelo y sobre datasets
-externos que ninguno de ellos seleccionó. La contribución empírica
-del trabajo, cuyo diseño se describe en el capítulo~\ref{cap:metodos}
-y cuyos resultados se presentan en el capítulo~\ref{cap:resultados},
-se dirige específicamente a estas cinco brechas: el benchmark
-homogéneo responde a~(ii); la ontología jerárquica L1/L2/L3, a~(iii);
-la auditoría de solapamiento por hash ---reacción directa al problema
-de fuga y duplicación entre datasets de evaluación y preentrenamiento
-(sección~\ref{sec:problemas-metodologicos})--- a~(i); el dataset
-DermapixelAI~1.0, a~(iv); y la integración en el prototipo DermApIxel,
-a~(v).
+Tres problemas atraviesan toda esta literatura y condicionan
+cualquier lectura de sus resultados: la fuga de información entre los
+datasets de evaluación y los de preentrenamiento, que infla las
+cifras; la incompatibilidad entre las taxonomías de cada dataset, que
+impide compararlos directamente; y la desigualdad de rendimiento
+entre fototipos cutáneos. A ello se suma una exigencia creciente de
+transparencia metodológica ---cohorte, particiones, incertidumbre y
+contrastes estadísticos--- recogida en guías como
+TRIPOD+AI~\cite{tripodai2024}.
 
-El alcance de esta revisión se acota deliberadamente a los modelos con
-pesos públicos como conjunto \emph{evaluable}: los sistemas cerrados o
-de aparición muy reciente ---DermFM-Zero, cuyos pesos no se liberan, o
-los modelos accesibles únicamente vía API--- se posicionan
-conceptualmente pero no se evalúan de forma empírica directa. Esta
-decisión es coherente con la prioridad de reproducibilidad declarada
-en la sección~\ref{sec:trabajo-previo} y se asume como un sesgo de
-selección explícito, no como una pretensión de exhaustividad sobre
-todo el ecosistema dermatológico.
+De este panorama se desprenden las carencias que motivan el trabajo.
+Cada modelo se publica evaluado por sus propios autores, sobre sus
+propios \emph{benchmarks} y con protocolos distintos: falta una
+comparación independiente, bajo un mismo protocolo y sobre datasets
+externos comunes, realizada por un equipo ajeno a quien creó los
+modelos. Casi todo el material y los codificadores de texto están en
+inglés y centrados en dermatoscopia; la fotografía clínica en
+español, con texto narrativo de caso real, es prácticamente
+inexistente ---los recursos recientes de \emph{captions} clínicas
+ricas, como SkinCAP~\cite{skincap2024}, enriquecen datasets en inglés
+ya existentes, pero no cubren esa carencia---. Y entre la evaluación
+sobre \emph{benchmarks} y el despliegue real en un hospital media una
+distancia operativa que los trabajos publicados no abordan.
+
+De estas carencias se desprende el punto de partida de este trabajo:
+una evaluación experimental homogénea e independiente de los modelos
+fundacionales dermatológicos con pesos públicos, sobre un conjunto
+común de datasets externos y de tareas. Hacerla comparable exigirá
+armonizar las taxonomías heterogéneas de esos datasets y auditar su
+posible solapamiento con los datos de preentrenamiento. Esta
+evaluación es el primer paso necesario: solo a partir de lo que revele
+---qué ofrecen y qué les falta estos modelos--- podrá decidirse cómo
+continuar.
