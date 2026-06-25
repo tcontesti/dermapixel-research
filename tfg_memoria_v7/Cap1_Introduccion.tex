@@ -1,0 +1,197 @@
+%!TeX root=MemoriaTFG.tex
+
+\chapter{Introducción}
+\label{cap:intro}
+
+En el presente Trabajo Final de Grado (TFG) se evalúa de forma
+sistemática el rendimiento de los modelos fundacionales disponibles
+para imagen dermatológica clínica, sobre un conjunto homogéneo de
+protocolos experimentales y datasets externos públicos. Por
+\emph{modelo fundacional} se entiende en este trabajo un modelo de
+gran escala preentrenado sobre un volumen amplio de datos y
+reutilizable, mediante adaptación, en múltiples tareas posteriores;
+el estudio evalúa los disponibles con pesos abiertos y, sobre esa
+base, construye una adaptación propia.
+
+El trabajo articula así tres aportaciones de naturaleza distinta pero
+complementaria: un \emph{benchmark} independiente y reproducible de
+catorce modelos fundacionales bajo un protocolo común; un
+\emph{dataset} clínico propio en español, DermapixelAI~1.0, entregado
+como contribución independiente; y un \emph{modelo adaptado},
+Dermapixel R0, que demuestra la viabilidad de especializar un modelo
+fundacional preexistente al castellano con recursos modestos. Las tres
+se desarrollan en el marco de dos colaboraciones preexistentes con la
+Dra.~R.~Taberner del Hospital Universitario Son Llàtzer (HUSLL).
+
+En este capítulo se presenta el contexto clínico del problema, el
+marco operativo en el que se inscribe el trabajo, los objetivos
+formales que lo articulan y la estructura del resto del documento. El estado del arte específico ---modelos fundacionales
+para imagen médica y dermatológica, métodos de adaptación y
+evaluación zero-shot--- se desarrolla en el
+capítulo~\ref{cap:sota}.
+
+
+\section{Contexto clínico}
+\label{sec:contexto}
+
+Aunque existen centenares de enfermedades cutáneas distintas, la
+actividad asistencial diaria de los servicios de dermatología se
+concentra principalmente en un número limitado de diagnósticos
+frecuentes. El estudio observacional DIADERM, sobre $10\,999$
+diagnósticos en $8\,953$ pacientes en territorio español, sitúa
+entre los diagnósticos más prevalentes la queratosis actínica, el
+carcinoma basocelular, los nevus melanocíticos, la queratosis
+seborreica, la psoriasis, el acné y las verrugas
+víricas~\cite{diaderm2018}. Por su parte, Taberner et~al.\
+documentaron $213$ diagnósticos diferentes en un único año
+asistencial en el Hospital Universitario Son
+Llàtzer~\cite{taberner2010_motivos}. Ambos trabajos reflejan una
+realidad común: una elevada diversidad diagnóstica sustentada sobre
+un núcleo relativamente reducido de dermatosis benignas,
+inflamatorias e infecciosas de alta frecuencia.
+
+La sensibilidad temporal del proceso diagnóstico resulta crítica en
+el melanoma cutáneo. La supervivencia específica a cinco años
+desciende desde aproximadamente $99\%$ en estadio~I hasta
+$25\%$ en estadio~IV según la octava edición de la American
+Joint Committee on Cancer~\cite{ajcc8}. El acceso al especialista
+se realiza mediante derivación desde atención primaria. La
+capacidad asistencial del circuito presencial es limitada frente a
+una demanda creciente, lo que justifica el interés por sistemas de
+apoyo al diagnóstico basados en imagen.
+
+El sustrato visual del diagnóstico dermatológico se articula en tres
+modalidades: fotografía clínica (presentación general y contexto
+anatómico), dermatoscopia (patrones pigmentarios y estructurales no
+visibles a simple vista) e histopatología (confirmación
+tisular). Sobre esta tríada operan los sistemas de apoyo basados en
+aprendizaje automático.
+
+
+\section{Marco operativo previo}
+\label{sec:trabajo-previo}
+
+Las dos colaboraciones preexistentes con la Dra.~R.~Taberner,
+dermatóloga del HUSLL, en cuyo marco se desarrolla el trabajo, se
+detallan a continuación. La primera es la modernización tecnológica
+del archivo Dermapixel,
+blog mantenido por la Dra.~Taberner desde 2010. El archivo reúne
+más de $700$ casos clínicos comentados con imagen clínica y
+dermatoscópica, historia abreviada, diagnóstico y razonamiento
+diferencial. En paralelo a este TFG se ha desarrollado su migración
+a una pila tecnológica propia. La segunda es un proyecto
+institucional del Servei de Salut de les Illes Balears (IB-Salut)
+sobre teledermatología hospitalaria. En él se desarrolla una
+herramienta de apoyo a la primera valoración dermatológica en el
+circuito de derivación desde atención primaria. Ambas líneas
+orientan la decisión de priorizar modelos con código y pesos
+públicos, por su viabilidad de integración hospitalaria y su
+reproducibilidad. Esta prioridad introduce un sesgo de selección
+explícito ---deja fuera modelos cerrados potencialmente más capaces,
+como DermFM-Zero, cuyos pesos no son públicos
+(sección~\ref{sec:lim-pesos})---, asumido a cambio de un marco de
+evaluación íntegramente reproducible; los modelos cerrados accesibles
+vía API se incorporan únicamente como comparadores contextuales.
+
+
+\section{Objetivos del trabajo}
+\label{sec:objetivos}
+
+Este trabajo evalúa el rendimiento y la capacidad de generalización
+de los modelos fundacionales dermatológicos disponibles, en función
+del volumen de datos etiquetados, del tipo de supervisión, de la
+heterogeneidad taxonómica entre conjuntos de datos y de la disparidad
+entre fototipos cutáneos. El resultado de esa evaluación condiciona la
+viabilidad de integrarlos en teledermatología hospitalaria con cohortes
+mediterráneas en español, escenario donde las referencias recientes del
+grupo de la Universidad Monash ---PanDerm, la familia DermLIP sobre
+Derm1M y DermFM-Zero--- carecen de evaluación independiente comparable
+a la fecha de cierre.
+
+El trabajo se articula en torno a tres objetivos formales,
+verificables sobre los resultados experimentales del
+capítulo~\ref{cap:resultados}.
+
+\paragraph{O1. Evaluación experimental sistemática de los modelos
+fundacionales dermatológicos sobre conjuntos de datos externos.}
+Sobre el hardware del proyecto ---una NVIDIA DGX Spark de
+arquitectura aarch64, cuya configuración completa se detalla en la
+sección~\ref{sec:infraestructura}--- se implementa el conjunto de
+modelos fundacionales con código y pesos públicos a la fecha de
+inicio. Se evalúa su
+comportamiento sobre doce datasets externos
+públicos\footnote{HAM10000~\cite{ham10000},
+BCN20000~\cite{bcn20000}, PAD-UFES-20~\cite{padufes},
+DDI~\cite{ddi}, Dermnet~\cite{dermnet}, Derm7pt
+(clínica y dermatoscópica)~\cite{kawahara2019}, HIBA, MSKCC, WSI
+patches, Fitzpatrick17k~\cite{fitzpatrick17k},
+SkinCon~\cite{skincon} e ISIC2018~\cite{isic2018}.} mediante cuatro
+protocolos principales (sondeo lineal, ajuste fino supervisado,
+segmentación binaria promptable sobre SAM2.1~\cite{sam2},
+clasificación zero-shot multimodal) y tres protocolos
+complementarios (comparación con modelos de lenguaje multimodales,
+análisis de equidad por fototipo Fitzpatrick, auditoría de
+solapamiento con Derm1M mediante hash MD5).
+
+\paragraph{O2. Construcción del dataset DermapixelAI 1.0.}
+Se extrae, depura y estructura el material del archivo Dermapixel
+para conformar un dataset que vincula, para cada caso, imagen y
+modalidad, metadatos clínicos y texto narrativo en español. El
+dataset se publica bajo licencia CC-BY-NC-SA~4.0 con datasheet
+formal~\cite{datasheets2018}, particiones documentadas y mecanismo
+de cita recomendada. Sobre él se ejecuta además parte de la
+evaluación experimental del capítulo~\ref{cap:resultados}, que
+contrasta el sondeo lineal supervisado frente a la clasificación
+zero-shot multimodal en los tres niveles ontológicos
+(secciones~\ref{sec:dermapixel-results} y~\ref{sec:dermapixel-zs}).
+
+\paragraph{O3. Inicialización de Dermapixel R0, una primera línea
+base dermatológica en español.}
+A partir del codificador PanDerm Large y del dataset
+DermapixelAI~1.0, se plantea adaptar un modelo fundacional
+preexistente al castellano mediante adaptación supervisada de bajo
+rango, dando lugar a una versión inicial (R0). Se describirá su
+comportamiento sobre los niveles ontológicos L2 y L3
+(sección~\ref{sec:dermapixel-spanderm-v0}) junto con una rama
+contrastiva multimodal en español
+(sección~\ref{sec:spanderm-clip}). El propósito no es alcanzar un
+rendimiento de referencia, sino disponer de una semilla reproducible
+y acotada que sirva de punto de partida para el escalado descrito en
+la sección~\ref{sec:linea-spanderm}.
+
+Los bloques derivados emergidos durante el desarrollo del proyecto
+(armonización ontológica jerárquica L1/L2/L3, ensemble de seguridad
+para detección de melanoma, análisis de equidad por fototipo,
+interpretabilidad mediante Sparse Autoencoders~\cite{templeton2024},
+recuperación visual densa basada en FAISS~\cite{faiss2019},
+integración en el prototipo DermApIxel) no constituyen objetivos
+formales y se documentan en los anexos y secciones correspondientes
+con su estado, prerrequisitos y líneas futuras.
+
+
+\section{Estructura del documento}
+\label{sec:estructura}
+
+El documento se compone de siete capítulos en el cuerpo principal,
+una bibliografía y un anexo que describe el repositorio reproducible.
+El capítulo~\ref{cap:sota} sintetiza
+el estado del arte en cuatro bloques: aprendizaje profundo aplicado
+a dermatología, modelos fundacionales en imagen médica, modelos
+específicos para dermatología y brechas operativas no resueltas por
+la literatura. El capítulo~\ref{cap:metodos} describe materiales y
+métodos: los doce datasets externos, la ontología jerárquica
+L1/L2/L3, el dataset DermapixelAI~1.0, los catorce modelos fundacionales
+evaluados, la infraestructura, los protocolos, las métricas y la
+trazabilidad. El
+capítulo~\ref{cap:resultados} reúne los resultados experimentales
+organizados por bloque. El capítulo~\ref{cap:discusion} interpreta
+los resultados en clave de hallazgos, comparación con la literatura
+e implicaciones operativas. El capítulo~\ref{cap:limitaciones}
+declara las limitaciones del estudio. El
+capítulo~\ref{cap:conclusiones} sintetiza el balance del trabajo y
+enumera las contribuciones reproducibles. El material de soporte
+---mapa de tareas experimentales, tablas detalladas de resultados por
+dataset, pipeline de construcción del dataset DermapixelAI~1.0,
+documento de entrega formal del dataset y ablaciones
+complementarias--- se recoge en el repositorio reproducible descrito
+en el anexo correspondiente.

@@ -1,0 +1,265 @@
+%!TeX root=MemoriaTFG.tex
+
+\chapter{Estado del arte}
+\label{cap:sota}
+
+\section{Aprendizaje profundo aplicado a dermatología}
+\label{sec:dl-dermatologia}
+
+El trabajo de Esteva et~al.~\cite{esteva2017} establece la primera
+referencia consolidada de clasificación dermatológica con redes
+convolucionales, con rendimiento equivalente al de un panel de
+dermatólogos certificados sobre clasificación binaria
+maligno/benigno. Las extensiones posteriores amplían el espectro
+diagnóstico y la diversidad de datos~\cite{tschandl2018,ham10000} y
+formulan tareas adicionales como segmentación binaria de
+lesión~\cite{isic2018} y clasificación binaria
+melanoma/no-melanoma con anotaciones estructuradas
+multi-criterio~\cite{kawahara2019}. El paradigma común permanece
+estable: entrenamiento desde pesos de ImageNet, una arquitectura por
+tarea y dependencia de anotación experta. Tres limitaciones lo
+acotan: el coste de la anotación clínica, la fragmentación
+taxonómica entre conjuntos públicos y la pérdida de rendimiento
+fuera del dominio de entrenamiento, particularmente acusada en
+fototipos cutáneos elevados~\cite{fitzpatrick17k,ddi}.
+
+\section{Modelos fundacionales: arquitectura y objetivos}
+\label{sec:fundacionales-base}
+
+Los modelos fundacionales sustituyen el entrenamiento específico por
+encoders preentrenados de forma auto-supervisada o multimodal sobre
+datasets visuales masivos. La arquitectura predominante es el Vision
+Transformer~\cite{vit2021}, que procesa la imagen como una secuencia
+de parches y aprende dependencias globales mediante mecanismos de
+atención. Los objetivos de preentrenamiento más extendidos son tres:
+el \emph{masked image modeling}, en el que la red reconstruye
+parches ocultos a partir del contexto visible; la destilación
+auto-supervisada entre vistas; y la alineación contrastiva
+imagen-texto al estilo CLIP~\cite{clip2021}. La adaptación posterior
+a tareas específicas opera por sondeo lineal sobre representaciones
+congeladas, ajuste fino supervisado, o transferencia directa
+zero-shot guiada por \emph{prompts} en los modelos con rama
+lingüística.
+
+\section{Encoders visuales auto-supervisados}
+\label{sec:encoders-visuales}
+
+DINOv2~\cite{dinov2} es la referencia abierta de encoder visual
+auto-supervisado de propósito general, entrenado sobre
+$\sim 142$ millones de imágenes naturales sin etiquetas mediante
+destilación entre vistas. Sus representaciones transfieren a tareas
+de clasificación, recuperación y segmentación sobre dominios
+naturales y biomédicos con ajuste mínimo, y constituyen una base
+habitual para adaptación a dominios especializados.
+
+En el dominio dermatológico, PanDerm~\cite{panderm2025} es un
+encoder visual ViT (Base $\sim 86$\,M y Large $\sim 307$\,M
+parámetros) entrenado sobre $\sim 2{,}1$ millones de imágenes
+dermatológicas en cuatro modalidades (fotografía corporal total,
+dermatoscopia, fotografía clínica e histopatología). El
+preentrenamiento utiliza \emph{masked latent modeling}: la red
+reconstruye representaciones latentes de regiones ocultas en lugar
+de píxeles, con un modelo CLIP-Large congelado como
+\emph{teacher}. Sus autores reportan una mejora media del
+$+10{,}2\%$ sobre el estado del arte previo en $28$ tareas
+dermatológicas. La disponibilidad simultánea de pesos, código y
+benchmarks lo convierte en el primer modelo fundacional dermatológico
+verificable de forma independiente.
+
+\section{Modelos vision-lenguaje contrastivos}
+\label{sec:vision-lenguaje}
+
+CLIP~\cite{clip2021} establece el preentrenamiento contrastivo
+imagen-texto sobre $400$ millones de pares de la web. El objetivo
+InfoNCE aproxima la imagen a su descripción dentro del lote y la
+aleja del resto. El espacio compartido habilita dos modos
+operativos: clasificación zero-shot guiada por \emph{prompts}
+textuales (la clase ganadora es la de mayor similitud coseno entre
+el vector visual y los vectores textuales de las clases candidatas)
+y recuperación bidireccional imagen-texto sobre datasets
+precomputados.
+
+SigLIP~\cite{siglip2023} sustituye la pérdida softmax de CLIP por
+una pérdida sigmoide que reduce la dependencia del tamaño de batch y
+escala con mejor estabilidad. Su variante Large
+(SO400M) dispone de embedding de $1\,152$ dimensiones y
+$\sim 878$\,M parámetros. BiomedCLIP~\cite{biomedclip} extiende
+el paradigma al dominio biomédico sobre PMC-15M
+($\sim 15$ millones de pares figura-leyenda de literatura
+científica); su cobertura dermatológica específica es limitada por
+el sesgo de selección del dataset.
+
+En dermatología, Derm1M y la familia DermLIP~\cite{derm1m} añaden la
+rama lingüística contrastiva al estado del arte de la disciplina.
+Derm1M reúne $1\,029\,761$ pares imagen-texto sobre
+$403\,563$ imágenes únicas, organizados según una ontología
+jerárquica de cuatro niveles construida por dermatólogos. La familia
+DermLIP combina varios encoders visuales (PanDerm Base,
+ConvNeXt-Large) con varios encoders textuales (PubMedBERT extendido
+a $256$ tokens, GPT-2 dermatológico con tokenizador de CLIP a
+$77$ tokens). La configuración con mejor rendimiento reportada
+por los autores combina PanDerm Base como encoder visual y
+PubMedBERT como encoder textual, superando a BiomedCLIP en los
+benchmarks zero-shot evaluados.
+
+La implementación operativa de la recuperación visual densa sobre
+datasets a gran escala requiere índices vectoriales optimizados para
+búsqueda aproximada del vecino más próximo. FAISS~\cite{faiss2019}
+y estructuras basadas en grafos del tipo Hierarchical Navigable
+Small Worlds permiten consultas en el orden de $10^2$
+milisegundos sobre datasets de centenares de miles a millones de
+\emph{embeddings} precomputados.
+
+\section{Modelos integrados con zero-shot nativo}
+\label{sec:zero-shot-nativo}
+
+DermFM-Zero~\cite{dermfmzero2026} integra el preentrenamiento visual
+auto-supervisado y la alineación contrastiva imagen-texto en un
+único modelo con capacidad zero-shot nativa. El entrenamiento se
+estructura en dos fases: \emph{masked latent modeling} sobre tres
+millones de imágenes en la primera, y \emph{bootstrapped contrastive
+learning} sobre un millón de pares texto-imagen en la segunda. El
+encoder textual es PubMedBERT. El modelo incorpora interpretabilidad
+emergente mediante Sparse Autoencoders~\cite{templeton2024}, redes
+auxiliares que descomponen la representación interna en un
+diccionario disperso de direcciones asociables a conceptos
+clínicamente identificables. Sus autores reportan validación en
+tres \emph{reader studies} con más de mil cien clínicos. Sus pesos
+no son públicos en la fecha de cierre del presente trabajo, lo que
+restringe su tratamiento a la discusión conceptual.
+
+BLIP-2~\cite{blip2_2023} introduce un patrón arquitectónico
+distinto: conecta un encoder visual congelado con un modelo de
+lenguaje preentrenado mediante un módulo intermedio ligero
+(\emph{Q-Former} o \emph{Querying Transformer}) que transforma las
+representaciones visuales en una secuencia reducida de tokens
+interpretables por el modelo de lenguaje. Sólo el Q-Former se
+entrena. No existe, en la fecha de cierre, una adaptación pública
+específica de BLIP-2 al dominio dermatológico.
+
+\section{Segmentación promptable}
+\label{sec:segmentacion-sota}
+
+SAM~\cite{sam2023} establece el paradigma de segmentación
+promptable: produce máscaras a partir de \emph{prompts} visuales
+(puntos, cajas, máscaras parciales) sobre imagen natural. Su
+preentrenamiento utiliza $\sim 11$ millones de imágenes con
+más de mil millones de máscaras generadas mediante un proceso
+semi-automatizado. SAM2~\cite{sam2} amplía el enfoque al dominio
+del vídeo y mejora el rendimiento sobre imágenes estáticas.
+
+La transferencia a dominios médicos requiere adaptación supervisada
+sobre conjuntos con máscaras binarias. La estrategia habitual
+combina un modelo SAM/SAM2 preentrenado con \emph{fine-tuning} sobre
+ISIC2018~\cite{isic2018} y adaptadores de bajo rango
+(\emph{Low-Rank Adaptation}, LoRA)~\cite{lora}, que
+incorporan un número reducido de parámetros entrenables manteniendo
+congelado el peso original del encoder visual. Esta estrategia
+reduce los requisitos de memoria y cómputo y permite la adaptación
+sobre hardware modesto.
+
+\section{Modelos de lenguaje multimodales generalistas}
+\label{sec:llm-multimodal}
+
+Los modelos de lenguaje multimodales preentrenados sobre datasets web
+masivos constituyen una referencia de comparación pertinente: GPT-4o
+(OpenAI), Gemini~2.5~Pro (Google DeepMind) y la familia MedGemma
+(versiones 4B Vision y 27B Text, Google). Su número de parámetros
+supera al de los encoders fundacionales específicos en uno o dos
+órdenes de magnitud. Su modo de uso característico es la inferencia
+guiada por \emph{prompts} sin \emph{fine-tuning} específico por
+tarea. Trabajos recientes documentan su uso conversacional para
+soporte al razonamiento clínico~\cite{amie2024,deepmind_aicoclinician}.
+Los modelos de acceso restringido (GPT-4o, Gemini) sólo se evalúan
+mediante API; MedGemma libera pesos y se evalúa en local.
+
+\section{Problemas metodológicos y guías de reporte}
+\label{sec:problemas-metodologicos}
+
+La aplicación de modelos fundacionales a imagen médica plantea tres
+problemas metodológicos directamente relevantes para el presente
+trabajo. El primero es la fuga de información entre conjuntos de
+evaluación y dataset de preentrenamiento. La construcción de Derm1M
+sobre fuentes web abiertas implica que datasets como Dermnet, HIBA
+o MSKCC pueden solaparse con su dataset de entrenamiento, lo que
+sesga al alza las métricas zero-shot reportadas. El segundo es la
+heterogeneidad taxonómica entre datasets, que impide comparaciones
+directas sin un paso explícito de armonización. El tercero es la
+disparidad de rendimiento por fototipo cutáneo, documentada en
+Fitzpatrick17k~\cite{fitzpatrick17k} y atendida específicamente por
+SkinCon~\cite{skincon} mediante anotación basada en $48$
+conceptos clínicos visuales.
+
+Las guías de reporte recientes para inteligencia artificial en
+imagen médica ---CLAIM~\cite{claim2024} y la actualización
+TRIPOD+AI~\cite{tripodai2024}--- establecen la transparencia metodológica como
+condición de defensibilidad: cohorte, particiones, métricas,
+incertidumbre y limitaciones deben constar explícitamente en el
+informe completo. El reporte de pruebas estadísticas (intervalos de
+confianza por \emph{bootstrap}, comparaciones múltiples,
+contrastes pareados de AUROC mediante el test de
+DeLong~\cite{delong1988}, y tamaños muestrales por subgrupo)
+constituye un requisito creciente en publicaciones de la disciplina.
+
+\section{Brechas operativas y posicionamiento}
+\label{sec:brecha}
+
+Cinco brechas operativas delimitan el espacio en el que el presente
+trabajo aporta evidencia empírica. \textbf{(i)~Disponibilidad real
+de los modelos.} PanDerm y DermLIP liberan pesos y código;
+DermFM-Zero no lo hace. BiomedCLIP, DINOv2, SigLIP, SAM, SAM2 y
+BLIP-2 son abiertos. Los modelos generalistas ofrecen acceso parcial
+por API. Cualquier evaluación empírica externa queda condicionada
+por esta disponibilidad. \textbf{(ii)~Benchmarks no homogéneos entre
+familias.} Los benchmarks reportados por los autores se construyen
+sobre subconjuntos derivados del propio preentrenamiento y aplican
+protocolos no equivalentes entre familias. La comparación bajo un
+mismo protocolo y un mismo conjunto de datasets externos no está
+documentada. \textbf{(iii)~Heterogeneidad taxonómica.} La
+comparación inter-dataset exige un esquema de armonización que la
+literatura no proporciona de forma consolidada.
+\textbf{(iv)~Concentración geográfica y lingüística.} Los datasets
+proceden mayoritariamente de instituciones de Australia, Estados
+Unidos y Europa central, y los encoders textuales se preentrenan
+sobre datasets en inglés. La disponibilidad de material clínico en
+español con texto narrativo asociado es marginal. La aparición
+reciente de datasets dermatológicos multimodales con \emph{captions}
+clínicas ricas no reduce esta brecha, sino que la perfila con mayor
+nitidez. SkinCAP~\cite{skincap2024}, por ejemplo, anota con
+descripciones clínicas en inglés $4\,000$ imágenes procedentes de
+Fitzpatrick17k~\cite{fitzpatrick17k} y DDI~\cite{ddi} ---dos de los
+datasets que este trabajo también evalúa---: enriquece con lenguaje
+natural recursos en inglés ya existentes, pero no aporta material en
+castellano, texto narrativo de un archivo clínico real ni
+independencia respecto a los datasets de preentrenamiento. Un recurso
+en español con texto narrativo de caso y particionado \emph{case-aware}
+es, por tanto, complementario y no redundante frente a esa tendencia.
+\textbf{(v)~Distancia entre evaluación experimental e integración
+hospitalaria.} La evaluación sobre \emph{benchmarks} públicos no
+cubre las condiciones operativas asociadas al despliegue en un
+entorno sanitario real (hardware no estándar, restricciones de
+privacidad, trazabilidad, interacción con sistemas hospitalarios).
+
+Por \emph{benchmark independiente} se entiende aquí la evaluación de
+las familias de modelos bajo un protocolo común, ejecutada por un
+equipo ajeno al ecosistema que originó cada modelo y sobre datasets
+externos que ninguno de ellos seleccionó. La contribución empírica
+del trabajo, cuyo diseño se describe en el capítulo~\ref{cap:metodos}
+y cuyos resultados se presentan en el capítulo~\ref{cap:resultados},
+se dirige específicamente a estas cinco brechas: el benchmark
+homogéneo responde a~(ii); la ontología jerárquica L1/L2/L3, a~(iii);
+la auditoría de solapamiento por hash ---reacción directa al problema
+de fuga y duplicación entre datasets de evaluación y preentrenamiento
+(sección~\ref{sec:problemas-metodologicos})--- a~(i); el dataset
+DermapixelAI~1.0, a~(iv); y la integración en el prototipo DermApIxel,
+a~(v).
+
+El alcance de esta revisión se acota deliberadamente a los modelos con
+pesos públicos como conjunto \emph{evaluable}: los sistemas cerrados o
+de aparición muy reciente ---DermFM-Zero, cuyos pesos no se liberan, o
+los modelos accesibles únicamente vía API--- se posicionan
+conceptualmente pero no se evalúan de forma empírica directa. Esta
+decisión es coherente con la prioridad de reproducibilidad declarada
+en la sección~\ref{sec:trabajo-previo} y se asume como un sesgo de
+selección explícito, no como una pretensión de exhaustividad sobre
+todo el ecosistema dermatológico.
