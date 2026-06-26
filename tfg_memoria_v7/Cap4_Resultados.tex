@@ -412,6 +412,29 @@ especialización dermatológica. Las tres subsecciones siguientes acotan
 cuánto del resultado depende del \emph{prompt}, su estabilidad y su
 techo real.
 
+La figura~\ref{fig:seg-examples} ilustra estas diferencias de forma
+cualitativa: dentro de dominio las tres opciones trazan contornos casi
+indistinguibles de la máscara de referencia, y el contraste aparece
+fuera de dominio, donde SAM2 sin adaptar puede fallar por completo
+mientras que los modelos adaptados se mantienen robustos.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{fig_seg_examples.png}
+\caption{Ejemplos cualitativos de segmentación sobre ocho lesiones
+---cuatro de ISIC2018 (in-domain) y cuatro de ISIC2017 (fuera de
+dominio)---. Columna~1: imagen original con la caja-\emph{prompt}
+(amarillo) derivada de la máscara de referencia. Columnas~2--4:
+MedSAM2-tiny, SAM2.1-Large y SAM2 \emph{zero-shot} (sin adaptar), con
+el contorno de referencia (verde) y el predicho (rojo) superpuestos y
+el Dice de cada caso. Dentro de dominio las tres opciones se ajustan
+bien; fuera de dominio, SAM2 sin adaptar puede colapsar (un caso con
+Dice $0{,}064$), mientras que MedSAM2-tiny y SAM2.1-Large permanecen
+robustos. Los valores coinciden con el pipeline de evaluación de la
+tabla~\ref{tab:seg-arquitecturas}.}
+\label{fig:seg-examples}
+\end{figure}
+
 \subsection{Valor del prompt: control automático sin caja}
 \label{sec:seg-control-automatico}
 
