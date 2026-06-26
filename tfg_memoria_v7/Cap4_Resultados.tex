@@ -483,25 +483,23 @@ extremos; y el aumento en test y el \emph{ensemble} de pliegues aportan
 mejoras marginales ($+0{,}13$/$+0{,}14$\,pp) que no compensan su coste,
 por lo que se recomienda un único modelo.
 
-\subsection{El techo de la métrica: acuerdo inter-anotador}
+\subsection{El modelo segmenta tan bien como un experto humano}
 \label{sec:seg-techo-anotador}
 
-El hallazgo más relevante de este bloque no es la cifra absoluta de
-Dice, sino su relación con el límite humano. El Dice se mide contra
-una máscara de referencia trazada por una persona, y el contorno de
-una lesión es intrínsecamente ambiguo: sobre el subconjunto de IMA++
-con anotación múltiple ($312$ imágenes con dos o más máscaras
-independientes, reservado y nunca usado en entrenamiento), el acuerdo
-\emph{inter-anotador} es de solo $0{,}728$, mientras que el modelo
-concuerda con el consenso en $0{,}915$ ---es decir, coincide con el
-consenso mejor de lo que los propios humanos coinciden entre sí--- y
-cae dentro de la envolvente de las máscaras humanas el $97{,}8\%$ de
-las veces.
+Lo más interesante de este bloque no es el valor absoluto de Dice, sino
+compararlo con lo que consigue una persona. El Dice se mide contra una
+máscara dibujada a mano, y el borde de una lesión es ambiguo: dos
+médicos rara vez trazan exactamente el mismo contorno. Para medir ese
+margen humano se empleó el subconjunto de IMA++ con anotación múltiple
+($312$ imágenes con dos o más máscaras independientes, reservado y
+nunca usado en entrenamiento): dos anotadores humanos coinciden entre
+sí solo $0{,}728$, mientras que el modelo coincide con el consenso
+$0{,}915$ ---mejor de lo que coinciden los propios médicos--- y queda
+dentro de la envolvente de las máscaras humanas el $97{,}8\%$ de las
+veces.
 
-La lectura, en términos sencillos, es que el modelo segmenta tan bien
-como un experto humano, o mejor: coincide con el consenso de varios
-médicos ($0{,}915$) más de lo que esos médicos coinciden entre sí
-($0{,}728$). Por eso las diferencias de $\sim 1$\,pp entre
+De aquí se sigue una consecuencia importante: las diferencias de
+$\sim 1$\,pp entre
 arquitecturas (tabla~\ref{tab:seg-arquitecturas}) dejan de ser
 relevantes ---son más pequeñas que el desacuerdo natural entre dos
 personas que dibujan el mismo contorno---: se ha alcanzado el techo de
