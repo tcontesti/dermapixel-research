@@ -3,13 +3,12 @@
 \chapter{Metodología}
 \label{cap:metodos}
 
-Este capítulo documenta la metodología del trabajo con el detalle
-suficiente para que cualquier cifra del
-capítulo~\ref{cap:resultados} pueda reconstruirse a partir de los
-artefactos publicados. Se describen los datos empleados, los modelos
-comparados y la infraestructura de cómputo, junto con las métricas,
-las pruebas estadísticas y los experimentos que sostienen la
-evaluación.
+En este capítulo se explica cómo se han realizado todos los
+experimentos del trabajo. Se describen los datasets, los modelos
+comparados, la infraestructura utilizada, las métricas de evaluación
+y las pruebas estadísticas empleadas, con el objetivo de que los
+resultados del capítulo~\ref{cap:resultados} puedan reproducirse e
+interpretarse correctamente.
 
 \section{Datasets}
 \label{sec:datos}
@@ -79,12 +78,14 @@ Models. En todos los experimentos se utilizaron las particiones oficiales de ent
 La validez de toda comparación de transferencia y \emph{zero-shot}
 del trabajo depende de que los conjuntos de test no se solapen con el
 dataset de preentrenamiento, por lo que conviene comprobarlo antes de
-emplearlos. La auditoría ---cuyo protocolo se detalla en la
-sección~\ref{sec:auditoria}--- intersecta los hashes MD5 de los doce
-datasets externos con los $415\,451$ hashes únicos de la fracción
-accesible de Derm1M e identifica un único dataset con solapamiento
-exacto: \textbf{Dermnet}, cuyas $18\,302$ imágenes están todas
-contenidas en Derm1M ($100\%$). Los once datasets restantes no
+emplearlos. La auditoría reduce cada imagen a su hash MD5 (biblioteca
+estándar de Python) e intersecta los hashes de los doce datasets
+externos ---salvo SkinCon, no evaluado sobre clases diagnósticas---
+con los $415\,451$ hashes únicos de la fracción accesible de Derm1M,
+principal dataset de preentrenamiento de la familia PanDerm y DermLIP.
+El cruce identifica un único dataset con solapamiento exacto:
+\textbf{Dermnet}, cuyas $18\,302$ imágenes están todas contenidas en
+Derm1M ($100\%$). Los once datasets restantes no
 arrojan ninguna coincidencia. En particular, HIBA y MSKCC ---cuyo
 origen en el ISIC archive motivaba una sospecha de procedencia---
 presentan $0$ coincidencias MD5, por lo que esa sospecha no se
@@ -100,6 +101,18 @@ interpretación de las cifras zero-shot de la familia DermLIP sobre
 Dermnet (sección~\ref{sec:zs-results}), ya que DermLIP se entrenó
 sobre Derm1M y vio durante el preentrenamiento la totalidad de ese
 conjunto.
+
+El alcance de la auditoría se declara con precisión. El hash MD5
+detecta coincidencias \emph{exactas} a nivel de bytes ---duplicados
+idénticos---, pero no \emph{near-duplicates} ---recortes, reescalados,
+recompresiones o alteraciones leves de una misma imagen---. La
+auditoría sostiene, en consecuencia, la ausencia de \emph{solapamiento
+exacto}, no la ausencia completa de contaminación visual. Esta
+elección prioriza la trazabilidad y el bajo coste del hash exacto
+frente a la cobertura perceptual; el \emph{perceptual hashing} o la
+comparación por \emph{embeddings} visuales constituyen su extensión
+natural, y las implicaciones de este alcance acotado se retoman en la
+sección~\ref{sec:lim-leakage}.
 
 \section{Ontología jerárquica L1/L2/L3}
 \label{sec:ontologia}
@@ -519,11 +532,10 @@ eficiencia en etiquetas cuántos datos anotados hacen falta para
 alcanzarlo. El segundo aborda la localización espacial de la lesión
 mediante segmentación. El tercero examina la capacidad multimodal: la
 clasificación \emph{zero-shot} guiada por texto y la comparación con
-los grandes modelos de lenguaje generalistas. El cuarto protege la
-validez de las conclusiones: la evaluación de equidad analiza el
-rendimiento entre fototipos cutáneos y la auditoría de solapamiento
-con Derm1M descarta la fuga de información entre evaluación y
-preentrenamiento. La tabla~\ref{tab:experimentos} resume cada
+los grandes modelos de lenguaje generalistas. El cuarto comprueba la
+equidad del rendimiento entre fototipos cutáneos; la independencia
+entre evaluación y preentrenamiento ya quedó verificada al describir
+los datos (sección~\ref{sec:auditoria-resultados}). La tabla~\ref{tab:experimentos} resume cada
 experimento, la pregunta que responde y su alcance. Todos comparten
 la infraestructura (sección~\ref{sec:infraestructura}) y las semillas
 declaradas (sección~\ref{sec:reproducibilidad}), de modo que sus
@@ -571,10 +583,6 @@ Equidad por fototipo (\ref{sec:equidad})
   & Estabilidad del rendimiento entre fototipos
   & $5$ encoders
   & Fitzpatrick17k \\
-Auditoría de solapamiento (\ref{sec:auditoria})
-  & Fuga de información con Derm1M
-  & Cómputo de \emph{hash}
-  & $12$ externos \\
 \hline
 \end{tabular}
 \end{table}
@@ -776,36 +784,3 @@ equitativo como un rendimiento uniformemente bajo en todos los
 subgrupos. El experimento se verifica re-ejecutando el sondeo sobre
 PanDerm Large y comprobando coincidencia hasta cuatro decimales con
 el resultado original.
-
-\subsection{Auditoría de solapamiento con Derm1M}
-\label{sec:auditoria}
-
-La interpretación de los resultados zero-shot requiere verificar
-previamente la independencia entre los conjuntos de evaluación y los
-datos utilizados durante el preentrenamiento. Si un modelo ha visto
-durante su entrenamiento imágenes posteriormente utilizadas como
-test, las métricas obtenidas pueden reflejar memorización parcial
-del conjunto de evaluación y no capacidad real de generalización.
-Por este motivo, se realiza una auditoría sistemática de
-solapamiento entre los datasets evaluados y Derm1M, principal
-dataset de preentrenamiento de la familia PanDerm y DermLIP.
-
-La auditoría lo cuantifica: cada imagen se reduce
-a su hash MD5 (biblioteca estándar de Python) y la intersección de
-hashes identifica las imágenes presentes en ambos datasets. La
-cardinalidad se reporta por dataset en la
-sección~\ref{sec:auditoria-resultados}. Se auditan los doce datasets
-externos, salvo SkinCon (no evaluado sobre clases diagnósticas).
-
-El alcance de esta auditoría se declara con precisión. El hash MD5
-detecta coincidencias \emph{exactas} a nivel de bytes y, por tanto,
-identifica duplicados idénticos, pero no \emph{near-duplicates}
----recortes, reescalados, recompresiones o alteraciones leves de una
-misma imagen---. La auditoría sostiene, en consecuencia, la ausencia
-de \emph{solapamiento exacto}, no la ausencia completa de
-contaminación visual. Esta elección prioriza la trazabilidad y el bajo
-coste del hash exacto frente a la cobertura perceptual; el
-\emph{perceptual hashing} o la comparación por \emph{embeddings}
-visuales constituyen su extensión natural, y las implicaciones de este
-alcance acotado para la interpretación de los resultados se retoman en
-la sección~\ref{sec:lim-leakage}.
