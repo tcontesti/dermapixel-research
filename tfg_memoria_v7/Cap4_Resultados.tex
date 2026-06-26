@@ -228,11 +228,11 @@ El ajuste fino mejora sustancialmente el rendimiento en HAM10000
 sobre las clases minoritarias responsables de la baja \emph{balanced
 accuracy} del sondeo lineal. El beneficio desaparece, en cambio, cuando
 disminuye la disponibilidad de datos: DDI muestra degradación global
-compatible con sobreajuste y MSKCC sólo mejoras marginales. El ajuste
-fino resulta así ventajoso bajo una cantidad moderada o elevada de
-ejemplos etiquetados, mientras que las representaciones congeladas son
-más robustas en escenarios de datos limitados. Este resultado justifica
-la exploración posterior de adaptación eficiente de parámetros (PEFT,
+compatible con sobreajuste y MSKCC sólo mejoras marginales. En la práctica, esto deja una regla sencilla: con un \emph{dataset}
+clínico grande conviene hacer \emph{fine-tuning}, pero con pocos datos
+es más seguro quedarse con el \emph{encoder} congelado, porque el
+\emph{fine-tuning} tiende a sobreajustar. Este resultado justifica la
+exploración posterior de adaptación eficiente de parámetros (PEFT,
 sección~\ref{sec:dermapixel-spanderm-v0}) y motiva cuantificar cuántas
 etiquetas son realmente necesarias, objeto de la sección siguiente.
 
@@ -285,10 +285,13 @@ La AUROC satura tempranamente en ambos datasets: el $1\%$ de HAM10000
 $97{,}7\%$ del máximo; sobre PAD-UFES-20, $14$ imágenes recuperan el
 $95{,}5\%$ de la AUROC final. La \emph{balanced accuracy}, en cambio,
 sigue mejorando con el volumen, reflejando mayor sensibilidad a las
-clases minoritarias. Esto sugiere que la mayor parte de la capacidad
-discriminativa reside ya en el encoder preentrenado y el aprendizaje
-supervisado actúa como calibración de la frontera de decisión, lo que
-reduce la dependencia de grandes volúmenes etiquetados. Las cifras
+clases minoritarias. La conclusión práctica es llamativa: con muy pocas imágenes
+etiquetadas ---del orden de unas decenas--- ya se alcanza casi todo el
+rendimiento, porque el \emph{encoder} preentrenado aporta la mayor
+parte de la capacidad de discriminar y las etiquetas solo afinan la
+frontera de decisión. Esto reduce mucho la dependencia de grandes
+volúmenes de anotación experta, el principal cuello de botella en
+dermatología. Las cifras
 proceden de una única partición y semilla por nivel de submuestreo, por
 lo que delimitan una tendencia y no un margen con cierre estadístico.
 
