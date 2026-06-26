@@ -86,21 +86,7 @@ sección~\ref{sec:estadistica}), PanDerm Large supera a PanDerm Base en
 cuatro de las cinco métricas, con mejoras medias de $+4{,}1$\,pp en
 accuracy, $+9{,}0$\,pp en \emph{balanced accuracy} y $+3{,}6$\,pp en
 AUROC; la única excepción es la BAcc de MSKCC ($-1{,}0$\,pp;
-figura~\ref{fig:lp-per-dataset}).
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.92\textwidth]{fig_lp_per_dataset.png}
-\caption{Linear probe: AUROC por modelo y dataset sobre los diez
-datasets externos. Cinco modelos (DermLIP v2, PanDerm Large, PanDerm
-Base, DINOv2 ---evaluado solo en cuatro datasets--- y BiomedCLIP);
-``N/A'' indica no evaluado. La celda en rojo, DermLIP v2 sobre Dermnet,
-señala el único dataset con solapamiento exacto frente al dataset de
-preentrenamiento Derm1M de DermLIP v2
-(sección~\ref{sec:auditoria-resultados}); HIBA y MSKCC no presentan
-solapamiento.}
-\label{fig:lp-per-dataset}
-\end{figure}
+tabla~\ref{tab:lp-panderm}).
 
 Las mayores ganancias aparecen en Dermnet, WSI~patches y PAD-UFES-20
 ---los escenarios más heterogéneos del benchmark---, lo que sugiere
@@ -175,6 +161,27 @@ los beneficios del preentrenamiento de dominio son menores en entornos
 dermatoscópicos altamente estandarizados; en cambio, PanDerm Large
 encabeza en PAD-UFES-20 y DDI, los datasets clínicos más alejados del
 dominio web.
+
+La figura~\ref{fig:lp-per-dataset} amplía la comparación a los diez
+datasets externos, añadiendo a PanDerm los modelos vision-language
+DermLIP v2 y BiomedCLIP y el encoder general DINOv2: ningún modelo
+domina en todos los datasets. La única cifra que debe leerse con
+cautela es la de DermLIP v2 sobre Dermnet, dataset que forma parte de
+su preentrenamiento (Derm1M; sección~\ref{sec:auditoria-resultados}).
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.92\textwidth]{fig_lp_per_dataset.png}
+\caption{Linear probe: AUROC por modelo y dataset sobre los diez
+datasets externos. Cinco modelos (DermLIP v2, PanDerm Large, PanDerm
+Base, DINOv2 ---evaluado solo en cuatro datasets--- y BiomedCLIP);
+``N/A'' indica no evaluado. La celda en rojo, DermLIP v2 sobre Dermnet,
+señala el único dataset con solapamiento exacto frente al dataset de
+preentrenamiento Derm1M de DermLIP v2
+(sección~\ref{sec:auditoria-resultados}); HIBA y MSKCC no presentan
+solapamiento.}
+\label{fig:lp-per-dataset}
+\end{figure}
 
 No existe, por tanto, una jerarquía universal entre familias: los
 sistemas vision-language generalistas igualan o superan a los
