@@ -587,6 +587,35 @@ confirma que el rendimiento \emph{zero-shot} depende críticamente de la
 alineación texto-imagen y limita la robustez del paradigma zero-shot
 puro (análisis extendido en el repositorio reproducible, \ref{cap:repo}, sección~\ref{sec:repo-llm}).
 
+\paragraph{El idioma del espacio latente: una exploración en el
+prototipo.}
+Conviene detenerse aquí, porque es una de las ideas que más ilusión
+despiertan. Un modelo como DermLIP coloca imágenes y textos en un mismo
+``mapa'' ---un espacio latente compartido---, y clasificar en
+\emph{zero-shot} no es más que mirar qué etiqueta de texto cae más
+cerca de la imagen. Eso es muy potente ---se añade un diagnóstico nuevo
+con solo escribir su nombre--- pero también frágil: si la frase no
+aterriza en el sitio correcto del mapa, el modelo falla aunque la
+lesión sea perfectamente reconocible.
+
+Y ahí entra un eje decisivo para un sistema en castellano: el idioma.
+El codificador de texto de estos modelos se entrenó casi todo en
+inglés, de modo que su mapa está ``anclado'' al inglés y el español
+crudo cae en una zona peor alineada. En el prototipo se está explorando
+exactamente esto ---describir los conceptos en español, en inglés, o en
+español traducido al inglés antes de codificarlos---. El efecto es
+llamativo: en un caso real de carcinoma basocelular, con las etiquetas
+en español el modelo lo situaba por detrás del melanoma; traduciendo
+esas mismas etiquetas al inglés ---misma imagen, mismo modelo, solo
+cambian las palabras--- pasaba a reconocer el carcinoma basocelular con
+clara ventaja. No se reentrena nada: se trata de ``hablarle'' al modelo
+en el idioma de su espacio latente. Estas confianzas son relativas
+entre las opciones, no diagnósticos calibrados, y la exploración sigue
+en curso; pero ya marca el camino ---un glosario clínico
+español$\to$inglés a corto plazo y, a más largo, un modelo realmente
+alineado con el español, la misma motivación que la rama contrastiva
+castellana de Dermapixel~R0 (sección~\ref{sec:spanderm-clip})---.
+
 \section{Comparación con modelos generativos generalistas}
 \label{sec:llm-results}
 
