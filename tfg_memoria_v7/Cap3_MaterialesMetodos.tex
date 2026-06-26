@@ -3,16 +3,13 @@
 \chapter{Metodología}
 \label{cap:metodos}
 
-Este capítulo describe lo necesario para reproducir el
-capítulo~\ref{cap:resultados}. Se presenta primero el material: los
-doce datasets externos, la ontología que los unifica bajo un
-vocabulario común y el dataset propio DermapixelAI~1.0. A
-continuación se enumeran los catorce modelos fundacionales
-evaluados, las dos líneas de base convolucionales y la
-infraestructura de cómputo. El capítulo cierra con los protocolos
-experimentales, las métricas, las pruebas estadísticas y las
-medidas de trazabilidad que permiten reconstruir cualquier cifra a
-partir de los artefactos publicados.
+Este capítulo documenta la metodología del trabajo con el detalle
+suficiente para que cualquier cifra del
+capítulo~\ref{cap:resultados} pueda reconstruirse a partir de los
+artefactos publicados. Se describen los datos empleados, los modelos
+comparados y la infraestructura de cómputo, junto con las métricas,
+las pruebas estadísticas y los experimentos que sostienen la
+evaluación.
 
 \section{Datasets}
 \label{sec:datos}
@@ -246,25 +243,303 @@ ablación de rango \emph{LoRA} asociada, unas $18$ horas; y el
 entrenamiento de un Sparse Autoencoder Large ($16\,384$
 características), unas $4$ horas.
 
+\section{Métricas}
+\label{sec:metricas}
+
+Ninguna métrica individual captura por sí sola el rendimiento sobre
+problemas dermatológicos, caracterizados por clases desbalanceadas,
+distintos niveles de granularidad diagnóstica y requisitos clínicos
+diversos. El trabajo reporta, por tanto, un conjunto de métricas
+complementarias para clasificación, segmentación, equidad y
+rendimiento computacional.
+
+\paragraph{Clasificación.}
+La métrica principal es la \emph{Balanced Accuracy} (BAcc, promedio
+del \emph{recall} por clase): se adopta porque asigna el mismo peso
+a todas las clases con independencia de su frecuencia, lo que evita
+que las categorías mayoritarias dominen la evaluación en los
+datasets desbalanceados de este trabajo. La \emph{accuracy} acompaña
+como referencia comparativa
+entre modelos sobre la misma distribución. Se reportan además la F1
+ponderada (media armónica de precisión y \emph{recall}, pesada por
+frecuencia de clase), la AUROC \emph{one-vs-rest}
+(\texttt{multi\_class='ovr'} en \texttt{scikit-learn}, promediada
+sobre clases) y el coeficiente kappa de Cohen, que corrige la
+concordancia por azar. \emph{Recall@$k$} —presencia de la etiqueta
+verdadera entre las $k$ primeras posiciones del ranking— se reporta
+específicamente para melanoma sobre HAM10000.
+
+\paragraph{Segmentación.}
+La calidad de las máscaras predichas se evalúa mediante el
+coeficiente Dice (DSC) y la intersección sobre unión (IoU), dos
+métricas estándar que cuantifican el grado de solapamiento entre la
+segmentación automática y la máscara de referencia:
+$\mathrm{DSC} = 2\,|P\cap G|/(|P|+|G|)$ e
+$\mathrm{IoU} = |P\cap G|/|P\cup G|$, con $P$ la máscara predicha y
+$G$ la de referencia.
+
+\paragraph{Equidad.}
+BAcc por subgrupo Fitzpatrick (I-VI) sobre la formulación de tres
+clases de malignidad, y \emph{gap}
+$\mathrm{Gap}_{\mathrm{I}\to\mathrm{VI}}
+= \mathrm{BAcc}_{\mathrm{I}} - \mathrm{BAcc}_{\mathrm{VI}}$. Un
+valor próximo a cero indica rendimiento comparable entre fototipos
+extremos; su interpretación conjunta con la BAcc global se discute en
+la sección~\ref{sec:equidad}.
+
+\paragraph{Operativas.}
+Además del rendimiento predictivo, se evalúa el coste computacional
+asociado a cada modelo, que permite valorar la viabilidad de un
+despliegue en entornos clínicos con recursos limitados: latencia por
+consulta en milisegundos (inferencia más posproceso) y huella de
+memoria (VRAM en gigabytes, BF16), medidas sobre la infraestructura
+de sección~\ref{sec:infraestructura}.
+
+\paragraph{Agregación entre datasets.}
+\label{sec:agregacion-datasets}
+Algunas vistas panorámicas del capítulo~\ref{cap:resultados} reportan
+la media de una métrica sobre varios datasets externos. Esta media
+debe interpretarse únicamente como un resumen descriptivo de
+tendencias generales entre conjuntos con taxonomías, modalidades y
+prevalencias diferentes. No pretende establecer un ranking absoluto
+entre modelos, ya que datasets como HAM10000, DDI, PAD-UFES-20 o
+Dermnet no son estrictamente comparables entre sí. Por ello, todas las
+conclusiones se fundamentan en el análisis desglosado por dataset y
+por nivel ontológico, utilizando las métricas agregadas únicamente
+como apoyo descriptivo.
+
+\section{Pruebas estadísticas}
+\label{sec:estadistica}
+
+Una diferencia entre métricas no implica por sí sola una ventaja
+real: puede explicarse por la variabilidad de la muestra de
+evaluación, riesgo agravado en dermatología por los tamaños
+moderados, el desequilibrio de clases y la heterogeneidad clínica.
+El trabajo incorpora, por tanto, un protocolo estadístico explícito,
+en línea con las guías de reporte para inteligencia artificial en
+imagen médica (CLAIM~\cite{claim2024} y TRIPOD+AI~\cite{tripodai2024}),
+basado en intervalos de confianza por \emph{bootstrap}, la
+comparación formal de curvas ROC mediante el test de DeLong y el
+control del riesgo de falsos positivos bajo comparaciones múltiples.
+
+La incertidumbre de cada métrica principal se cuantifica mediante
+\emph{bootstrap} no paramétrico con $1\,000$ remuestreos del
+conjunto de evaluación, estratificado por clase, del que se derivan
+los intervalos de confianza al $95\%$. No requiere asumir
+normalidad ni varianza conocida, lo que es necesario sobre los
+conjuntos de test reducidos y desbalanceados de este trabajo, donde
+la aproximación asintótica de los estimadores no es fiable. Los
+intervalos de confianza al $95\%$ por \emph{bootstrap}
+($B = 1\,000$, remuestreo estratificado por clase, percentil
+$2{,}5/97{,}5$) de las métricas \emph{headline} que no los
+incorporan en el cuerpo se reportan en el repositorio reproducible
+(\ref{cap:repo}, sección~\ref{sec:repo-bootstrap-ci}).
+
+Las comparaciones de AUROC entre dos modelos sobre el mismo conjunto
+emplean el test de DeLong~\cite{delong1988}. Su motivación es
+metodológica: ambos modelos se evalúan sobre las mismas imágenes, de
+modo que sus curvas ROC están correlacionadas; tratar las dos AUROC
+como muestras independientes subestima la varianza del contraste y
+sobrestima su significación. DeLong estima esa covarianza de forma
+no paramétrica y produce un contraste pareado válido. Se aplica a los
+contrastes pareados entre codificadores sobre tres \emph{endpoints}
+binarios de malignidad ---Fitzpatrick17k, HAM10000 y DermapixelAI~1.0---
+(sección~\ref{sec:equidad-delong}; tabla detallada en el repositorio reproducible, \ref{sec:repo-tablas}).
+
+Los $p$-valores se reportan como nominales y, de forma
+complementaria, bajo corrección por el método de Holm dentro de cada
+\emph{endpoint}. Exponer ambos es intencionado: la corrección controla
+la tasa de falsos positivos a costa de potencia estadística, y
+mostrar el valor nominal junto al corregido permite al lector juzgar
+la robustez de cada contraste sin imponer una única política de
+corrección. Dada la magnitud de las diferencias observadas (con $p$
+varios órdenes por debajo de $0{,}05$), las conclusiones principales
+se mantienen bajo cualquier corrección estándar. Los tamaños
+muestrales por subgrupo ---por fototipo cutáneo y por nivel
+ontológico--- se consolidan en las tablas~\ref{tab:muestral-fst}
+y~\ref{tab:muestral-nivel}, lo que permite contextualizar la potencia
+de cada análisis por subgrupo; en particular, el reducido tamaño del
+fototipo~VI ($n = 73$ en test) y la cola larga diagnóstica L3 acotan la
+inferencia en esos subgrupos. El detalle por subgrupo acompaña además
+a sus cifras en el capítulo~\ref{cap:resultados}.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Tamaño muestral por fototipo cutáneo (Fitzpatrick17k),
+cohorte de los análisis de equidad y del test de DeLong de
+malignidad. La evaluación del \emph{gap}~I-VI usa los $1\,597$ casos
+de test con fototipo asignado; el \emph{endpoint} binario de
+malignidad emplea los $1\,658$ del test ($226$ malignos). El reducido
+tamaño del fototipo~VI ($n = 73$ en test) acota la potencia
+estadística en ese subgrupo.}
+\label{tab:muestral-fst}
+\begin{tabular}{lrr}
+\hline
+Fototipo (FST) & $N$ corpus & $N$ test \\
+\hline
+I    & $2\,947$ & $299$ \\
+II   & $4\,808$ & $470$ \\
+III  & $3\,308$ & $325$ \\
+IV   & $2\,781$ & $261$ \\
+V    & $1\,533$ & $169$ \\
+VI   & $635$    & $73$  \\
+Sin asignar & $565$ & $61$ \\
+\hline
+\textbf{Total} & $\mathbf{16\,577}$ & $\mathbf{1\,658}$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Tamaño muestral por nivel ontológico sobre DermapixelAI~1.0
+($1\,089$ imágenes, $669$ casos). El vocabulario común declara $4$
+categorías etiológicas L1, $43$ subcategorías clínicas L2 y $367$
+diagnósticos L3; el dataset armonizado de los doce externos aporta
+$72\,654$ imágenes mapeadas a ese vocabulario. La cola larga L3
+concentra $64$ clases con una sola imagen, $129$ con dos a cinco, $39$
+con seis a diez, $11$ con once a veinte y $7$ con veintiuna o más.}
+\label{tab:muestral-nivel}
+\begin{tabular}{lrr}
+\hline
+Nivel & Declarado & Representado \\
+\hline
+L1 & $4$   & $4$ \\
+L2 & $43$  & $38$ \\
+L3 & $367$ & $250$ \\
+\hline
+\end{tabular}
+\end{table}
+
+El alcance de este protocolo estadístico es, no obstante, heterogéneo
+entre bloques experimentales, y conviene declararlo de forma
+explícita. El contraste pareado de DeLong y la corrección por
+comparaciones múltiples se aplican donde la comparación entre modelos
+es el objeto central ---el ranking de encoders en detección de
+malignidad (sección~\ref{sec:equidad-delong})---; la estimación por
+\emph{bootstrap} acompaña a las métricas principales sobre
+DermapixelAI~1.0 y a la validación cruzada de segmentación. Otros
+bloques ---el sondeo lineal sobre los datasets externos, la eficiencia
+en etiquetas y la equidad por fototipo--- se reportan como
+estimaciones puntuales bajo semilla única
+(sección~\ref{sec:lim-semilla}). En consecuencia, la fuerza de las
+afirmaciones comparativas se modula según el cierre estadístico
+disponible: se sostienen como patrones cualitativos robustos cuando la
+magnitud del efecto excede holgadamente la variabilidad esperable, y
+se enuncian con la cautela correspondiente cuando el contraste formal
+queda fuera del alcance del trabajo.
+
+\section{Trazabilidad y reproducibilidad}
+\label{sec:reproducibilidad}
+
+La reproducibilidad es una condición necesaria para la validación
+independiente de los resultados. El trabajo se diseña, por tanto,
+para que cualquier número del capítulo~\ref{cap:resultados} se
+reconstruya a partir de artefactos persistentes y no de la memoria
+de una ejecución concreta. Tres mecanismos articulan esta garantía.
+
+El primero es el determinismo de la ejecución. Las semillas
+aleatorias se fijan a $0$ para \texttt{torch}, \texttt{numpy} y
+\texttt{random} en \emph{fine-tuning} y segmentación, y a $42$ en
+\texttt{random\_state} para los protocolos basados en
+\texttt{scikit-learn} (sondeo lineal, eficiencia en etiquetas,
+equidad). El entorno queda fijado a las versiones de
+sección~\ref{sec:infraestructura}, y cualquier desviación se
+documenta en el experimento afectado. Por último, se deshabilita la
+telemetría externa y se fija explícitamente el dispositivo de
+ejecución para evitar variaciones no controladas del entorno
+experimental.
+
+El segundo mecanismo es la persistencia de las salidas. Los
+resultados numéricos se vuelcan a ficheros CSV o JSON con esquema
+estable, lo que permite reconstruir cualquier tabla o figura del
+capítulo~\ref{cap:resultados} sin reejecutar nada, y los mapeos de
+etiquetas nativas a la ontología L1/L2/L3 se mantienen fijos entre
+experimentos. El tercero es la integridad de la cadena de cómputo:
+cuando un experimento toma como entrada la salida de otro ---por
+ejemplo, los \emph{embeddings} del sondeo lineal alimentan la rama
+visual del zero-shot---, la identidad de esa entrada se preserva
+mediante hash MD5 del fichero. El encadenamiento por hash convierte
+el conjunto de experimentos en un grafo de dependencias verificable:
+cualquier alteración silenciosa de una entrada intermedia
+invalidaría el hash y sería detectable, lo que protege la cadena de
+evidencia frente a la deriva de datos entre etapas dependientes. El
+listado completo de tareas reproducibles, con sus comandos, ficheros
+de salida y \emph{checkpoints}, figura en el
+repositorio reproducible (\ref{cap:repo}, sección~\ref{sec:repo-reproducibilidad}).
+
 \section{Experimentos}
 \label{sec:protocolos}
 
-Cada protocolo responde a una pregunta específica: el sondeo lineal
-evalúa la calidad intrínseca de las representaciones del
-preentrenamiento; el ajuste fino, el rendimiento máximo tras
-adaptación supervisada; la eficiencia en etiquetas, la cantidad de
-datos anotados necesaria; la segmentación, la localización espacial
-de lesiones; la clasificación zero-shot, la transferencia sin
-entrenamiento específico; la comparación con modelos multimodales
-generalistas sitúa a los encoders especializados en el contexto
-actual; la evaluación de equidad analiza el comportamiento entre
-fototipos; y la auditoría de solapamiento con Derm1M sostiene la
-interpretación de los resultados de transferencia y zero-shot. En
-conjunto proporcionan una caracterización multidimensional, más allá
-de una única métrica. Todos comparten la infraestructura
-(sección~\ref{sec:infraestructura}) y las semillas declaradas
-(sección~\ref{sec:reproducibilidad}), de modo que sus cifras son
-comparables entre sí.
+Los experimentos se organizan en cuatro bloques. El primero mide la
+calidad y la adaptabilidad de las representaciones visuales: el
+sondeo lineal evalúa lo que capturan los encoders congelados, el
+ajuste fino su rendimiento máximo tras adaptación supervisada, y la
+eficiencia en etiquetas cuántos datos anotados hacen falta para
+alcanzarlo. El segundo aborda la localización espacial de la lesión
+mediante segmentación. El tercero examina la capacidad multimodal: la
+clasificación \emph{zero-shot} guiada por texto y la comparación con
+los grandes modelos de lenguaje generalistas. El cuarto protege la
+validez de las conclusiones: la evaluación de equidad analiza el
+rendimiento entre fototipos cutáneos y la auditoría de solapamiento
+con Derm1M descarta la fuga de información entre evaluación y
+preentrenamiento. La tabla~\ref{tab:experimentos} resume cada
+experimento, la pregunta que responde y su alcance. Todos comparten
+la infraestructura (sección~\ref{sec:infraestructura}) y las semillas
+declaradas (sección~\ref{sec:reproducibilidad}), de modo que sus
+cifras son comparables entre sí.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\caption{Resumen de los experimentos: la pregunta que responde cada
+uno y su alcance en modelos y datasets. DermapixelAI~1.0 se evalúa
+además en sondeo lineal y \emph{zero-shot}
+(secciones~\ref{sec:dermapixel-results} y~\ref{sec:dermapixel-zs}).}
+\label{tab:experimentos}
+\begin{tabular}{p{2.5cm}p{3.7cm}p{2.9cm}p{3.4cm}}
+\hline
+Experimento & Pregunta & Modelos & Datasets \\
+\hline
+Sondeo lineal (\ref{sec:lp})
+  & Calidad de las representaciones congeladas
+  & $8$ encoders visuales
+  & $10$ externos de clasificación \\
+Ajuste fino (\ref{sec:ft})
+  & Rendimiento máximo tras adaptación supervisada
+  & PanDerm Base/Large
+  & HAM10000, PAD-UFES-20, DDI, MSKCC \\
+Eficiencia en etiquetas (\ref{sec:label-eff})
+  & Datos anotados necesarios
+  & PanDerm Large
+  & HAM10000, PAD-UFES-20 \\
+Segmentación (\ref{sec:segmentacion})
+  & Localización de la lesión; arquitectura, dominio y tamaño
+  & $5$ modelos SAM/SAM2 y controles
+  & ISIC2018 (transferencia a ISIC2017, PH2) \\
+Zero-shot multimodal (\ref{sec:zs})
+  & Transferencia guiada por texto sin entrenamiento
+  & DermLIP, BiomedCLIP, SigLIP
+  & HAM10000, HIBA, MSKCC, DDI, Derm7pt clínico \\
+Modelos generalistas (\ref{sec:llm})
+  & ¿Compiten con los encoders especializados?
+  & GPT-4o, Gemini~2.5~Pro, MedGemma 4B/27B
+  & HAM10000 \\
+Equidad por fototipo (\ref{sec:equidad})
+  & Estabilidad del rendimiento entre fototipos
+  & $5$ encoders
+  & Fitzpatrick17k \\
+Auditoría de solapamiento (\ref{sec:auditoria})
+  & Fuga de información con Derm1M
+  & Cómputo de \emph{hash}
+  & $12$ externos \\
+\hline
+\end{tabular}
+\end{table}
 
 \subsection{Sondeo lineal (LP)}
 \label{sec:lp}
@@ -496,230 +771,3 @@ coste del hash exacto frente a la cobertura perceptual; el
 visuales constituyen su extensión natural, y las implicaciones de este
 alcance acotado para la interpretación de los resultados se retoman en
 la sección~\ref{sec:lim-leakage}.
-
-\section{Métricas}
-\label{sec:metricas}
-
-Ninguna métrica individual captura por sí sola el rendimiento sobre
-problemas dermatológicos, caracterizados por clases desbalanceadas,
-distintos niveles de granularidad diagnóstica y requisitos clínicos
-diversos. El trabajo reporta, por tanto, un conjunto de métricas
-complementarias para clasificación, segmentación, equidad y
-rendimiento computacional.
-
-\paragraph{Clasificación.}
-La métrica principal es la \emph{Balanced Accuracy} (BAcc, promedio
-del \emph{recall} por clase): se adopta porque asigna el mismo peso
-a todas las clases con independencia de su frecuencia, lo que evita
-que las categorías mayoritarias dominen la evaluación en los
-datasets desbalanceados de este trabajo. La \emph{accuracy} acompaña
-como referencia comparativa
-entre modelos sobre la misma distribución. Se reportan además la F1
-ponderada (media armónica de precisión y \emph{recall}, pesada por
-frecuencia de clase), la AUROC \emph{one-vs-rest}
-(\texttt{multi\_class='ovr'} en \texttt{scikit-learn}, promediada
-sobre clases) y el coeficiente kappa de Cohen, que corrige la
-concordancia por azar. \emph{Recall@$k$} —presencia de la etiqueta
-verdadera entre las $k$ primeras posiciones del ranking— se reporta
-específicamente para melanoma sobre HAM10000.
-
-\paragraph{Segmentación.}
-La calidad de las máscaras predichas se evalúa mediante el
-coeficiente Dice (DSC) y la intersección sobre unión (IoU), dos
-métricas estándar que cuantifican el grado de solapamiento entre la
-segmentación automática y la máscara de referencia:
-$\mathrm{DSC} = 2\,|P\cap G|/(|P|+|G|)$ e
-$\mathrm{IoU} = |P\cap G|/|P\cup G|$, con $P$ la máscara predicha y
-$G$ la de referencia.
-
-\paragraph{Equidad.}
-BAcc por subgrupo Fitzpatrick (I-VI) sobre la formulación de tres
-clases de malignidad, y \emph{gap}
-$\mathrm{Gap}_{\mathrm{I}\to\mathrm{VI}}
-= \mathrm{BAcc}_{\mathrm{I}} - \mathrm{BAcc}_{\mathrm{VI}}$. Un
-valor próximo a cero indica rendimiento comparable entre fototipos
-extremos; su interpretación conjunta con la BAcc global se discute en
-la sección~\ref{sec:equidad}.
-
-\paragraph{Operativas.}
-Además del rendimiento predictivo, se evalúa el coste computacional
-asociado a cada modelo, que permite valorar la viabilidad de un
-despliegue en entornos clínicos con recursos limitados: latencia por
-consulta en milisegundos (inferencia más posproceso) y huella de
-memoria (VRAM en gigabytes, BF16), medidas sobre la infraestructura
-de sección~\ref{sec:infraestructura}.
-
-\paragraph{Agregación entre datasets.}
-\label{sec:agregacion-datasets}
-Algunas vistas panorámicas del capítulo~\ref{cap:resultados} reportan
-la media de una métrica sobre varios datasets externos. Esta media
-debe interpretarse únicamente como un resumen descriptivo de
-tendencias generales entre conjuntos con taxonomías, modalidades y
-prevalencias diferentes. No pretende establecer un ranking absoluto
-entre modelos, ya que datasets como HAM10000, DDI, PAD-UFES-20 o
-Dermnet no son estrictamente comparables entre sí. Por ello, todas las
-conclusiones se fundamentan en el análisis desglosado por dataset y
-por nivel ontológico, utilizando las métricas agregadas únicamente
-como apoyo descriptivo.
-
-\section{Pruebas estadísticas}
-\label{sec:estadistica}
-
-Una diferencia entre métricas no implica por sí sola una ventaja
-real: puede explicarse por la variabilidad de la muestra de
-evaluación, riesgo agravado en dermatología por los tamaños
-moderados, el desequilibrio de clases y la heterogeneidad clínica.
-El trabajo incorpora, por tanto, un protocolo estadístico explícito,
-en línea con las guías de reporte para inteligencia artificial en
-imagen médica (CLAIM~\cite{claim2024} y TRIPOD+AI~\cite{tripodai2024}),
-basado en intervalos de confianza por \emph{bootstrap}, la
-comparación formal de curvas ROC mediante el test de DeLong y el
-control del riesgo de falsos positivos bajo comparaciones múltiples.
-
-La incertidumbre de cada métrica principal se cuantifica mediante
-\emph{bootstrap} no paramétrico con $1\,000$ remuestreos del
-conjunto de evaluación, estratificado por clase, del que se derivan
-los intervalos de confianza al $95\%$. No requiere asumir
-normalidad ni varianza conocida, lo que es necesario sobre los
-conjuntos de test reducidos y desbalanceados de este trabajo, donde
-la aproximación asintótica de los estimadores no es fiable. Los
-intervalos de confianza al $95\%$ por \emph{bootstrap}
-($B = 1\,000$, remuestreo estratificado por clase, percentil
-$2{,}5/97{,}5$) de las métricas \emph{headline} que no los
-incorporan en el cuerpo se reportan en el repositorio reproducible
-(\ref{cap:repo}, sección~\ref{sec:repo-bootstrap-ci}).
-
-Las comparaciones de AUROC entre dos modelos sobre el mismo conjunto
-emplean el test de DeLong~\cite{delong1988}. Su motivación es
-metodológica: ambos modelos se evalúan sobre las mismas imágenes, de
-modo que sus curvas ROC están correlacionadas; tratar las dos AUROC
-como muestras independientes subestima la varianza del contraste y
-sobrestima su significación. DeLong estima esa covarianza de forma
-no paramétrica y produce un contraste pareado válido. Se aplica a los
-contrastes pareados entre codificadores sobre tres \emph{endpoints}
-binarios de malignidad ---Fitzpatrick17k, HAM10000 y DermapixelAI~1.0---
-(sección~\ref{sec:equidad-delong}; tabla detallada en el repositorio reproducible, \ref{sec:repo-tablas}).
-
-Los $p$-valores se reportan como nominales y, de forma
-complementaria, bajo corrección por el método de Holm dentro de cada
-\emph{endpoint}. Exponer ambos es intencionado: la corrección controla
-la tasa de falsos positivos a costa de potencia estadística, y
-mostrar el valor nominal junto al corregido permite al lector juzgar
-la robustez de cada contraste sin imponer una única política de
-corrección. Dada la magnitud de las diferencias observadas (con $p$
-varios órdenes por debajo de $0{,}05$), las conclusiones principales
-se mantienen bajo cualquier corrección estándar. Los tamaños
-muestrales por subgrupo ---por fototipo cutáneo y por nivel
-ontológico--- se consolidan en las tablas~\ref{tab:muestral-fst}
-y~\ref{tab:muestral-nivel}, lo que permite contextualizar la potencia
-de cada análisis por subgrupo; en particular, el reducido tamaño del
-fototipo~VI ($n = 73$ en test) y la cola larga diagnóstica L3 acotan la
-inferencia en esos subgrupos. El detalle por subgrupo acompaña además
-a sus cifras en el capítulo~\ref{cap:resultados}.
-
-\begin{table}[htbp]
-\centering
-\footnotesize
-\caption{Tamaño muestral por fototipo cutáneo (Fitzpatrick17k),
-cohorte de los análisis de equidad y del test de DeLong de
-malignidad. La evaluación del \emph{gap}~I-VI usa los $1\,597$ casos
-de test con fototipo asignado; el \emph{endpoint} binario de
-malignidad emplea los $1\,658$ del test ($226$ malignos). El reducido
-tamaño del fototipo~VI ($n = 73$ en test) acota la potencia
-estadística en ese subgrupo.}
-\label{tab:muestral-fst}
-\begin{tabular}{lrr}
-\hline
-Fototipo (FST) & $N$ corpus & $N$ test \\
-\hline
-I    & $2\,947$ & $299$ \\
-II   & $4\,808$ & $470$ \\
-III  & $3\,308$ & $325$ \\
-IV   & $2\,781$ & $261$ \\
-V    & $1\,533$ & $169$ \\
-VI   & $635$    & $73$  \\
-Sin asignar & $565$ & $61$ \\
-\hline
-\textbf{Total} & $\mathbf{16\,577}$ & $\mathbf{1\,658}$ \\
-\hline
-\end{tabular}
-\end{table}
-
-\begin{table}[htbp]
-\centering
-\footnotesize
-\caption{Tamaño muestral por nivel ontológico sobre DermapixelAI~1.0
-($1\,089$ imágenes, $669$ casos). El vocabulario común declara $4$
-categorías etiológicas L1, $43$ subcategorías clínicas L2 y $367$
-diagnósticos L3; el dataset armonizado de los doce externos aporta
-$72\,654$ imágenes mapeadas a ese vocabulario. La cola larga L3
-concentra $64$ clases con una sola imagen, $129$ con dos a cinco, $39$
-con seis a diez, $11$ con once a veinte y $7$ con veintiuna o más.}
-\label{tab:muestral-nivel}
-\begin{tabular}{lrr}
-\hline
-Nivel & Declarado & Representado \\
-\hline
-L1 & $4$   & $4$ \\
-L2 & $43$  & $38$ \\
-L3 & $367$ & $250$ \\
-\hline
-\end{tabular}
-\end{table}
-
-El alcance de este protocolo estadístico es, no obstante, heterogéneo
-entre bloques experimentales, y conviene declararlo de forma
-explícita. El contraste pareado de DeLong y la corrección por
-comparaciones múltiples se aplican donde la comparación entre modelos
-es el objeto central ---el ranking de encoders en detección de
-malignidad (sección~\ref{sec:equidad-delong})---; la estimación por
-\emph{bootstrap} acompaña a las métricas principales sobre
-DermapixelAI~1.0 y a la validación cruzada de segmentación. Otros
-bloques ---el sondeo lineal sobre los datasets externos, la eficiencia
-en etiquetas y la equidad por fototipo--- se reportan como
-estimaciones puntuales bajo semilla única
-(sección~\ref{sec:lim-semilla}). En consecuencia, la fuerza de las
-afirmaciones comparativas se modula según el cierre estadístico
-disponible: se sostienen como patrones cualitativos robustos cuando la
-magnitud del efecto excede holgadamente la variabilidad esperable, y
-se enuncian con la cautela correspondiente cuando el contraste formal
-queda fuera del alcance del trabajo.
-
-\section{Trazabilidad y reproducibilidad}
-\label{sec:reproducibilidad}
-
-La reproducibilidad es una condición necesaria para la validación
-independiente de los resultados. El trabajo se diseña, por tanto,
-para que cualquier número del capítulo~\ref{cap:resultados} se
-reconstruya a partir de artefactos persistentes y no de la memoria
-de una ejecución concreta. Tres mecanismos articulan esta garantía.
-
-El primero es el determinismo de la ejecución. Las semillas
-aleatorias se fijan a $0$ para \texttt{torch}, \texttt{numpy} y
-\texttt{random} en \emph{fine-tuning} y segmentación, y a $42$ en
-\texttt{random\_state} para los protocolos basados en
-\texttt{scikit-learn} (sondeo lineal, eficiencia en etiquetas,
-equidad). El entorno queda fijado a las versiones de
-sección~\ref{sec:infraestructura}, y cualquier desviación se
-documenta en el experimento afectado. Por último, se deshabilita la
-telemetría externa y se fija explícitamente el dispositivo de
-ejecución para evitar variaciones no controladas del entorno
-experimental.
-
-El segundo mecanismo es la persistencia de las salidas. Los
-resultados numéricos se vuelcan a ficheros CSV o JSON con esquema
-estable, lo que permite reconstruir cualquier tabla o figura del
-capítulo~\ref{cap:resultados} sin reejecutar nada, y los mapeos de
-etiquetas nativas a la ontología L1/L2/L3 se mantienen fijos entre
-experimentos. El tercero es la integridad de la cadena de cómputo:
-cuando un experimento toma como entrada la salida de otro ---por
-ejemplo, los \emph{embeddings} del sondeo lineal alimentan la rama
-visual del zero-shot---, la identidad de esa entrada se preserva
-mediante hash MD5 del fichero. El encadenamiento por hash convierte
-el conjunto de experimentos en un grafo de dependencias verificable:
-cualquier alteración silenciosa de una entrada intermedia
-invalidaría el hash y sería detectable, lo que protege la cadena de
-evidencia frente a la deriva de datos entre etapas dependientes. El
-listado completo de tareas reproducibles, con sus comandos, ficheros
-de salida y \emph{checkpoints}, figura en el
-repositorio reproducible (\ref{cap:repo}, sección~\ref{sec:repo-reproducibilidad}).
