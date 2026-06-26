@@ -21,15 +21,17 @@ estrategias de adaptación y el papel de los datos en la transferencia
 de modelos fundacionales a un entorno clínico dermatológico en
 castellano.
 
-\section{Reproducción de PanDerm: sondeo lineal sobre diez datasets}
+\section{Evaluación de PanDerm}
 \label{sec:rep-panderm}
 
-Esta sección evalúa si las representaciones de un modelo fundacional
-dermatológico, sin reajustar el encoder, clasifican lesiones en
-datasets externos no vistos. El codificador de mayor capacidad
-transfiere de forma robusta entre datasets, con ventaja creciente en
-los escenarios de mayor heterogeneidad de adquisición y complejidad
-taxonómica, como cuantifican los diez datasets externos a continuación.
+El trabajo arranca evaluando PanDerm, el modelo fundacional
+dermatológico que se toma como referencia: se mide si sus
+representaciones, sin reajustar el \emph{encoder}, clasifican lesiones
+en datasets externos no vistos. El \emph{encoder} de mayor capacidad
+(PanDerm Large) transfiere de forma robusta entre datasets, con
+ventaja creciente en los escenarios de mayor heterogeneidad de
+adquisición y complejidad taxonómica, como cuantifican los diez
+datasets externos a continuación.
 
 La tabla~\ref{tab:lp-panderm} aplica este protocolo a PanDerm Base y
 Large sobre los diez datasets externos contrastados, conforme a
@@ -112,7 +114,7 @@ modalidad y prevalencia heterogéneas, por lo que se interpretan como
 tendencia descriptiva y no como marcador absoluto del mejor modelo
 (sección~\ref{sec:agregacion-datasets}).
 
-\section{Benchmark comparativo entre familias}
+\section{Comparación con otras familias de modelos}
 \label{sec:benchmark}
 
 Para distinguir si la ventaja de PanDerm Large refleja el
@@ -177,7 +179,10 @@ mientras que los modelos dermatológicos mantienen ventaja cuando aumenta
 la variabilidad clínica. El preentrenamiento de dominio ofrece una
 ventaja \emph{creciente} con la heterogeneidad, no una superioridad
 absoluta, lo que anticipa la tesis de especialización por tarea
-(sección~\ref{sec:disc-especializacion}).
+(sección~\ref{sec:disc-especializacion}). Como modelo dermatológico de
+referencia ---abierto y el más sólido sobre los datasets clínicos más
+exigentes---, PanDerm se adopta como base de los protocolos que siguen,
+en los que se estudia hasta dónde puede llevarse su rendimiento.
 
 \section{Ajuste fino supervisado}
 \label{sec:ft-results}
@@ -490,28 +495,38 @@ consenso mejor de lo que los propios humanos coinciden entre sí--- y
 cae dentro de la envolvente de las máscaras humanas el $97{,}8\%$ de
 las veces.
 
-La consecuencia es interpretativa: las diferencias de $\sim 1$\,pp entre
-arquitecturas (tabla~\ref{tab:seg-arquitecturas}) son menores que el
-desacuerdo entre anotadores humanos, de modo que el resultado ya se
-sitúa en el techo que la propia tarea permite. Dentro del alcance
-evaluado ---segmentación binaria de lesión dermatoscópica con
-\emph{prompt} de caja y test blindado de ISIC2018--- la principal
-limitación reside ya en la incertidumbre de la anotación humana y no se
-extiende a la segmentación multilesión ni al régimen sin
-caja-\emph{prompt}. La supervisión en forma de lenguaje motiva el bloque
-siguiente sobre clasificación \emph{zero-shot} multimodal.
+La lectura, en términos sencillos, es que el modelo segmenta tan bien
+como un experto humano, o mejor: coincide con el consenso de varios
+médicos ($0{,}915$) más de lo que esos médicos coinciden entre sí
+($0{,}728$). Por eso las diferencias de $\sim 1$\,pp entre
+arquitecturas (tabla~\ref{tab:seg-arquitecturas}) dejan de ser
+relevantes ---son más pequeñas que el desacuerdo natural entre dos
+personas que dibujan el mismo contorno---: se ha alcanzado el techo de
+precisión que la propia tarea permite medir. Conviene acotar esta
+conclusión: vale para la segmentación de una sola lesión dermatoscópica
+con \emph{prompt} de caja sobre el test blindado de ISIC2018, y no se
+extiende a imágenes con varias lesiones ni al uso sin caja. A partir de
+aquí, la idea de guiar el modelo con lenguaje ---en lugar de con una
+caja--- abre el bloque siguiente, sobre clasificación \emph{zero-shot}
+multimodal.
 
 \section{Clasificación zero-shot multimodal}
 \label{sec:zs-results}
 
-Esta sección analiza de qué depende que un modelo visión-lenguaje
-clasifique bien sin entrenar cabeza alguna, régimen que prometería
-despliegue inmediato sin etiquetas. El factor crítico no es la imagen
-sino la compatibilidad entre el tokenizador del texto y el espacio del
-encoder. Esto se cuantifica sobre HAM10000 ($7$ clases,
-$N_{\mathrm{test}} = 1\,232$) con tres configuraciones de \emph{prompts}
-y dos tokenizadores distintos (cifras completas en el repositorio
-reproducible, \ref{cap:repo}, sección~\ref{sec:repo-llm}).
+La clasificación \emph{zero-shot} permite asignar una imagen a un
+diagnóstico descrito solo con palabras, sin haber entrenado el modelo
+con ejemplos etiquetados de esas categorías. Su interés práctico es
+claro: permitiría poner en marcha un sistema sin reunir antes un
+\emph{dataset} etiquetado, y añadir diagnósticos nuevos con solo
+describirlos. Esta sección estudia de qué depende que ese régimen
+funcione, y la respuesta es menos intuitiva de lo esperable: lo
+decisivo no es la imagen, sino que el texto y la imagen ``hablen el
+mismo idioma'', es decir, que el \emph{tokenizer} del texto encaje con
+el espacio del \emph{encoder} visual. Se cuantifica sobre HAM10000
+($7$ clases, $N_{\mathrm{test}} = 1\,232$) con tres formas de redactar
+los \emph{prompts} y dos \emph{tokenizers} distintos (cifras completas
+en el repositorio reproducible, \ref{cap:repo},
+sección~\ref{sec:repo-llm}).
 
 El rendimiento depende drásticamente de cómo se construye el texto.
 Pasar de \emph{prompts} genéricos en inglés con tokenizador
