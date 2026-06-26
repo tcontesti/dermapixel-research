@@ -639,6 +639,9 @@ Dermapixel R0 sobre el
 conjunto de test de $101$ imágenes (per-case estratificado por
 L1) bajo régimen híbrido \emph{H6} homogéneo
 ($w_v = 0{,}3$, $w_t = 0{,}7$) aplicado a las cinco iteraciones.
+Las cardinalidades por nivel ($4$, $23$ y $54$ clases) son las clases
+L1/L2/L3 representadas en este test de $101$ imágenes, menores que en
+el dataset completo (L2$=38$, L3$=224$).
 La columna \emph{Objetivo} corresponde al umbral fijado en el
 diseño experimental antes de observar resultados. Mejor cifra
 por fila excluyendo la columna \emph{Objetivo} en negrita.
@@ -696,9 +699,11 @@ $0{,}2079$ ($-4{,}0$\,pp): el resultado informa que la escala genérica
 no sustituye a la cobertura \emph{in-domain}. Aunque el encoder visual mejora aislado
 (\emph{H1} $0{,}168 \to 0{,}238$), las \emph{captions} externas no
 preservan el registro del archivo y erosionan la alineación castellana
-sobre la que se calibra \emph{H6}. La long tail tampoco se rellena
-($327$ clases L3 con $\leq 5$ imágenes; sólo ocho ganan cobertura):
-superar el \emph{zero-shot} L3 $\sim 0{,}25$ exige anotación experta
+sobre la que se calibra \emph{H6}. La long tail tampoco se rellena: de
+las $327$ clases L3 con $\leq 5$ imágenes, ninguna recibe imágenes
+externas (las ocho clases que sí se refuerzan ya tenían entre $7$ y
+$20$ imágenes base, es decir, quedan fuera de la cola).
+Superar el \emph{zero-shot} L3 $\sim 0{,}25$ exige anotación experta
 \emph{in-domain}, no escala genérica
 (sección~\ref{sec:linea-active-learning}). Convergente con la
 sensibilidad de DermLIP al tokenizer
