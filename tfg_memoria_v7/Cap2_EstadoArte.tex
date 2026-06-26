@@ -289,7 +289,7 @@ transparencia metodológica ---cohorte, particiones, incertidumbre y
 contrastes estadísticos--- recogida en guías como
 TRIPOD+AI~\cite{tripodai2024}.
 
-De este panorama se desprenden las carencias que motivan el trabajo.
+De todo lo anterior se desprenden las carencias que motivan el trabajo.
 Cada modelo se publica evaluado por sus propios autores, sobre sus
 propios \emph{benchmarks} y con protocolos distintos: falta una
 comparación independiente, bajo un mismo protocolo y sobre datasets
@@ -303,12 +303,19 @@ ya existentes, pero no cubren esa carencia---. Y entre la evaluación
 sobre \emph{benchmarks} y el despliegue real en un hospital media una
 distancia operativa que los trabajos publicados no abordan.
 
-De estas carencias se desprende el punto de partida de este trabajo:
-una evaluación experimental homogénea e independiente de los modelos
-fundacionales dermatológicos con pesos públicos, sobre un conjunto
-común de datasets externos y de tareas. Hacerla comparable exigirá
-armonizar las taxonomías heterogéneas de esos datasets y auditar su
-posible solapamiento con los datos de preentrenamiento. Esta
-evaluación es el primer paso necesario: solo a partir de lo que revele
----qué ofrecen y qué les falta estos modelos--- podrá decidirse cómo
-continuar.
+De este panorama se desprende el plan de este trabajo. El primer paso
+es reproducir y validar PanDerm ---el modelo fundacional dermatológico
+abierto más completo--- sobre un conjunto común de datasets externos,
+comprobando que su comportamiento se corresponde con el publicado y
+comparándolo de forma homogénea con los demás modelos disponibles;
+ello exige armonizar las taxonomías heterogéneas de los datasets y
+auditar su posible solapamiento con los datos de preentrenamiento.
+Sobre esa base fiable, el trabajo explora después un conjunto de ideas
+que el propio estado del arte ---y en particular DermFM-Zero--- apunta
+como prometedoras: el trabajo en el espacio latente y el alineamiento
+contrastivo imagen-texto al estilo CLIP, la interpretabilidad mediante
+\emph{sparse autoencoders} ---adaptada al español para explicar las
+imágenes--- y la clasificación \emph{zero-shot} guiada por lenguaje.
+El horizonte de todo ello es el reconocimiento sobre fotografía
+clínica ---en clasificación y en segmentación---, la modalidad menos
+trabajada y de mayor interés asistencial.
