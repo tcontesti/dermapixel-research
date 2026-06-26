@@ -70,8 +70,7 @@ un papel específico: Fitzpatrick17k habilita el análisis de equidad,
 al anotar conjuntamente patología ($114$ categorías) y fototipo
 cutáneo (escala Fitzpatrick I-VI), y SkinCon aporta anotación densa
 de $48$ conceptos clínicos visuales para los Concept Bottleneck
-Models. En todos los casos se respetan las particiones
-\emph{train/val/test} canónicas de cada dataset, sin reasignación.
+Models. En todos los experimentos se utilizaron las particiones oficiales de entrenamiento, validación y prueba \emph{train/val/test} proporcionadas por cada dataset, sin modificar ni reasignar imágenes entre ellas.
 
 
 \subsection{Independencia frente al preentrenamiento: solapamiento con Derm1M}
@@ -340,57 +339,69 @@ como apoyo descriptivo.
 \section{Pruebas estadísticas}
 \label{sec:estadistica}
 
-Una diferencia entre métricas no implica por sí sola una ventaja
-real: puede explicarse por la variabilidad de la muestra de
-evaluación, riesgo agravado en dermatología por los tamaños
-moderados, el desequilibrio de clases y la heterogeneidad clínica.
-El trabajo incorpora, por tanto, un protocolo estadístico explícito,
-en línea con las guías de reporte para inteligencia artificial en
-imagen médica (CLAIM~\cite{claim2024} y TRIPOD+AI~\cite{tripodai2024}),
-basado en intervalos de confianza por \emph{bootstrap}, la
-comparación formal de curvas ROC mediante el test de DeLong y el
-control del riesgo de falsos positivos bajo comparaciones múltiples.
+Que un modelo obtenga una cifra mejor que otro no basta para afirmar
+que sea mejor: la diferencia podría deberse al azar de qué imágenes
+concretas cayeron en el conjunto de evaluación. Este riesgo es mayor
+en dermatología, donde los conjuntos de test son moderados, las
+clases están desbalanceadas y los casos son clínicamente
+heterogéneos. Para no confundir una diferencia real con una
+casualidad, el trabajo adopta un protocolo estadístico explícito,
+alineado con las guías de reporte para inteligencia artificial en
+imagen médica (CLAIM~\cite{claim2024} y TRIPOD+AI~\cite{tripodai2024}).
+Lo componen tres herramientas: los intervalos de confianza por
+\emph{bootstrap}, que miden cuánto puede oscilar cada cifra; el test
+de DeLong, que compara dos modelos de forma justa; y la corrección de
+Holm, que evita dar por buenas diferencias surgidas de hacer muchas
+comparaciones.
 
-La incertidumbre de cada métrica principal se cuantifica mediante
-\emph{bootstrap} no paramétrico con $1\,000$ remuestreos del
-conjunto de evaluación, estratificado por clase, del que se derivan
-los intervalos de confianza al $95\%$. No requiere asumir
-normalidad ni varianza conocida, lo que es necesario sobre los
-conjuntos de test reducidos y desbalanceados de este trabajo, donde
-la aproximación asintótica de los estimadores no es fiable. Los
-intervalos de confianza al $95\%$ por \emph{bootstrap}
-($B = 1\,000$, remuestreo estratificado por clase, percentil
-$2{,}5/97{,}5$) de las métricas \emph{headline} que no los
-incorporan en el cuerpo se reportan en el repositorio reproducible
-(\ref{cap:repo}, sección~\ref{sec:repo-bootstrap-ci}).
+El \emph{bootstrap} responde a la pregunta ``¿cuánto cambiaría esta
+cifra si el test hubiera estado formado por otras imágenes?''. El
+procedimiento es sencillo: se generan $1\,000$ conjuntos de test
+``alternativos'' tomando imágenes del test real al azar y con
+reemplazo ---conservando la proporción de clases---, y se recalcula la
+métrica en cada uno. La dispersión de esas $1\,000$ cifras describe su
+incertidumbre, y el rango que descarta el $2{,}5\%$ de valores más
+altos y el $2{,}5\%$ más bajos define el intervalo de confianza al
+$95\%$: el margen dentro del cual cabe esperar el valor verdadero.
+Este método no exige suponer que los datos sigan ninguna distribución
+concreta, lo que lo hace apropiado para los conjuntos reducidos y
+desbalanceados de este trabajo, donde las fórmulas estadísticas
+clásicas no son fiables. Los intervalos al $95\%$ ($B = 1\,000$,
+remuestreo estratificado por clase, percentil $2{,}5/97{,}5$) de las
+métricas \emph{headline} que no los incluyen en el cuerpo figuran en
+el repositorio reproducible (\ref{cap:repo},
+sección~\ref{sec:repo-bootstrap-ci}).
 
-Las comparaciones de AUROC entre dos modelos sobre el mismo conjunto
-emplean el test de DeLong~\cite{delong1988}. Su motivación es
-metodológica: ambos modelos se evalúan sobre las mismas imágenes, de
-modo que sus curvas ROC están correlacionadas; tratar las dos AUROC
-como muestras independientes subestima la varianza del contraste y
-sobrestima su significación. DeLong estima esa covarianza de forma
-no paramétrica y produce un contraste pareado válido. Se aplica a los
-contrastes pareados entre codificadores sobre tres \emph{endpoints}
-binarios de malignidad ---Fitzpatrick17k, HAM10000 y DermapixelAI~1.0---
-(sección~\ref{sec:equidad-delong}; tabla detallada en el repositorio reproducible, \ref{sec:repo-tablas}).
+Para decidir si la diferencia de AUROC entre dos modelos es real, y no
+fruto del azar, se emplea el test de DeLong~\cite{delong1988}. La
+razón de elegirlo es importante: como ambos modelos se evalúan sobre
+exactamente las mismas imágenes, sus aciertos y errores están ligados;
+tratar sus dos AUROC como si procedieran de muestras independientes
+haría parecer las diferencias más significativas de lo que son. El
+test de DeLong tiene en cuenta esa relación y produce una comparación
+pareada correcta. Se aplica a los contrastes entre codificadores sobre
+tres tareas binarias de detección de malignidad ---Fitzpatrick17k,
+HAM10000 y DermapixelAI~1.0--- (sección~\ref{sec:equidad-delong};
+tabla detallada en el repositorio reproducible, \ref{sec:repo-tablas}).
 
-Los $p$-valores se reportan como nominales y, de forma
-complementaria, bajo corrección por el método de Holm dentro de cada
-\emph{endpoint}. Exponer ambos es intencionado: la corrección controla
-la tasa de falsos positivos a costa de potencia estadística, y
-mostrar el valor nominal junto al corregido permite al lector juzgar
-la robustez de cada contraste sin imponer una única política de
-corrección. Dada la magnitud de las diferencias observadas (con $p$
-varios órdenes por debajo de $0{,}05$), las conclusiones principales
-se mantienen bajo cualquier corrección estándar. Los tamaños
-muestrales por subgrupo ---por fototipo cutáneo y por nivel
-ontológico--- se consolidan en las tablas~\ref{tab:muestral-fst}
-y~\ref{tab:muestral-nivel}, lo que permite contextualizar la potencia
-de cada análisis por subgrupo; en particular, el reducido tamaño del
-fototipo~VI ($n = 73$ en test) y la cola larga diagnóstica L3 acotan la
-inferencia en esos subgrupos. El detalle por subgrupo acompaña además
-a sus cifras en el capítulo~\ref{cap:resultados}.
+Por último, cuando se hacen muchas comparaciones aumenta la
+probabilidad de que alguna parezca significativa solo por azar. Para
+controlarlo, los $p$-valores se reportan de dos maneras: el valor
+nominal (sin corregir) y el valor corregido por el método de Holm
+dentro de cada tarea. Mostrar ambos es deliberado: la corrección
+reduce los falsos positivos, pero también la capacidad de detectar
+diferencias reales, y ofrecer las dos cifras permite al lector juzgar
+por sí mismo la solidez de cada comparación. En la práctica, las
+diferencias observadas son tan grandes (con $p$ varios órdenes de
+magnitud por debajo de $0{,}05$) que las conclusiones principales se
+mantienen con cualquier corrección estándar. Los tamaños de muestra
+por subgrupo ---por fototipo cutáneo y por nivel de la ontología--- se
+recogen en las tablas~\ref{tab:muestral-fst} y~\ref{tab:muestral-nivel},
+que ayudan a ver qué análisis tienen más respaldo: en particular, el
+escaso número de casos del fototipo~VI ($n = 73$ en test) y la larga
+cola de diagnósticos poco frecuentes de L3 limitan la fiabilidad de
+las conclusiones en esos subgrupos. El detalle por subgrupo acompaña
+además a sus cifras en el capítulo~\ref{cap:resultados}.
 
 \begin{table}[htbp]
 \centering
@@ -442,23 +453,21 @@ L3 & $367$ & $250$ \\
 \end{tabular}
 \end{table}
 
-El alcance de este protocolo estadístico es, no obstante, heterogéneo
-entre bloques experimentales, y conviene declararlo de forma
-explícita. El contraste pareado de DeLong y la corrección por
-comparaciones múltiples se aplican donde la comparación entre modelos
-es el objeto central ---el ranking de encoders en detección de
-malignidad (sección~\ref{sec:equidad-delong})---; la estimación por
-\emph{bootstrap} acompaña a las métricas principales sobre
+Conviene aclarar que este aparato estadístico no se aplica por igual
+en todo el trabajo. El test de DeLong y la corrección por
+comparaciones múltiples se usan allí donde comparar modelos es el
+objetivo central ---el ranking de codificadores en detección de
+malignidad (sección~\ref{sec:equidad-delong})---, y los intervalos por
+\emph{bootstrap} acompañan a las métricas principales sobre
 DermapixelAI~1.0 y a la validación cruzada de segmentación. Otros
 bloques ---el sondeo lineal sobre los datasets externos, la eficiencia
-en etiquetas y la equidad por fototipo--- se reportan como
-estimaciones puntuales bajo semilla única
-(sección~\ref{sec:lim-semilla}). En consecuencia, la fuerza de las
-afirmaciones comparativas se modula según el cierre estadístico
-disponible: se sostienen como patrones cualitativos robustos cuando la
-magnitud del efecto excede holgadamente la variabilidad esperable, y
-se enuncian con la cautela correspondiente cuando el contraste formal
-queda fuera del alcance del trabajo.
+en etiquetas y la equidad por fototipo--- se presentan como una sola
+estimación, sin repetirla con varias semillas
+(sección~\ref{sec:lim-semilla}). Por eso las afirmaciones se gradúan
+según el respaldo estadístico disponible: se presentan como patrones
+sólidos cuando la diferencia supera con holgura la variabilidad
+esperable, y con la cautela correspondiente cuando no se dispone de un
+contraste formal.
 
 \section{Trazabilidad y reproducibilidad}
 \label{sec:reproducibilidad}
