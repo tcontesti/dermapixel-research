@@ -91,8 +91,8 @@ el \emph{masked image modeling}, en el que la red reconstruye
 parches ocultos a partir del contexto visible; la destilación
 auto-supervisada entre vistas; y la alineación contrastiva
 imagen-texto al estilo CLIP~\cite{clip2021}. La adaptación posterior
-a tareas específicas opera por sondeo lineal sobre representaciones
-congeladas, ajuste fino supervisado, o transferencia directa
+a tareas específicas opera por linear probe sobre representaciones
+congeladas, fine-tuning supervisado, o transferencia directa
 zero-shot guiada por \emph{prompts} en los modelos con rama
 lingüística.
 
@@ -121,8 +121,8 @@ dermatológicas. La disponibilidad simultánea de pesos, código y
 benchmarks lo convierte en el primer modelo fundacional dermatológico
 verificable de forma independiente.
 
-\section{Modelos vision-lenguaje contrastivos}
-\label{sec:vision-lenguaje}
+\section{Modelos vision-language contrastivos}
+\label{sec:vision-language}
 
 CLIP~\cite{clip2021} establece el preentrenamiento contrastivo
 imagen-texto sobre $400$ millones de pares de la web. El objetivo
@@ -151,7 +151,7 @@ $403\,563$ imágenes únicas, organizados según una ontología
 jerárquica de cuatro niveles construida por dermatólogos. La familia
 DermLIP combina varios encoders visuales (PanDerm Base,
 ConvNeXt-Large) con varios encoders textuales (PubMedBERT extendido
-a $256$ tokens, GPT-2 dermatológico con tokenizador de CLIP a
+a $256$ tokens, GPT-2 dermatológico con tokenizer de CLIP a
 $77$ tokens). La configuración con mejor rendimiento reportada
 por los autores combina PanDerm Base como encoder visual y
 PubMedBERT como encoder textual, superando a BiomedCLIP en los
@@ -205,7 +205,7 @@ del vídeo y mejora el rendimiento sobre imágenes estáticas.
 
 La transferencia a dominios médicos requiere adaptación supervisada
 sobre conjuntos con máscaras binarias. La estrategia habitual
-combina un modelo SAM/SAM2 preentrenado con \emph{fine-tuning} sobre
+combina un modelo SAM/SAM2 preentrenado con fine-tuning sobre
 ISIC2018~\cite{isic2018} y adaptadores de bajo rango
 (\emph{Low-Rank Adaptation}, LoRA)~\cite{lora}, que
 incorporan un número reducido de parámetros entrenables manteniendo
@@ -222,7 +222,7 @@ masivos constituyen una referencia de comparación pertinente: GPT-4o
 (versiones 4B Vision y 27B Text, Google). Su número de parámetros
 supera al de los encoders fundacionales específicos en uno o dos
 órdenes de magnitud. Su modo de uso característico es la inferencia
-guiada por \emph{prompts} sin \emph{fine-tuning} específico por
+guiada por \emph{prompts} sin fine-tuning específico por
 tarea. Trabajos recientes documentan su uso conversacional para
 soporte al razonamiento clínico~\cite{amie2024,deepmind_aicoclinician}.
 Los modelos de acceso restringido (GPT-4o, Gemini) sólo se evalúan
@@ -266,15 +266,15 @@ arquitectura por tarea, una fuerte dependencia de anotación experta y
 una caída notable de rendimiento fuera del dominio de entrenamiento,
 especialmente sobre los fototipos cutáneos más
 oscuros~\cite{fitzpatrick17k,ddi}. Los \emph{modelos fundacionales}
-cambiaron esa lógica: un mismo codificador, preentrenado a gran
+cambiaron esa lógica: un mismo encoder, preentrenado a gran
 escala, se reutiliza en muchas tareas mediante adaptación ligera. En
-dermatología, las referencias abiertas son PanDerm ---un codificador
+dermatología, las referencias abiertas son PanDerm ---un encoder
 visual entrenado sobre las cuatro modalidades de la
 especialidad~\cite{panderm2025}--- y la familia DermLIP, que añade una
 rama de texto y la clasificación \emph{zero-shot}~\cite{derm1m}; el
 modelo más reciente con \emph{zero-shot} nativo, DermFM-Zero, no
 libera sus pesos~\cite{dermfmzero2026}. Alrededor de ellos conviven
-codificadores generalistas (DINOv2), modelos contrastivos
+encoders generalistas (DINOv2), modelos contrastivos
 imagen-texto (CLIP, SigLIP, BiomedCLIP), la segmentación
 \emph{promptable} de la familia SAM~\cite{sam2} y los grandes modelos
 de lenguaje multimodales como comparadores de contexto.
@@ -294,7 +294,7 @@ Cada modelo se publica evaluado por sus propios autores, sobre sus
 propios \emph{benchmarks} y con protocolos distintos: falta una
 comparación independiente, bajo un mismo protocolo y sobre datasets
 externos comunes, realizada por un equipo ajeno a quien creó los
-modelos. Casi todo el material y los codificadores de texto están en
+modelos. Casi todo el material y los encoders de texto están en
 inglés y centrados en dermatoscopia; la fotografía clínica en
 español, con texto narrativo de caso real, es prácticamente
 inexistente ---los recursos recientes de \emph{captions} clínicas

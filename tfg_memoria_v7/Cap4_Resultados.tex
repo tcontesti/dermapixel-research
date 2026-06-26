@@ -9,7 +9,7 @@ trabajo, que concretan sus objetivos formales
 (sección~\ref{sec:objetivos}). La secuencia es acumulativa: establecida en la metodología la
 independencia entre los conjuntos de evaluación y el preentrenamiento
 (sección~\ref{sec:auditoria-resultados}), se estudia la transferencia
-supervisada (sondeo lineal, ajuste fino, eficiencia en etiquetas), las
+supervisada (linear probe, fine-tuning, eficiencia en etiquetas), las
 tareas de segmentación,
 clasificación \emph{zero-shot} y razonamiento multimodal, y los
 aspectos de equidad y seguridad diagnóstica; y, finalmente, las
@@ -26,8 +26,8 @@ castellano.
 
 El trabajo arranca evaluando PanDerm, el modelo fundacional
 dermatológico que se toma como referencia: se mide si sus
-representaciones, sin reajustar el \emph{encoder}, clasifican lesiones
-en datasets externos no vistos. El \emph{encoder} de mayor capacidad
+representaciones, sin reajustar el encoder, clasifican lesiones
+en datasets externos no vistos. El encoder de mayor capacidad
 (PanDerm Large) transfiere de forma robusta entre datasets, con
 ventaja creciente en los escenarios de mayor heterogeneidad de
 adquisición y complejidad taxonómica, como cuantifican los diez
@@ -44,7 +44,7 @@ ponderada (W-F1) y coeficiente kappa de Cohen.
 \footnotesize
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{0.95}
-\caption{Sondeo lineal con PanDerm Base y Large sobre diez datasets
+\caption{Linear probe con PanDerm Base y Large sobre diez datasets
 externos. El asterisco (\textsuperscript{$\ast$}) marca Dermnet, el
 único dataset con solapamiento exacto frente a Derm1M ($100\%$ por
 hash MD5; sección~\ref{sec:auditoria-resultados}).
@@ -91,7 +91,7 @@ figura~\ref{fig:lp-per-dataset}).
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.92\textwidth]{fig_lp_per_dataset.png}
-\caption{Sondeo lineal con PanDerm Base y Large sobre los diez
+\caption{Linear probe con PanDerm Base y Large sobre los diez
 datasets externos contrastados. Diferencia absoluta en BAcc
 ($+9{,}0$\,pp de promedio) y AUROC ($+3{,}6$\,pp de
 promedio) a favor de PanDerm Large.}
@@ -121,17 +121,17 @@ Para distinguir si la ventaja de PanDerm Large refleja el
 preentrenamiento dermatológico o una mera comparación favorable
 frente a su versión Base, se sitúa frente a familias con filosofías
 de aprendizaje distintas: arquitecturas convolucionales supervisadas,
-modelos auto-supervisados generalistas y sistemas visión-lenguaje a
+modelos auto-supervisados generalistas y sistemas vision-language a
 gran escala. La tabla~\ref{tab:benchmark} compara cinco modelos
 representativos sobre HAM10000, PAD-UFES-20 y DDI bajo el mismo
-protocolo de sondeo lineal.
+protocolo de linear probe.
 
 \begin{table}[htbp]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{0.95}
-\caption{Benchmark comparativo bajo sondeo lineal sobre HAM10000,
+\caption{Benchmark comparativo bajo linear probe sobre HAM10000,
 PAD-UFES-20 y DDI. Mejor valor por columna en negrita. La AUROC del
 DDI de las líneas base convolucionales se calcula sobre $N = 220$
 (fusión de validación y test en el \emph{script} de extracción CNN),
@@ -173,7 +173,7 @@ encabeza en PAD-UFES-20 y DDI, los datasets clínicos más alejados del
 dominio web.
 
 No existe, por tanto, una jerarquía universal entre familias: los
-sistemas visión-lenguaje generalistas igualan o superan a los
+sistemas vision-language generalistas igualan o superan a los
 especializados en escenarios dermatoscópicos muy estandarizados,
 mientras que los modelos dermatológicos mantienen ventaja cuando aumenta
 la variabilidad clínica. El preentrenamiento de dominio ofrece una
@@ -184,16 +184,16 @@ referencia ---abierto y el más sólido sobre los datasets clínicos más
 exigentes---, PanDerm se adopta como base de los protocolos que siguen,
 en los que se estudia hasta dónde puede llevarse su rendimiento.
 
-\section{Ajuste fino supervisado}
+\section{Fine-tuning supervisado}
 \label{sec:ft-results}
 
-Esta sección delimita cuándo el ajuste fino del encoder mejora sobre
+Esta sección delimita cuándo el fine-tuning del encoder mejora sobre
 la representación congelada y cuándo es contraproducente, decisión
-central para los datasets clínicos pequeños. El ajuste fino mejora con
+central para los datasets clínicos pequeños. El fine-tuning mejora con
 una cantidad moderada o elevada de datos de entrenamiento y puede
 degradar el rendimiento bajo baja disponibilidad de muestras. La
 tabla~\ref{tab:ft-panderm} lo concreta comparando el
-sondeo lineal con el ajuste fino supervisado de PanDerm Base sobre
+linear probe con el fine-tuning supervisado de PanDerm Base sobre
 cuatro datasets de tamaño dispar, con la configuración descrita
 en sección~\ref{sec:ft}. Sobre HAM10000 se añade además
 \emph{test-time augmentation} con cinco augmentaciones
@@ -204,7 +204,7 @@ deterministas.
 \footnotesize
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{0.95}
-\caption{Sondeo lineal (LP) frente a ajuste fino (FT) con PanDerm
+\caption{Linear probe (LP) frente a fine-tuning (FT) con PanDerm
 Base. $\Delta$BAcc en puntos porcentuales respecto al LP.}
 \label{tab:ft-panderm}
 \begin{tabular}{llrrrrr}
@@ -223,15 +223,15 @@ MSKCC        & FT   & $\mathbf{0{,}731}$ & $\mathbf{0{,}684}$ & $0{,}719$     & 
 \end{tabular}
 \end{table}
 
-El ajuste fino mejora sustancialmente el rendimiento en HAM10000
+El fine-tuning mejora sustancialmente el rendimiento en HAM10000
 ($+47{,}1$\,pp BAcc) y PAD-UFES-20 ($+19{,}4$\,pp), especialmente
 sobre las clases minoritarias responsables de la baja \emph{balanced
-accuracy} del sondeo lineal. El beneficio desaparece, en cambio, cuando
+accuracy} del linear probe. El beneficio desaparece, en cambio, cuando
 disminuye la disponibilidad de datos: DDI muestra degradación global
 compatible con sobreajuste y MSKCC sólo mejoras marginales. En la práctica, esto deja una regla sencilla: con un \emph{dataset}
-clínico grande conviene hacer \emph{fine-tuning}, pero con pocos datos
-es más seguro quedarse con el \emph{encoder} congelado, porque el
-\emph{fine-tuning} tiende a sobreajustar. Este resultado justifica la
+clínico grande conviene hacer fine-tuning, pero con pocos datos
+es más seguro quedarse con el encoder congelado, porque el
+fine-tuning tiende a sobreajustar. Este resultado justifica la
 exploración posterior de adaptación eficiente de parámetros (PEFT,
 sección~\ref{sec:dermapixel-spanderm-v0}) y motiva cuantificar cuántas
 etiquetas son realmente necesarias, objeto de la sección siguiente.
@@ -253,7 +253,7 @@ PAD-UFES-20.
 \footnotesize
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{0.95}
-\caption{Eficiencia en etiquetas (sondeo lineal con PanDerm Large).
+\caption{Eficiencia en etiquetas (linear probe con PanDerm Large).
 $N_{\mathrm{train}}$: tamaño efectivo del subconjunto de
 entrenamiento. Mejor valor por columna en negrita.}
 \label{tab:label-eff}
@@ -287,7 +287,7 @@ $95{,}5\%$ de la AUROC final. La \emph{balanced accuracy}, en cambio,
 sigue mejorando con el volumen, reflejando mayor sensibilidad a las
 clases minoritarias. La conclusión práctica es llamativa: con muy pocas imágenes
 etiquetadas ---del orden de unas decenas--- ya se alcanza casi todo el
-rendimiento, porque el \emph{encoder} preentrenado aporta la mayor
+rendimiento, porque el encoder preentrenado aporta la mayor
 parte de la capacidad de discriminar y las etiquetas solo afinan la
 frontera de decisión. Esto reduce mucho la dependencia de grandes
 volúmenes de anotación experta, el principal cuello de botella en
@@ -301,8 +301,8 @@ lo que delimitan una tendencia y no un margen con cierre estadístico.
 Este bloque evalúa si un modelo fundacional de segmentación adaptado
 al dominio dermatológico alcanza una delimitación de lesión de calidad
 clínica y qué factores la determinan. La tabla~\ref{tab:seg} compara
-SAM2.1-Large adaptado al dominio mediante \emph{fine-tuning} del
-decodificador frente a SAM2 sin adaptar (\emph{zero-shot}), un
+SAM2.1-Large adaptado al dominio mediante fine-tuning del
+decoder frente a SAM2 sin adaptar (\emph{zero-shot}), un
 autoencoder convolucional sobre PanDerm Large (CAE-seg) y la
 referencia publicada por Yan et~al.~\cite{panderm2025}, analizando
 además su generalización fuera de dominio sobre ISIC2017 y PH2; las
@@ -334,13 +334,13 @@ El detalle con la desviación estándar y el IoU sobre los datasets de
 transferencia (ISIC2017 y PH2) figura en el repositorio reproducible
 (\ref{cap:repo}, sección~\ref{sec:repo-tablas}).
 
-SAM2.1-L con \emph{fine-tuning} del decodificador alcanza Dice
+SAM2.1-L con fine-tuning del decoder alcanza Dice
 $0{,}947$ sobre ISIC2018, $+2{,}6$\,pp sobre la cifra publicada por
 Yan et~al.~\cite{panderm2025} y $+5{,}3$\,pp sobre el CAE-seg: supera,
 por tanto, la referencia previa. Su generalización fuera de dominio es
 prácticamente nula (Dice $0{,}945$ en ISIC2017 y $0{,}960$ en PH2,
 este último superior por su mayor limpieza visual). Y, sobre todo, la
-adaptación del decodificador aporta $+14{,}8$\,pp en ISIC2017
+adaptación del decoder aporta $+14{,}8$\,pp en ISIC2017
 ($0{,}797 \to 0{,}945$) y $+7{,}4$\,pp en PH2 ($0{,}886 \to 0{,}960$)
 frente a SAM2 sin adaptar: es la adaptación al dominio, y no el tamaño
 bruto del modelo, lo que explica la mayor parte de la mejora.
@@ -360,7 +360,7 @@ de dominio y tamaño de \emph{backbone}. Para separarlos, se evalúan de
 forma pareada cinco arquitecturas \emph{promptables} sobre un dataset
 dermatoscópico ampliado y deduplicado por hash MD5 ($14\,201$ imágenes
 únicas de ISIC2018, ISIC2017, HAM10000-seg y PH2), bajo régimen común
-(\emph{fine-tuning} denso del decodificador y el \emph{promptable
+(fine-tuning denso del decoder y el \emph{promptable
 encoder}, encoder visual congelado, \emph{prompt} de \emph{bounding
 box} de referencia; detalle de optimización en Cap.~3) y sobre el mismo
 test canónico de ISIC2018 ($N = 1\,000$, blindado) que la cifra de
@@ -374,7 +374,7 @@ tabla~\ref{tab:seg-arquitecturas} reporta el Dice resultante.
 \renewcommand{\arraystretch}{0.95}
 \caption{Comparativa de cinco arquitecturas promptables sobre el
 test canónico de ISIC2018 ($N = 1\,000$). Régimen común de
-\emph{fine-tuning} del decodificador con \emph{prompt} de
+fine-tuning del decoder con \emph{prompt} de
 \emph{bounding box}. Las diferencias de Dice son modestas en valor
 absoluto pero significativas al test de Wilcoxon
 pareado~\cite{wilcoxon1945}
@@ -419,8 +419,8 @@ Toda la comparativa anterior opera en régimen \emph{box-prompted}:
 cada predicción parte de una \emph{bounding box} derivada de la
 máscara de referencia. Para aislar la contribución de ese
 \emph{prompt} se entrena un control automático que no recibe caja
-alguna ---una U-Net con codificador ResNet-101 preentrenado en
-ImageNet, ajuste fino denso de $51{,}5$\,M de parámetros sobre el
+alguna ---una U-Net con encoder ResNet-101 preentrenado en
+ImageNet, fine-tuning denso de $51{,}5$\,M de parámetros sobre el
 mismo dataset $v1c$--- y se evalúa sobre el test canónico de
 ISIC2018, contrastando su Dice con el del mejor modelo
 \emph{promptable} (desglose completo con IoU, precisión y recall en el
@@ -476,7 +476,7 @@ aflojarla.}
 
 El resto de comprobaciones confirman un modelo bien comportado y no
 alteran la conclusión: el ajuste de bajo rango (LoRA
-$r\in\{4,8,16,32\}$) iguala al ajuste denso del decodificador; la
+$r\in\{4,8,16,32\}$) iguala al ajuste denso del decoder; la
 calibración a nivel de píxel es buena (ECE $0{,}0082$); la equidad por
 fototipo (ITA) muestra una brecha de solo $1{,}1$\,pp entre fototipos
 extremos; y el aumento en test y el \emph{ensemble} de pliegues aportan
@@ -524,22 +524,22 @@ claro: permitiría poner en marcha un sistema sin reunir antes un
 describirlos. Esta sección estudia de qué depende que ese régimen
 funcione, y la respuesta es menos intuitiva de lo esperable: lo
 decisivo no es la imagen, sino que el texto y la imagen ``hablen el
-mismo idioma'', es decir, que el \emph{tokenizer} del texto encaje con
-el espacio del \emph{encoder} visual. Se cuantifica sobre HAM10000
+mismo idioma'', es decir, que el tokenizer del texto encaje con
+el espacio del encoder visual. Se cuantifica sobre HAM10000
 ($7$ clases, $N_{\mathrm{test}} = 1\,232$) con tres formas de redactar
-los \emph{prompts} y dos \emph{tokenizers} distintos (cifras completas
+los \emph{prompts} y dos tokenizers distintos (cifras completas
 en el repositorio reproducible, \ref{cap:repo},
 sección~\ref{sec:repo-llm}).
 
 El rendimiento depende drásticamente de cómo se construye el texto.
-Pasar de \emph{prompts} genéricos en inglés con tokenizador
-PubMedBERT al conjunto A3 de Derm1M con tokenizador GPT-2/CLIP eleva
+Pasar de \emph{prompts} genéricos en inglés con tokenizer
+PubMedBERT al conjunto A3 de Derm1M con tokenizer GPT-2/CLIP eleva
 la AUROC de $0{,}366$ a $0{,}854$ ($+48{,}8$\,pp). Los
 \emph{prompts} genéricos con PubMedBERT quedan en AUROC$<0{,}5$,
 señal de que proyectan en un espacio no alineado con el encoder
 visual de la variante v1/v2. Cambiar solo el conjunto A3, sin tocar
-el tokenizador, sube la AUROC a $0{,}516$; cambiar solo el
-tokenizador, manteniendo A3, la lleva a $0{,}854$. El principal cuello
+el tokenizer, sube la AUROC a $0{,}516$; cambiar solo el
+tokenizer, manteniendo A3, la lleva a $0{,}854$. El principal cuello
 de botella del régimen \emph{zero-shot} no reside, por tanto, en la
 representación visual ---idéntica en todas las configuraciones---,
 sino en la alineación entre el espacio textual y el espacio visual.
@@ -547,7 +547,7 @@ sino en la alineación entre el espacio textual y el espacio visual.
 Esta diferencia de casi $50$\,pp de AUROC, obtenida sin modificar el
 encoder visual ni las imágenes, tiene una implicación metodológica
 directa: evaluar un modelo \emph{zero-shot} con una única configuración
-de \emph{prompts} o tokenizadores puede falsear sus capacidades
+de \emph{prompts} o tokenizers puede falsear sus capacidades
 reales, y una comparación entre modelos puede incluso invertirse según
 el \emph{prompt} elegido.
 
@@ -583,8 +583,8 @@ y~\ref{sec:ft-results}.
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{0.95}
 \caption{Comparación de paradigmas sobre HAM10000, PAD-UFES-20 y DDI
-($N_{\mathrm{test}} = 1\,232 / 461 / 137$). FT: ajuste fino, LP:
-sondeo lineal, ZS: zero-shot.}
+($N_{\mathrm{test}} = 1\,232 / 461 / 137$). FT: fine-tuning, LP:
+linear probe, ZS: zero-shot.}
 \label{tab:llm-comparativa}
 \begin{tabular}{llrrrrrr}
 \hline
@@ -819,7 +819,7 @@ distinciones del \emph{ranking} son señal y cuáles ruido muestral.
 \paragraph{Endpoint 2: melanoma sobre HAM10000.}
 El mismo contraste se aplica al \emph{endpoint} binario melanoma frente
 al resto sobre el test de HAM10000 ($N = 1\,232$, $70$ melanomas),
-incorporando SigLIP-Large al conjunto de codificadores con AUROC
+incorporando SigLIP-Large al conjunto de encoders con AUROC
 publicada sobre este dataset. La tabla~\ref{tab:delong-ham} reporta las
 cifras.
 
@@ -845,7 +845,7 @@ DermLIP v2      & $0{,}9463$          & $[0{,}9246,\, 0{,}9681]$ \\
 \end{tabular}
 \end{table}
 
-Los tres codificadores alcanzan AUROC en torno a $0{,}95$ con
+Los tres encoders alcanzan AUROC en torno a $0{,}95$ con
 diferencias inferiores a $0{,}006$, y ningún contraste pareado resulta
 significativo tras la corrección de Holm (todos con $p_{\mathrm{Holm}} =
 1{,}0$): sobre este \emph{endpoint}, PanDerm Large, SigLIP-Large y
@@ -856,7 +856,7 @@ se solapan ampliamente.
 Sobre este mismo \emph{endpoint}, la discriminación es fuerte
 (AUROC $\sim 0{,}95$) \emph{y} la calibración de las probabilidades
 resulta razonable: reutilizando las mismas predicciones por muestra
-del contraste de DeLong (cabeza de regresión logística \emph{train}$\to$\emph{test},
+del contraste de DeLong (head de regresión logística \emph{train}$\to$\emph{test},
 sin reentrenamiento), el error de calibración esperado
 (ECE, $15$ \emph{bins} de igual anchura sobre la probabilidad de la
 clase positiva) y el \emph{Brier score} son de
@@ -913,7 +913,7 @@ delante de PanDerm Large ($0{,}8632$) y del resto ($0{,}85$--$0{,}86$),
 pero ningún par de contrastes alcanza significación tras la corrección
 de Holm: con $58$ positivos el \emph{endpoint} no tiene potencia para
 ordenar los modelos. Dermapixel R0 queda fuera de este contraste, cuyo
-alcance se circunscribe a los codificadores congelados.
+alcance se circunscribe a los encoders congelados.
 
 En conjunto, el cierre estadístico se concentra en Fitzpatrick17k ---el
 único \emph{endpoint} con potencia suficiente ($226$ positivos)---,
@@ -953,7 +953,7 @@ complementarios para evaluar si las representaciones del SAE codifican
 conceptos dermatoscópicos clínicamente relevantes (E1 alineamiento
 \emph{single-feature}; E3 cruce con el Grupo~A de la Dra.~R.~Taberner) y
 si dichos conceptos pueden sostener modelos interpretables sin penalizar
-el rendimiento (E2 \emph{Concept Bottleneck Model}; E4 \emph{fine-tuning}
+el rendimiento (E2 \emph{Concept Bottleneck Model}; E4 fine-tuning
 multitarea). Todos sobre DGX Spark GB10.
 
 E1 evalúa, para cada uno de los siete criterios binarizados, la AUROC
@@ -969,11 +969,11 @@ $\leq 0{,}043$) indica que el alineamiento no se concentra en una
 \emph{feature} aislada: el SAE codifica los conceptos mediante un
 pequeño subconjunto coherente de activaciones.
 
-E2 construye un CBM jerárquico de dos etapas: una cabeza logística
+E2 construye un CBM jerárquico de dos etapas: una head logística
 sobre las $16\,384$ activaciones estima la probabilidad de los siete
 criterios, y un meta-clasificador logístico predice
 melanoma/no-melanoma a partir de esas siete estimaciones. Las cifras
-de E2 se reportan junto al \emph{fine-tuning} multitarea en la
+de E2 se reportan junto al fine-tuning multitarea en la
 tabla~\ref{tab:sae-d7pt-e4-comp}.
 
 La pérdida de $5{,}8$\,pp de AUROC ($0{,}890 \to 0{,}832$) cuantifica el
@@ -996,7 +996,7 @@ contempladas en la escala original y definen el contenido de la
 anotación clínica colaborativa (detalle completo en el
 repositorio reproducible, \ref{cap:repo}, sección~\ref{sec:repo-sae}).
 
-\subsection*{Ajuste fino multitarea: cabezas conceptuales y
+\subsection*{Fine-tuning multitarea: heads conceptuales y
 melanoma}
 \label{sec:sae-d7pt-e4}
 
@@ -1005,13 +1005,13 @@ Kawahara et~al.~\cite{kawahara2019} sustituyendo la red convolucional
 por PanDerm Large, con LoRA ($r = 16$) sobre los dos últimos bloques
 (\emph{blocks.22-23}), idéntico al protocolo de Dermapixel R0
 (sección~\ref{sec:dermapixel-spanderm-v0}). Sobre la representación
-adaptada se conectan ocho cabezas paralelas (una por criterio del
+adaptada se conectan ocho heads paralelas (una por criterio del
 \emph{Seven-Point Checklist} más una binaria de melanoma), optimizadas
 con la suma equiponderada de entropías cruzadas
 $\mathcal{L} = \sum_{i=1}^{7} \mathrm{CE}(\hat{c}_i, c_i) +
 \mathrm{CE}(\hat{m}, m)$ y \emph{class weight} balanceado ($0{,}56$\,M
-parámetros entrenables, $0{,}18\%$ del codificador). La
-tabla~\ref{tab:sae-d7pt-e4-comp} compara E4 con el sondeo lineal
+parámetros entrenables, $0{,}18\%$ del encoder). La
+tabla~\ref{tab:sae-d7pt-e4-comp} compara E4 con el linear probe
 directo (E2 Direct LP) y el CBM jerárquico (E2 CBM) sobre el test
 Derm7pt ($N_{\mathrm{test}} = 395$, $n_{\mathrm{mel}} \approx 98$),
 con IC95\% por \emph{bootstrap}.
@@ -1022,9 +1022,9 @@ con IC95\% por \emph{bootstrap}.
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{0.95}
 \caption{Comparativa sobre la tarea binaria melanoma/no-melanoma
-entre sondeo lineal directo sobre las $16\,384$ \emph{features}
+entre linear probe directo sobre las $16\,384$ \emph{features}
 del SAE Large (E2 Direct LP), CBM jerárquico de siete conceptos
-(E2 CBM) y \emph{fine-tuning} multitarea LoRA con ocho cabezas
+(E2 CBM) y fine-tuning multitarea LoRA con ocho heads
 paralelas (E4). Conjunto de test Derm7pt
 ($N_{\mathrm{test}} = 395$, $n_{\mathrm{mel}} \approx 98$), mismo
 \emph{split} oficial. AUROC en negrita.}
@@ -1040,8 +1040,8 @@ E2 CBM (SAE $\to$ $7$ conceptos $\to$ mel)    & $\sim 120$    & $0{,}825$ & $0{,
 \end{tabular}
 \end{table}
 
-La cabeza melanoma del \emph{fine-tuning} multitarea alcanza AUROC test
-$= 0{,}891$ (IC95\% $[0{,}856,\,0{,}927]$), que iguala al sondeo lineal
+La head melanoma del fine-tuning multitarea alcanza AUROC test
+$= 0{,}891$ (IC95\% $[0{,}856,\,0{,}927]$), que iguala al linear probe
 directo ($0{,}890$) y mejora el CBM jerárquico en $+5{,}9$\,pp.
 \textbf{A diferencia del CBM jerárquico, el aprendizaje multitarea
 conserva la capacidad discriminativa del modelo mientras mantiene
@@ -1052,7 +1052,7 @@ coherentes con la tarea principal ---como ocurre con el \emph{Seven-Point
 Checklist}~\cite{kawahara2019}---. En síntesis, el SAE Large codifica
 conceptos dermatoscópicos clásicos sin supervisión explícita (E1), el
 CBM cuantifica el compromiso interpretabilidad--precisión ($-5{,}8$\,pp
-AUROC, E2) y el multitarea LoRA iguala al sondeo lineal preservando
+AUROC, E2) y el multitarea LoRA iguala al linear probe preservando
 inferencia concepto-a-concepto (E4), lo que refuerza la viabilidad del
 módulo de interpretabilidad del prototipo (repositorio reproducible,
 \ref{cap:repo}, sección~\ref{sec:repo-prototipo}).

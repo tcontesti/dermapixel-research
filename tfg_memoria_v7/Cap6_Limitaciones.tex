@@ -88,14 +88,14 @@ son directamente extrapolables al espectro diagnóstico atendido en
 el Hospital Universitario Son Llàtzer
 (HUSLL)~\cite{taberner2010_motivos} sin validación adicional.
 
-La rama lingüística de los modelos vision-lenguaje contrastivos
+La rama lingüística de los modelos vision-language contrastivos
 (DermLIP, BiomedCLIP) está preentrenada sobre dataset en inglés. La
-sensibilidad documentada al tokenizador (sección~\ref{sec:disc-zs},
+sensibilidad documentada al tokenizer (sección~\ref{sec:disc-zs},
 $48{,}8$\,pp AUROC entre la peor y la mejor configuración) se
 limita a las variantes evaluadas en inglés y no caracteriza el
 rendimiento sobre \emph{prompts} en español, idioma sobre el que
 no se han evaluado por la ausencia de validación de los
-tokenizadores con vocabulario clínico hispanohablante. El dataset
+tokenizers con vocabulario clínico hispanohablante. El dataset
 DermapixelAI~1.0 publicado como contribución del trabajo
 (sección~\ref{sec:dermapixel}) aborda esta brecha para la fase
 posterior al periodo cubierto por este documento.
@@ -197,7 +197,7 @@ elevados--- es robusta frente a esta asimetría muestral; la
 cuantificación exacta del \emph{gap}, en cambio, queda condicionada
 por la menor masa muestral de los fototipos oscuros, y su
 acompañamiento con intervalos de confianza al $95\%$ por
-\emph{bootstrap} ---incluido el \emph{gap}~I-VI de cada codificador---
+\emph{bootstrap} ---incluido el \emph{gap}~I-VI de cada encoder---
 se reporta en el repositorio reproducible (\ref{cap:repo},
 sección~\ref{sec:repo-bootstrap-ci}).
 
@@ -207,9 +207,9 @@ sección~\ref{sec:repo-bootstrap-ci}).
 \subsection{Variabilidad inter-semilla}
 \label{sec:lim-semilla}
 
-Los protocolos de sondeo lineal, eficiencia en etiquetas y
+Los protocolos de linear probe, eficiencia en etiquetas y
 evaluación de equidad por fototipo operan con una única semilla
-(\texttt{random\_state}~$=42$); el protocolo de ajuste fino emplea
+(\texttt{random\_state}~$=42$); el protocolo de fine-tuning emplea
 también una única configuración de
 semillas (\texttt{torch}, \texttt{numpy}, \texttt{random} fijadas a
 $0$). La variabilidad inter-semilla no se reporta de forma
@@ -229,7 +229,7 @@ trayectoria de optimización concreta y no incluyen su variabilidad
 esperable bajo distintas inicializaciones. Las heurísticas
 operativas extraídas en sección~\ref{sec:disc-lp-vs-ft}
 (régimen $N_{\mathrm{train}} \lesssim 500$ para preferencia de
-sondeo lineal) son cualitativas y robustas, pero los umbrales
+linear probe) son cualitativas y robustas, pero los umbrales
 exactos pueden desplazarse bajo otras semillas.
 
 Esta limitación se acota por dos consideraciones. La semilla fija
@@ -249,7 +249,7 @@ la extensión natural de este protocolo.
 \label{sec:lim-estadistica}
 
 El test de DeLong~\cite{delong1988} se ha aplicado a los contrastes
-pareados entre codificadores sobre tres \emph{endpoints} binarios
+pareados entre encoders sobre tres \emph{endpoints} binarios
 centrales de detección de lesión maligna ---Fitzpatrick17k (malignidad),
 HAM10000 (melanoma) y DermapixelAI~1.0 (malignidad)---, con corrección
 de Holm dentro de cada \emph{endpoint} (sección~\ref{sec:equidad-delong};
@@ -264,7 +264,7 @@ reproducible (sección~\ref{sec:repo-bootstrap-ci}); la extensión del
 contraste pareado de DeLong al resto de tablas multiclase del capítulo
 queda como continuación natural del trabajo.
 
-La consecuencia operativa es que la superioridad de los codificadores de
+La consecuencia operativa es que la superioridad de los encoders de
 dominio sobre los generalistas queda establecida estadísticamente sobre
 el \emph{endpoint} con potencia (Fitzpatrick17k), mientras que el resto
 de hallazgos numéricos del capítulo~\ref{cap:resultados} ---y la
@@ -328,7 +328,7 @@ distintos, sobre las $367$ entradas declaradas en la
 ontología, lo que corresponde a una cobertura efectiva del
 $68{,}1\%$ del vocabulario L3 con al menos una imagen. El
 diagnóstico L3 más frecuente concentra aproximadamente el
-$32\%$ del dataset, lo que reproduce la cola larga típica del
+$32\%$ del dataset, lo que reproduce la long tail típica del
 material clínico. Esta cobertura parcial limita el uso del dataset
 para evaluación granular sobre L3 sin agregación a L2.
 
@@ -479,10 +479,10 @@ planteamiento descrito en sección~\ref{sec:objetivos}:
 
 \begin{enumerate}
   \item La \textbf{ventaja del preentrenamiento sobre el dominio
-  clínico} frente a codificadores generalistas.
-  \item La \textbf{saturación temprana del sondeo lineal}, que alcanza
+  clínico} frente a encoders generalistas.
+  \item La \textbf{saturación temprana del linear probe}, que alcanza
   el grueso de su rendimiento con $1$--$5\%$ de los datos etiquetados.
-  \item La \textbf{brecha entre codificadores específicos y LLMs
+  \item La \textbf{brecha entre encoders específicos y LLMs
   multimodales generalistas}, a favor de los primeros.
   \item El \textbf{\emph{gap} sistemático por fototipo cutáneo}, con
   sentido peor-en-fototipos-elevados y consistente entre encoders.
@@ -496,7 +496,7 @@ de orden superior que emerge de leerlas en conjunto. Su cuantificación y
 su lectura como conclusiones se desarrollan en el
 capítulo~\ref{cap:conclusiones} (sección~\ref{sec:respuesta}). La quinta
 está, además, acotada por el tamaño moderado del dataset
-DermapixelAI~1.0 (sección~\ref{sec:lim-dermapixel}), su cola larga en el
+DermapixelAI~1.0 (sección~\ref{sec:lim-dermapixel}), su long tail en el
 nivel L3 y el carácter exploratorio de varios de los contrastes por
 nivel ontológico: el patrón cualitativo es robusto, pero no constituye
 una ordenación cuantitativa cerrada entre métodos, cuya validación

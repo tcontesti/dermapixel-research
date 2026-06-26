@@ -12,7 +12,7 @@ cuatro dimensiones principales: el nivel ontológico al que se evalúa, el
 régimen de datos etiquetados disponible, la modalidad de entrada y la
 estrategia de adaptación empleada. Los resultados sugieren que, una vez
 alcanzado cierto nivel de capacidad representacional en los
-codificadores visuales modernos, las diferencias de rendimiento
+encoders visuales modernos, las diferencias de rendimiento
 dependen cada vez más de factores ligados a los datos, la formulación de
 la tarea y la integración multimodal ---taxonomía de las clases,
 volumen y calidad de las etiquetas, alineamiento texto-imagen,
@@ -23,9 +23,9 @@ la sección~\ref{sec:implicaciones} deriva sus implicaciones operativas.
 
 Conviene subrayar que la amplitud de esta evaluación no se obtiene a
 costa de la comparabilidad: cada eje se contrastó bajo un protocolo
-controlado y homogéneo ---sondeo lineal con idéntica configuración
+controlado y homogéneo ---linear probe con idéntica configuración
 sobre los mismos datasets, equidad evaluada entre los mismos cinco
-codificadores sobre una partición común, y test de DeLong pareado
+encoders sobre una partición común, y test de DeLong pareado
 sobre predicciones compartidas---, de modo que las comparaciones entre
 familias de modelos son directas y no quedan confundidas por
 diferencias de montaje experimental.
@@ -38,11 +38,11 @@ La síntesis transversal de los experimentos sobre DermapixelAI~1.0
 método universalmente superior para todas las tareas evaluadas. Los
 distintos modelos alcanzan su mejor rendimiento en escenarios diferentes
 según el nivel ontológico, la modalidad de entrada y el criterio de
-evaluación considerado. Así, los codificadores especializados destacan en
+evaluación considerado. Así, los encoders especializados destacan en
 transferencia visual y clasificación supervisada, las arquitecturas
 contrastivas muestran ventajas en recuperación multimodal y búsqueda
 semántica, los métodos basados en recuperación resultan competitivos en
-escenarios de cola larga diagnóstica y los \emph{ensembles} aportan
+escenarios de long tail diagnóstica y los \emph{ensembles} aportan
 sensibilidad adicional en tareas de seguridad clínica como el cribado de
 melanoma.
 
@@ -52,7 +52,7 @@ depende del objetivo perseguido: clasificación general, subcategorización
 clínica, recuperación de casos similares, segmentación, razonamiento
 multimodal o maximización de sensibilidad diagnóstica. En consecuencia,
 la pregunta relevante deja de ser \emph{qué modelo es el mejor} en
-términos absolutos y pasa a ser \emph{qué combinación de codificador,
+términos absolutos y pasa a ser \emph{qué combinación de encoder,
 estrategia de adaptación y mecanismo de inferencia resulta más adecuada
 para una tarea concreta}.
 
@@ -70,7 +70,7 @@ de inferencia empleado.
 \label{sec:disc-nivel-ontologico}
 
 El peso del preentrenamiento de dominio queda establecido por el
-sondeo lineal (sección~\ref{sec:rep-panderm},
+linear probe (sección~\ref{sec:rep-panderm},
 sección~\ref{sec:benchmark}): PanDerm Large supera a PanDerm Base con
 una mejora media de $+9{,}0$\,pp en BAcc sobre los diez datasets
 externos contrastados (tabla~\ref{tab:lp-panderm}). El detalle por
@@ -90,32 +90,32 @@ material clínico heterogéneo.
 
 Esta ventaja, sin embargo, no es uniforme entre niveles ontológicos.
 Sobre la cardinalidad clínica intermedia L2, DermLIP v2 se sitúa como
-la mejor cabeza individual, con una ventaja de $+6{,}7$\,pp de AUROC
+la mejor head individual, con una ventaja de $+6{,}7$\,pp de AUROC
 sobre PanDerm Large (sección~\ref{sec:dermapixel-ensemble}), y lidera
-también la AUROC L2 en régimen \emph{zero-shot} sin entrenar cabeza
+también la AUROC L2 en régimen \emph{zero-shot} sin entrenar head
 alguna (sección~\ref{sec:dermapixel-zs}). Ambos resultados sugieren
 que el preentrenamiento contrastivo texto-imagen de
 Derm1M~\cite{derm1m} captura la granularidad de subcategoría clínica
 con mayor fidelidad que el preentrenamiento auto-supervisado puro de
 la familia PanDerm. La jerarquía PanDerm Large $>$ DermLIP v2, válida
-en la mayoría de datasets, se invierte por tanto en L2: el codificador
+en la mayoría de datasets, se invierte por tanto en L2: el encoder
 óptimo depende del nivel ontológico objetivo.
 
 \subsubsection{Adaptación eficiente frente a ajuste denso}
 \label{sec:disc-lora-vs-ft}
 
-El ajuste fino parcial sobre DermapixelAI~1.0
+El fine-tuning parcial sobre DermapixelAI~1.0
 (sección~\ref{sec:dermapixel-ft-l1}), con un volumen de entrenamiento
 reducido ($N_{\mathrm{train}} = 874$), mejora sustancialmente la BAcc
-sobre el sondeo lineal congelado, pero no supera al \emph{ensemble}
-lineal de codificadores congelados, que lo aventaja en BAcc y AUROC
+sobre el linear probe congelado, pero no supera al \emph{ensemble}
+lineal de encoders congelados, que lo aventaja en BAcc y AUROC
 (tabla~\ref{tab:dermapixel-ensemble}). El patrón es coherente con la
 literatura sobre régimen de bajo $N$: combinar linealmente
-codificadores fundacionales congelados aprovecha la diversidad de sus
+encoders fundacionales congelados aprovecha la diversidad de sus
 representaciones sin añadir los parámetros que el ajuste denso debe
 estimar sobre un dataset reducido.
 
-La cabeza supervisada L2 de Dermapixel R0
+La head supervisada L2 de Dermapixel R0
 (sección~\ref{sec:dermapixel-spanderm-v0}) confirma esta lectura y
 aporta la cifra-ancla del argumento: la adaptación LoRA sobre los dos
 últimos bloques de PanDerm Large ---$524\,K$ parámetros entrenables,
@@ -125,11 +125,11 @@ dataset, y su AUROC L2 empata estadísticamente con la de DermLIP v2
 nativo (tabla~\ref{tab:dermapixel-ft-multilevel}). El ajuste denso,
 pese a su mayor parametrización, no supera a la adaptación de bajo
 rango sobre el mismo encoder; sobre L3, además, ningún protocolo de
-ajuste denso rebasa el techo que impone la cola larga estructural. La
+ajuste denso rebasa el techo que impone la long tail estructural. La
 implicación de diseño es directa y motiva la arquitectura de
 Dermapixel R0 (sección~\ref{sec:linea-spanderm}): en régimen de bajo
-$N$, la adaptación de bajo rango y la combinación de codificadores con
-cabezas ligeras son preferibles al ajuste fino denso clásico.
+$N$, la adaptación de bajo rango y la combinación de encoders con
+heads ligeras son preferibles al fine-tuning denso clásico.
 
 Más allá de sus métricas concretas, Dermapixel R0 demuestra que la
 especialización de un modelo fundacional al castellano mediante
@@ -141,10 +141,10 @@ grupos académicos, no sólo de grandes consorcios de investigación.
 \subsubsection{Retrieval frente a clasificación paramétrica}
 \label{sec:disc-retrieval}
 
-Una tercera fuente de especialización emerge sobre la cola larga, en
+Una tercera fuente de especialización emerge sobre la long tail, en
 el paradigma de clasificación. Dos observaciones la sostienen.
-Primero, CLIP-L-336, un codificador generalista sin material
-biomédico en su preentrenamiento, encabeza la AUROC bajo sondeo lineal
+Primero, CLIP-L-336, un encoder generalista sin material
+biomédico en su preentrenamiento, encabeza la AUROC bajo linear probe
 sobre L2 y L3 (repositorio reproducible, \ref{cap:repo}, sección~\ref{sec:repo-ablaciones}), lo que
 matiza la hipótesis de especialización de dominio cuando la métrica es
 el ranking probabilístico. Este resultado no contradice la ventaja
@@ -154,16 +154,16 @@ representación: la primera mide la ordenación probabilística y la
 segunda el acierto equilibrado por clase. Segundo, sustituir el clasificador
 paramétrico por \emph{retrieval} $k$-NN con índice FAISS sobre los
 mismos \emph{embeddings} de PanDerm Large
-(repositorio reproducible, \ref{cap:repo}, sección~\ref{sec:repo-ablaciones}) supera al sondeo lineal en
-el régimen de cola larga severa L3, donde el escaso número de muestras
+(repositorio reproducible, \ref{cap:repo}, sección~\ref{sec:repo-ablaciones}) supera al linear probe en
+el régimen de long tail severa L3, donde el escaso número de muestras
 por clase penaliza a los clasificadores paramétricos. La recuperación
 por vecindad, además, es operativamente atractiva: no exige reentrenar
-una cabeza al incorporar clases nuevas y permite mostrar los casos
+una head al incorporar clases nuevas y permite mostrar los casos
 similares que sustentan la predicción. Ambas observaciones cierran la
 lectura: la elección óptima debe condicionarse al nivel ontológico y
-al criterio operativo predominante, no a un codificador o clasificador
+al criterio operativo predominante, no a un encoder o clasificador
 presupuesto como universal. Esta lectura sobre L3 debe entenderse, no
-obstante, como indicio y no como ordenación cerrada: la cola larga
+obstante, como indicio y no como ordenación cerrada: la long tail
 extrema y el tamaño reducido del conjunto de test en ese nivel
 (sección~\ref{sec:lim-dermapixel}) limitan la fuerza de cualquier
 ranking sobre L3.
@@ -195,7 +195,7 @@ Sobre este material se generan los resultados de las
 secciones~\ref{sec:dermapixel-results}--\ref{sec:dermapixel-extra-sintesis}.
 
 La interpretación se acota a una primera versión de tamaño limitado y
-cola larga marcada a nivel L3, por lo que las cifras derivadas se
+long tail marcada a nivel L3, por lo que las cifras derivadas se
 respaldan en la estimación robusta discutida en
 sección~\ref{sec:disc-cv-robustez} y no se extrapolan directamente a la
 práctica asistencial.
@@ -213,7 +213,7 @@ recupera ya el $96{,}2\%$ de la AUROC final y $14$ imágenes el
 $95{,}5\%$ sobre PAD-UFES-20---, mientras que la \emph{balanced
 accuracy} sigue mejorando con el volumen porque las clases minoritarias
 aún se benefician de más ejemplos. Gran parte del conocimiento visual
-relevante está, por tanto, internalizado en el codificador, y el
+relevante está, por tanto, internalizado en el encoder, y el
 clasificador supervisado sólo lo calibra.
 
 Este comportamiento tiene una consecuencia práctica importante. En los
@@ -229,37 +229,37 @@ Desde una perspectiva clínica, el resultado es especialmente relevante
 para enfermedades raras, centros con bajo volumen asistencial o
 subgrupos infrarrepresentados, donde la obtención de miles de
 anotaciones expertas es poco realista. Los datos sugieren que una
-estrategia basada en codificadores fundacionales especializados y
-cabezas ligeras puede ofrecer rendimientos cercanos al máximo alcanzable
+estrategia basada en encoders fundacionales especializados y
+heads ligeras puede ofrecer rendimientos cercanos al máximo alcanzable
 incluso en escenarios de escasez de datos. Esta observación refuerza una
 de las ideas centrales del trabajo: en dermatología, el cuello de
 botella deja de ser necesariamente la disponibilidad de etiquetas y pasa
 a ser, en muchos escenarios, la calidad del preentrenamiento del que se
 parte.
 
-\subsection{Sondeo lineal frente a ajuste fino}
+\subsection{Linear probe frente a fine-tuning}
 \label{sec:disc-lp-vs-ft}
 
 La elección entre congelar el encoder o reentrenarlo no tiene una
 respuesta única, y esta subsección discute de qué depende. La
-comparación directa entre sondeo lineal y ajuste fino sobre cuatro
+comparación directa entre linear probe y fine-tuning sobre cuatro
 datasets (sección~\ref{sec:ft-results},
 tabla~\ref{tab:ft-panderm}) revela un patrón asimétrico con
 implicaciones para el diseño de sistemas clínicos. Sobre HAM10000 y
 PAD-UFES-20, datasets de tamaño intermedio o alto
-($N \in [1\,493, 8\,207]$), el ajuste fino mejora la BAcc en
+($N \in [1\,493, 8\,207]$), el fine-tuning mejora la BAcc en
 $+47{,}1$\,pp y $+19{,}4$\,pp respectivamente. Esto confirma la
 utilidad de la receta original de PanDerm ---\emph{weighted random
 sampler}, Mixup, CutMix y \emph{layer decay}--- para aprender las
 clases minoritarias bajo desbalance acusado.
 
 El comportamiento se invierte cuando el dataset es pequeño. Sobre
-DDI ($N_{\mathrm{train}} = 427$), el sondeo lineal supera al ajuste
+DDI ($N_{\mathrm{train}} = 427$), el linear probe supera al ajuste
 fino en las cuatro métricas, con un descenso de AUROC
 especialmente diagnóstico ($0{,}827 \to 0{,}682$): el encoder ajustado
 pierde capacidad de \emph{ranking} sobre el \emph{test}, compatible con
 sobreajuste pese a las augmentaciones. Sobre MSKCC la mejora es
-marginal. La asimetría admite una explicación común: el ajuste fino
+marginal. La asimetría admite una explicación común: el fine-tuning
 sólo rentabiliza su mayor capacidad cuando el conjunto basta para
 estimar los nuevos pesos sin memorizar la distribución; por debajo de
 ese umbral, congelar el encoder actúa como regularización implícita y
@@ -268,9 +268,9 @@ preserva la capacidad de \emph{ranking} heredada del preentrenamiento.
 Estos tres casos delimitan un régimen operativo cuantificable. Para
 datasets con $N_{\mathrm{train}} \lesssim 500$ imágenes, el sondeo
 lineal sobre PanDerm Large es la opción de referencia. Para
-$N_{\mathrm{train}} \gtrsim 5\,000$, el ajuste fino con la receta
+$N_{\mathrm{train}} \gtrsim 5\,000$, el fine-tuning con la receta
 original es preferible, siempre que existan clases minoritarias
-clínicamente relevantes que el sondeo lineal no logre discriminar.
+clínicamente relevantes que el linear probe no logre discriminar.
 Entre ambos regímenes, la decisión depende del desbalance de clases
 y del coste computacional asumible.
 
@@ -283,7 +283,7 @@ intermedia que materializa la arquitectura de Dermapixel R0
 tres estrategias en una regla escalonada por volumen de datos: sondeo
 lineal con $N_{\mathrm{train}} \lesssim 500$; LoRA en el régimen
 intermedio, preferible al ajuste denso por su menor exposición al
-sobreajuste; y ajuste fino denso con la receta original sólo con
+sobreajuste; y fine-tuning denso con la receta original sólo con
 $N_{\mathrm{train}} \gtrsim 5\,000$ y clases minoritarias clínicamente
 relevantes. La capacidad del modelo a desplegar se escala, por tanto,
 con los datos disponibles.
@@ -294,12 +294,12 @@ con los datos disponibles.
 La segmentación aporta el hallazgo de mayor magnitud absoluta del
 trabajo, y conviene discutir tanto su alcance como su origen. Sobre
 ISIC2018 (sección~\ref{sec:seg-results}, tabla~\ref{tab:seg}),
-SAM2.1-Large con \emph{fine-tuning} de su decodificador alcanza
+SAM2.1-Large con fine-tuning de su decoder alcanza
 Dice $0{,}947$ en el conjunto de test. Supera en $+2{,}6$\,pp la
 cifra publicada por Yan et~al.~\cite{panderm2025} ($0{,}921$) y
 en $+5{,}3$\,pp al baseline CAE-seg con backbone PanDerm Large
 entrenado desde cero ($0{,}894$). El ajuste mantiene congelado el
-\emph{image\_encoder} y entrena sólo el decodificador de máscaras y
+\emph{image\_encoder} y entrena sólo el decoder de máscaras y
 el \emph{promptable encoder}. Por eso los pesos actualizados se
 limitan a $\sim 4{,}2$\,M sobre los $\sim 227$\,M de
 SAM2.1-Large (menos del $2\%$), con un coste computacional bajo.
@@ -308,12 +308,12 @@ La transferencia fuera de dominio es prácticamente nula: el Dice apenas
 varía sobre ISIC2017 y PH2 respecto a ISIC2018. Este patrón sugiere que
 las representaciones del encoder visual congelado (Hiera-Large) codifican
 primitivas geométricas y de contorno suficientemente generales, de modo
-que el ajuste del decodificador de máscaras y del \emph{promptable
+que el ajuste del decoder de máscaras y del \emph{promptable
 encoder} captura los matices del dominio dermatoscópico sin sobreajustar a
 una fuente de adquisición concreta. La magnitud del efecto de la
 adaptación de dominio, cuantificada en sección~\ref{sec:seg-results}
 frente a SAM2 \emph{zero-shot}, confirma que el coste de adaptación se
-concentra en el decodificador y no en el encoder.
+concentra en el decoder y no en el encoder.
 
 La comparativa pareada de arquitecturas promptables
 (sección~\ref{sec:seg-arquitecturas},
@@ -369,22 +369,22 @@ ligera sobreconfianza en los bordes dudosos---: alcanzado el entorno de
 $0{,}95$ frente a una referencia única, el margen de mejora técnica queda
 condicionado por la incertidumbre de la anotación clínica.
 
-\subsection{Sensibilidad al tokenizador en zero-shot multimodal}
+\subsection{Sensibilidad al tokenizer en zero-shot multimodal}
 \label{sec:disc-zs}
 
 El rendimiento zero-shot no depende sólo del modelo, sino de cómo se
 le interroga. La evaluación sobre HAM10000
 (sección~\ref{sec:zs-results}) revela una
-sensibilidad acusada al tokenizador y a la formulación de los
+sensibilidad acusada al tokenizer y a la formulación de los
 \emph{prompts}. La AUROC oscila entre $0{,}366$ (DermLIP v1/v2 con
-tokenizador PubMedBERT y \emph{prompts} genéricos) y $0{,}854$
-(DermLIP original con tokenizador GPT-2/CLIP y \emph{prompts} A3 de
+tokenizer PubMedBERT y \emph{prompts} genéricos) y $0{,}854$
+(DermLIP original con tokenizer GPT-2/CLIP y \emph{prompts} A3 de
 Derm1M). Es un rango de $48{,}8$\,pp para variaciones que no tocan
 los pesos visuales, sino sólo la rama lingüística y la formulación
 textual de las clases.
 
 A diferencia de los clasificadores supervisados convencionales, donde
-la etiqueta final se obtiene a partir de una cabeza entrenada
+la etiqueta final se obtiene a partir de una head entrenada
 explícitamente para la tarea, los sistemas \emph{vision}-lenguaje
 \emph{zero-shot} realizan una comparación geométrica entre
 \emph{embeddings} visuales y textuales. En consecuencia, la calidad de
@@ -399,19 +399,19 @@ espacio visual del encoder de DermLIP v1/v2, hasta el punto de invertir la
 correlación respecto a la tarea de clasificación. El experimento de
 modificaciones aisladas (sección~\ref{sec:zs-results}) permite atribuir la
 recuperación del rendimiento a la combinación de dos factores ---el cambio
-de tokenizador y el cambio al conjunto de \emph{prompts} A3---, sin que la
+de tokenizer y el cambio al conjunto de \emph{prompts} A3---, sin que la
 evidencia disponible permita aislar una causa única de forma concluyente,
 puesto que ambos operan sobre la misma rama textual. La lectura no debe,
 por tanto, formularse como causalidad absoluta de un único componente,
-sino como el efecto conjunto del tokenizador, los \emph{prompts} y el
+sino como el efecto conjunto del tokenizer, los \emph{prompts} y el
 alineamiento texto-imagen resultante. Los resultados sugieren que, en
 régimen \emph{zero-shot}, la rama textual deja de ser un mecanismo de
 entrada y pasa a formar parte efectiva del modelo de decisión: desde
-esta perspectiva, el tokenizador, los \emph{prompts} y el encoder
+esta perspectiva, el tokenizer, los \emph{prompts} y el encoder
 textual no son hiperparámetros externos, sino componentes funcionales
 del clasificador. De aquí se sigue una implicación práctica directa: todo despliegue \emph{zero-shot} debe validar
 empíricamente, sobre un conjunto del dominio, no sólo el modelo sino
-también su tokenizador y la formulación de los \emph{prompts}, porque la
+también su tokenizer y la formulación de los \emph{prompts}, porque la
 transferencia desde la configuración publicada por los autores no está
 garantizada. El experimento cuestiona, además, una práctica habitual en
 la literatura multimodal: reportar resultados \emph{zero-shot} utilizando
@@ -431,7 +431,7 @@ la misma comparación. BiomedCLIP, en cambio, mantiene Acc@1
 $= 0{,}389$ en ambos idiomas. Esto sitúa la penalización por
 castellano como dependiente del dataset textual de preentrenamiento.
 La magnitud de la caída motiva, como línea futura inmediata,
-construir modelos vision-lenguaje contrastivos con rama textual
+construir modelos vision-language contrastivos con rama textual
 entrenada sobre material clínico en castellano. Esta penalización
 proporciona, además, una posible explicación mecanística para parte de
 los resultados obtenidos posteriormente con Dermapixel R0
@@ -451,7 +451,7 @@ los especialistas. La comparación de paradigmas sobre HAM10000
 (sección~\ref{sec:llm-results}) muestra lo contrario y fija un orden de
 magnitud entre familias relevante para elegir arquitectura en
 escenarios clínicos. El gradiente de accuracy entre el mejor
-especialista ajustado (PanDerm Base con ajuste fino y \emph{test-time
+especialista ajustado (PanDerm Base con fine-tuning y \emph{test-time
 augmentation}) y el mejor LLM multimodal \emph{zero-shot} (GPT-4o)
 supera los $43$\,pp; el desglose de la escala completa de
 configuraciones intermedias figura en el repositorio reproducible
@@ -558,8 +558,8 @@ modelo. En varios experimentos, modificaciones en el diseño del sistema
 ---tokenización, \emph{prompts}, estrategia de adaptación, estructura
 ontológica, equilibrio de clases, recuperación por similitud o
 validación por subgrupos--- producen variaciones comparables o
-superiores a las obtenidas al sustituir el codificador visual. Estas
-decisiones, más que la elección aislada de un codificador, determinan el
+superiores a las obtenidas al sustituir el encoder visual. Estas
+decisiones, más que la elección aislada de un encoder, determinan el
 rendimiento alcanzable, y la lectura desplaza parcialmente el foco desde
 el diseño del modelo hacia el diseño del sistema completo.
 
@@ -632,7 +632,7 @@ la matizan y cuáles aportan evidencia nueva.
 Yan et~al.~\cite{panderm2025} reportan para PanDerm Large una mejora
 media del $+10{,}2\%$ sobre el estado del arte previo a través de los
 $28$ \emph{downstream tasks} de su benchmark interno. Las cifras de
-sondeo lineal de este trabajo sobre los datasets compartidos (HAM10000,
+linear probe de este trabajo sobre los datasets compartidos (HAM10000,
 PAD-UFES-20 y Derm7pt; tabla~\ref{tab:lp-panderm}) se sitúan dentro de
 ese rango y reproducen las relaciones de rendimiento entre PanDerm Base
 y Large, pese a ejecutarse sobre una plataforma distinta de la original
@@ -652,12 +652,12 @@ utilizados durante su desarrollo.
 \subsection{Segmentación binaria de lesión}
 \label{sec:lit-seg}
 
-En segmentación, SAM2.1-Large con \emph{fine-tuning} del decodificador
+En segmentación, SAM2.1-Large con fine-tuning del decoder
 sobre ISIC2018 alcanza Dice $= 0{,}947$, $+2{,}6$\,pp sobre el resultado
 de Yan et~al.~\cite{panderm2025} ($0{,}921$). La diferencia es atribuible
 a la señal espacial explícita de la \emph{bounding box}, al encoder
 Hiera-Large preentrenado a gran escala y a la adaptación restringida al
-decodificador, que concentra la capacidad de ajuste y reduce el
+decoder, que concentra la capacidad de ajuste y reduce el
 sobreajuste. La comparación pareada entre arquitecturas
 (sección~\ref{sec:seg-arquitecturas}) y el control sin caja
 (sección~\ref{sec:seg-control-automatico}) refuerzan que el determinante
@@ -681,7 +681,7 @@ El comportamiento zero-shot es consistente con la literatura previa
 sobre modelos contrastivos dermatológicos pero la matiza: DermLIP
 alcanza AUROC comparable a la reportada en Derm1M~\cite{derm1m} (máxima
 $0{,}854$ sobre HAM10000) cuando se emplea una configuración textual
-alineada con su desarrollo, mientras que la sensibilidad al tokenizador
+alineada con su desarrollo, mientras que la sensibilidad al tokenizer
 y a la formulación de los \emph{prompts} (sección~\ref{sec:disc-zs})
 ---hasta $48{,}8$\,pp de AUROC sobre el mismo encoder visual--- muestra
 que la alineación texto-imagen es un componente crítico. Dado que la
@@ -712,7 +712,7 @@ piel continúa siendo un problema abierto incluso en los modelos
 fundacionales dermatológicos más recientes.
 
 La aportación de este trabajo reside en comparar esa disparidad de forma
-homogénea entre cinco familias de codificadores bajo un mismo protocolo,
+homogénea entre cinco familias de encoders bajo un mismo protocolo,
 lo que revela que la relación entre rendimiento global y equidad no es
 directa: la paradoja de BiomedCLIP ---menor \emph{gap} con peor
 rendimiento global--- muestra que un modelo uniformemente mediocre puede
@@ -758,19 +758,19 @@ arquitectura técnicamente defendible para sistemas de apoyo al
 diagnóstico dermatológico construidos sobre los modelos
 fundacionales disponibles. La estructura recomendable es la
 siguiente. El encoder es PanDerm Large preentrenado, congelado por
-defecto y ajustado sólo bajo demanda. La cabeza es una regresión
+defecto y ajustado sólo bajo demanda. La head es una regresión
 logística multi-clase (L-BFGS, $C=1{,}0$,
 \texttt{max\_iter}~$=5\,000$) cuando el dataset de entrenamiento es
-reducido ($N_{\mathrm{train}} \lesssim 500$), o una cabeza
+reducido ($N_{\mathrm{train}} \lesssim 500$), o una head
 ajustada con la receta de PanDerm Large (Mixup, CutMix,
 \emph{weighted random sampler}, $50$ épocas) cuando
 $N_{\mathrm{train}} \gtrsim 5\,000$ y existe desbalance acusado.
 La segmentación se resuelve con SAM2.1-Large adaptado mediante
-\emph{fine-tuning} del decodificador cuando la tarea requiera
+fine-tuning del decoder cuando la tarea requiera
 localizar la lesión.
 
 Las ramas textuales se incorporan con cautela. La rama lingüística
-contrastiva (DermLIP) sólo entra con prompts validados y tokenizador
+contrastiva (DermLIP) sólo entra con prompts validados y tokenizer
 compatible, verificado sobre un conjunto de validación del dominio.
 La rama LLM multimodal generalista (GPT-4o, Gemini, MedGemma) no se
 usa como clasificador principal, dado el orden de magnitud de
@@ -783,22 +783,22 @@ La consecuencia de diseño que se desprende del conjunto de hallazgos
 (sección~\ref{sec:hallazgos}) es que la arquitectura defendible es
 modular, no un modelo único: PanDerm Large para la transferencia visual
 general, adaptación LoRA para la subcategoría clínica bajo $N$ reducido,
-\emph{retrieval} FAISS para la cola larga, SAM2.1 para la segmentación y
+\emph{retrieval} FAISS para la long tail, SAM2.1 para la segmentación y
 un \emph{ensemble} acotado para el cribado de melanoma, seleccionando el
 componente según la tarea y el nivel ontológico. Sobre esta estructura,
 dos validaciones son condición necesaria antes del despliegue: la de los
-\emph{prompts} y el tokenizador de cualquier rama contrastiva sobre un
+\emph{prompts} y el tokenizer de cualquier rama contrastiva sobre un
 conjunto del dominio, dada la sensibilidad documentada en
 sección~\ref{sec:disc-zs}, y la validación por fototipo cutáneo
 (sección~\ref{sec:disc-equidad}).
 
 Esta arquitectura modular hereda, por último, una decisión taxonómica:
 la comparación inter-dataset es defendible a nivel L1 y L2 sobre el
-dataset armonizado, mientras que el nivel L3 conserva la cola larga
+dataset armonizado, mientras que el nivel L3 conserva la long tail
 propia de cada dataset y no admite contrastes directos sin agregación
 (sección~\ref{sec:ontologia}). La implicación para producción es
 presentar al usuario clínico la predicción L3 junto a su agregación L2 y
-L1, lo que da robustez frente a la incertidumbre de la cola larga sin
+L1, lo que da robustez frente a la incertidumbre de la long tail sin
 sacrificar especificidad cuando ésta es fiable. Y, dado el \emph{gap}
 por fototipo (sección~\ref{sec:disc-equidad}), desplegar sobre
 poblaciones con representación significativa de fototipos elevados exige
@@ -814,7 +814,7 @@ y conviene discutir tanto su valor como sus costes. El protocolo
 auxiliar de ensemble (repositorio reproducible, \ref{cap:repo},
 sección~\ref{sec:repo-prototipo}) muestra que la combinación OR
 \emph{top-3} de PanDerm Large \emph{fine-tuned} sobre HAM10000 (M1)
-y SigLIP-Large SO400M con sondeo lineal alcanza \emph{recall} de
+y SigLIP-Large SO400M con linear probe alcanza \emph{recall} de
 melanoma del $100\%$ ($70$ de $70$) sobre el \emph{split} de
 test de HAM10000. El análisis de errores explica por qué: los dos
 melanomas que M1 no captura en \emph{top-3} sí los captura SigLIP,
@@ -860,27 +860,27 @@ capítulo~\ref{cap:limitaciones}, contradicen una expectativa previa
 razonable. Por ese motivo merecen atención específica como aportaciones
 empíricas con entidad propia.
 
-\paragraph{Sensibilidad extrema al tokenizador y al \emph{prompt}.}
+\paragraph{Sensibilidad extrema al tokenizer y al \emph{prompt}.}
 La AUROC \emph{zero-shot} de la familia DermLIP sobre HAM10000 varía en un
 rango comparable al de cambiar de paradigma completo, sin modificar los
-pesos del encoder visual, en función del tokenizador y de la formulación
+pesos del encoder visual, en función del tokenizer y de la formulación
 de los \emph{prompts} (sección~\ref{sec:disc-zs}). Esta sensibilidad no
 está cuantificada de forma sistemática en la literatura previa sobre
 DermLIP y desplaza parte de la atención metodológica del modelo hacia su
 configuración operativa.
 
-\paragraph{Retrieval competitivo en la cola larga L3.}
+\paragraph{Retrieval competitivo en la long tail L3.}
 La sustitución del clasificador lineal por \emph{retrieval} $k$-NN con
 índice FAISS sobre los mismos \emph{embeddings} PanDerm Large supera al
-sondeo lineal en el régimen de cola larga severa L3 de DermapixelAI~1.0
+linear probe en el régimen de long tail severa L3 de DermapixelAI~1.0
 (repositorio reproducible, \ref{cap:repo}, sección~\ref{sec:repo-ablaciones}). El hallazgo indica que, cuando
 el número de muestras por clase es muy bajo, un esquema no paramétrico
 basado en vecindad puede ser preferible al ajuste de una frontera de
 decisión paramétrica.
 
-\paragraph{Sondeo lineal supera al ajuste fino en DDI.}
-Sobre DDI ($N_{\mathrm{train}} = 427$), el sondeo lineal sobre PanDerm
-Large supera al ajuste fino en accuracy, AUROC, BAcc y F1 ponderada
+\paragraph{Linear probe supera al fine-tuning en DDI.}
+Sobre DDI ($N_{\mathrm{train}} = 427$), el linear probe sobre PanDerm
+Large supera al fine-tuning en accuracy, AUROC, BAcc y F1 ponderada
 (sección~\ref{sec:disc-lp-vs-ft}). El comportamiento, atribuible a
 sobreajuste bajo $N$ reducido, no se documenta de forma explícita en la
 literatura sobre PanDerm y ofrece una heurística operativa para datasets
@@ -927,11 +927,11 @@ investigación, no sobre adquisición prospectiva en flujo asistencial;
 la denominación de Dermapixel R0 como primera adaptación en español,
 afirmación de prioridad acotada a su categoría
 (sección~\ref{sec:linea-spanderm}); y el tamaño moderado de
-DermapixelAI~1.0, cuya cola larga L3 obliga a leer ese nivel como
+DermapixelAI~1.0, cuya long tail L3 obliga a leer ese nivel como
 evidencia exploratoria (sección~\ref{sec:lim-dermapixel}). Estas
 limitaciones acotan el dominio de validez de las cifras, pero no
 invalidan los patrones cualitativos identificados: la ventaja del
-preentrenamiento de dominio, la saturación temprana del sondeo lineal,
+preentrenamiento de dominio, la saturación temprana del linear probe,
 el umbral $N_{\mathrm{train}} \lesssim 500$ de preferencia del LP, la
 brecha frente a los LLMs multimodales generalistas y el \emph{gap} por
 fototipo sistemático entre encoders.

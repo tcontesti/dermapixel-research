@@ -193,7 +193,7 @@ de representar los principales paradigmas actualmente utilizados en
 visión artificial y aprendizaje multimodal aplicado a dermatología.
 La comparación combina modelos específicamente entrenados para
 dermatología, modelos visuales generalistas de referencia,
-arquitecturas visión-lenguaje biomédicas y modelos multimodales de
+arquitecturas vision-language biomédicas y modelos multimodales de
 propósito general. Esta diversidad permite evaluar hasta qué punto
 la especialización dermatológica aporta ventajas medibles frente a
 modelos más generales y situar el rendimiento de los modelos
@@ -202,7 +202,7 @@ inteligencia artificial médica.
 
 La tabla~\ref{tab:modelos} resume los dieciséis sistemas evaluados:
 catorce modelos fundacionales ---encoders visuales de dominio
-(PanDerm) y generales (DINOv2), modelos visión-lenguaje (la familia
+(PanDerm) y generales (DINOv2), modelos vision-language (la familia
 DermLIP, BiomedCLIP y SigLIP), el segmentador promptable SAM2.1 y
 los modelos de lenguaje multimodales (GPT-4o, Gemini~2.5~Pro,
 MedGemma y BLIP-2)--- y dos líneas de base de redes convolucionales
@@ -226,17 +226,17 @@ PanDerm Large               & Encoder visual derm.       & $\sim 307$\,M & \cite
 DINOv2 ViT-L/14             & Encoder visual general     & $\sim 300$\,M & \cite{dinov2} \\
 ConvNeXt-Large              & ConvNet supervisada        & $\sim 198$\,M & --- \\
 EfficientNetV2-Large        & ConvNet supervisada        & $\sim 118$\,M & --- \\
-DermLIP v1 (PubMedBERT)     & Vision-lenguaje derm.      & --- & \cite{derm1m} \\
-DermLIP v2 (PubMedBERT)     & Vision-lenguaje derm.      & --- & \cite{derm1m} \\
-DermLIP original (GPT-2)    & Vision-lenguaje derm.      & --- & \cite{derm1m} \\
-BiomedCLIP                  & Vision-lenguaje biomédico  & --- & \cite{biomedclip} \\
-SigLIP-Large SO400M         & Vision-lenguaje general    & $\sim 878$\,M & \cite{siglip2023} \\
+DermLIP v1 (PubMedBERT)     & Vision-language derm.      & --- & \cite{derm1m} \\
+DermLIP v2 (PubMedBERT)     & Vision-language derm.      & --- & \cite{derm1m} \\
+DermLIP original (GPT-2)    & Vision-language derm.      & --- & \cite{derm1m} \\
+BiomedCLIP                  & Vision-language biomédico  & --- & \cite{biomedclip} \\
+SigLIP-Large SO400M         & Vision-language general    & $\sim 878$\,M & \cite{siglip2023} \\
 SAM2.1-Large (decoder FT)   & Segmentación               & $\sim 227$\,M & \cite{sam2} \\
 GPT-4o                      & LLM multimodal             & no público & --- \\
 Gemini 2.5 Pro              & LLM multimodal             & no público & --- \\
 MedGemma 4B Vision          & LLM multimodal biomédico   & $\sim 4$\,B & --- \\
 MedGemma 27B Text+LoRA      & LLM multimodal biomédico   & $\sim 27$\,B & --- \\
-BLIP-2 (Q-Former)           & Vision-lenguaje general    & --- & \cite{blip2_2023} \\
+BLIP-2 (Q-Former)           & Vision-language general    & --- & \cite{blip2_2023} \\
 \hline
 \end{tabular}
 \end{table}
@@ -246,12 +246,12 @@ $768$ en PanDerm Base; $1\,024$ en PanDerm Large y DINOv2
 ViT-L/14; $1\,152$ en SigLIP-Large SO400M. La cifra de
 $\sim 307$\,M parámetros de PanDerm Large es el valor nominal del
 ViT-L/16 publicado por sus autores. Al cargarlo como extractor de
-características y sustituir la cabeza original por la identidad
+características y sustituir la head original por la identidad
 quedan $303{,}3$\,M parámetros efectivos. Esta diferencia no afecta
-al rendimiento, porque la cabeza descartada no interviene en la
+al rendimiento, porque la head descartada no interviene en la
 inferencia. La familia DermLIP usa ViT-B/16 como encoder visual y
 dos encoders textuales alternativos: PubMedBERT extendido a $256$
-tokens (variantes v1 y v2) y GPT-2 con tokenizador de CLIP a $77$
+tokens (variantes v1 y v2) y GPT-2 con tokenizer de CLIP a $77$
 tokens (variante original). DermFM-Zero~\cite{dermfmzero2026} se
 incluye en la discusión pero no en la evaluación empírica, ya que
 sus pesos no estaban disponibles a la fecha de cierre.
@@ -274,10 +274,10 @@ software queda fijado en Python~3.12.3, PyTorch~2.11.0,
 FAISS~\cite{faiss2019}.
 
 Los tiempos de cálculo característicos sobre este equipo orientan
-sobre el coste de cada protocolo: un sondeo lineal completo de un
+sobre el coste de cada protocolo: un linear probe completo de un
 encoder sobre un dataset estándar tarda $1$--$3$ minutos; el
-ajuste fino de PanDerm Large sobre HAM10000 ($50$ épocas con TTA),
-unas $15$ horas; el ajuste fino del decodificador de SAM2.1-Large
+fine-tuning de PanDerm Large sobre HAM10000 ($50$ épocas con TTA),
+unas $15$ horas; el fine-tuning del decoder de SAM2.1-Large
 sobre ISIC2018 ($50$ épocas), unas $24$ horas; la validación
 cruzada de cinco pliegues del modelo de segmentación, con la
 ablación de rango \emph{LoRA} asociada, unas $18$ horas; y el
@@ -392,7 +392,7 @@ exactamente las mismas imágenes, sus aciertos y errores están ligados;
 tratar sus dos AUROC como si procedieran de muestras independientes
 haría parecer las diferencias más significativas de lo que son. El
 test de DeLong tiene en cuenta esa relación y produce una comparación
-pareada correcta. Se aplica a los contrastes entre codificadores sobre
+pareada correcta. Se aplica a los contrastes entre encoders sobre
 tres tareas binarias de detección de malignidad ---Fitzpatrick17k,
 HAM10000 y DermapixelAI~1.0--- (sección~\ref{sec:equidad-delong};
 tabla detallada en el repositorio reproducible, \ref{sec:repo-tablas}).
@@ -451,7 +451,7 @@ Sin asignar & $565$ & $61$ \\
 ($1\,089$ imágenes, $669$ casos). El vocabulario común declara $4$
 categorías etiológicas L1, $43$ subcategorías clínicas L2 y $367$
 diagnósticos L3; el dataset armonizado de los doce externos aporta
-$72\,654$ imágenes mapeadas a ese vocabulario. La cola larga L3
+$72\,654$ imágenes mapeadas a ese vocabulario. La long tail L3
 concentra $64$ clases con una sola imagen, $129$ con dos a cinco, $39$
 con seis a diez, $11$ con once a veinte y $7$ con veintiuna o más.}
 \label{tab:muestral-nivel}
@@ -469,11 +469,11 @@ L3 & $367$ & $250$ \\
 Conviene aclarar que este aparato estadístico no se aplica por igual
 en todo el trabajo. El test de DeLong y la corrección por
 comparaciones múltiples se usan allí donde comparar modelos es el
-objetivo central ---el ranking de codificadores en detección de
+objetivo central ---el ranking de encoders en detección de
 malignidad (sección~\ref{sec:equidad-delong})---, y los intervalos por
 \emph{bootstrap} acompañan a las métricas principales sobre
 DermapixelAI~1.0 y a la validación cruzada de segmentación. Otros
-bloques ---el sondeo lineal sobre los datasets externos, la eficiencia
+bloques ---el linear probe sobre los datasets externos, la eficiencia
 en etiquetas y la equidad por fototipo--- se presentan como una sola
 estimación, sin repetirla con varias semillas
 (sección~\ref{sec:lim-semilla}). Por eso las afirmaciones se gradúan
@@ -493,9 +493,9 @@ de una ejecución concreta. Tres mecanismos articulan esta garantía.
 
 El primero es el determinismo de la ejecución. Las semillas
 aleatorias se fijan a $0$ para \texttt{torch}, \texttt{numpy} y
-\texttt{random} en \emph{fine-tuning} y segmentación, y a $42$ en
+\texttt{random} en fine-tuning y segmentación, y a $42$ en
 \texttt{random\_state} para los protocolos basados en
-\texttt{scikit-learn} (sondeo lineal, eficiencia en etiquetas,
+\texttt{scikit-learn} (linear probe, eficiencia en etiquetas,
 equidad). El entorno queda fijado a las versiones de
 sección~\ref{sec:infraestructura}, y cualquier desviación se
 documenta en el experimento afectado. Por último, se deshabilita la
@@ -510,7 +510,7 @@ capítulo~\ref{cap:resultados} sin reejecutar nada, y los mapeos de
 etiquetas nativas a la ontología L1/L2/L3 se mantienen fijos entre
 experimentos. El tercero es la integridad de la cadena de cómputo:
 cuando un experimento toma como entrada la salida de otro ---por
-ejemplo, los \emph{embeddings} del sondeo lineal alimentan la rama
+ejemplo, los \emph{embeddings} del linear probe alimentan la rama
 visual del zero-shot---, la identidad de esa entrada se preserva
 mediante hash MD5 del fichero. El encadenamiento por hash convierte
 el conjunto de experimentos en un grafo de dependencias verificable:
@@ -526,8 +526,8 @@ repositorio reproducible (\ref{cap:repo}, sección~\ref{sec:repo-reproducibilida
 
 Los experimentos se organizan en cuatro bloques. El primero mide la
 calidad y la adaptabilidad de las representaciones visuales: el
-sondeo lineal evalúa lo que capturan los encoders congelados, el
-ajuste fino su rendimiento máximo tras adaptación supervisada, y la
+linear probe evalúa lo que capturan los encoders congelados, el
+fine-tuning su rendimiento máximo tras adaptación supervisada, y la
 eficiencia en etiquetas cuántos datos anotados hacen falta para
 alcanzarlo. El segundo aborda la localización espacial de la lesión
 mediante segmentación. El tercero examina la capacidad multimodal: la
@@ -548,18 +548,18 @@ cifras son comparables entre sí.
 \renewcommand{\arraystretch}{1.15}
 \caption{Resumen de los experimentos: la pregunta que responde cada
 uno y su alcance en modelos y datasets. DermapixelAI~1.0 se evalúa
-además en sondeo lineal y \emph{zero-shot}
+además en linear probe y \emph{zero-shot}
 (secciones~\ref{sec:dermapixel-results} y~\ref{sec:dermapixel-zs}).}
 \label{tab:experimentos}
 \begin{tabular}{p{2.5cm}p{3.7cm}p{2.9cm}p{3.4cm}}
 \hline
 Experimento & Pregunta & Modelos & Datasets \\
 \hline
-Sondeo lineal (\ref{sec:lp})
+Linear probe (\ref{sec:lp})
   & Calidad de las representaciones congeladas
   & $8$ encoders visuales
   & $10$ externos de clasificación \\
-Ajuste fino (\ref{sec:ft})
+Fine-tuning (\ref{sec:ft})
   & Rendimiento máximo tras adaptación supervisada
   & PanDerm Base/Large
   & HAM10000, PAD-UFES-20, DDI, MSKCC \\
@@ -587,10 +587,10 @@ Equidad por fototipo (\ref{sec:equidad})
 \end{tabular}
 \end{table}
 
-\subsection{Sondeo lineal (LP)}
+\subsection{Linear probe (LP)}
 \label{sec:lp}
 
-El sondeo lineal mide el valor de las representaciones de un encoder
+El linear probe mide el valor de las representaciones de un encoder
 sin modificarlo: se congela el encoder y se entrena un clasificador
 lineal sobre los \emph{embeddings} que extrae. La extracción aplica
 la normalización canónica de cada modelo —parámetros ImageNet para
@@ -605,11 +605,11 @@ El protocolo se aplica a PanDerm Base y Large, DINOv2,
 ConvNeXt-Large, EfficientNetV2-Large y la rama visual de DermLIP v2,
 BiomedCLIP y SigLIP-Large.
 
-\subsection{Ajuste fino supervisado (FT)}
+\subsection{Fine-tuning supervisado (FT)}
 \label{sec:ft}
 
-A diferencia del sondeo lineal, el ajuste fino sí modifica el
-encoder: entrena de forma conjunta el encoder visual y una cabeza de
+A diferencia del linear probe, el fine-tuning sí modifica el
+encoder: entrena de forma conjunta el encoder visual y una head de
 clasificación. La receta reproduce la del paper original de
 PanDerm~\cite{panderm2025}, para que la comparación sea directa:
 optimizador AdamW con \emph{cosine annealing} y \emph{warmup}
@@ -630,7 +630,7 @@ PAD-UFES-20, DDI y MSKCC.
 
 Este protocolo responde a una pregunta práctica: cuántas etiquetas
 hacen falta. Manteniendo el encoder congelado, se entrenan
-clasificadores lineales (misma configuración que el sondeo lineal,
+clasificadores lineales (misma configuración que el linear probe,
 sección~\ref{sec:lp}) sobre submuestreos estratificados del
 conjunto de entrenamiento de HAM10000 y PAD-UFES-20 al $1\%$,
 $5\%$, $10\%$, $20\%$, $50\%$ y $100\%$. La
@@ -649,8 +649,8 @@ La evaluación se organiza en dos protocolos complementarios y varios
 análisis de robustez.
 
 \paragraph{Adaptación de SAM2.1-Large al dominio dermatológico.}
-El primer protocolo adapta SAM2.1-Large mediante \emph{fine-tuning}
-denso de su decodificador: se ajustan el decodificador de máscaras y
+El primer protocolo adapta SAM2.1-Large mediante fine-tuning
+denso de su decoder: se ajustan el decoder de máscaras y
 el \emph{promptable encoder}, mientras que el \emph{image encoder}
 (Hiera-Large preentrenado) permanece congelado, de modo que solo
 $\sim 4{,}2$\,M parámetros resultan entrenables ($\sim 17$\,MB de
@@ -661,7 +661,7 @@ convención de SAM2) se detalla en el repositorio reproducible
 entrenamiento es sobre ISIC2018~\cite{isic2018} y la transferencia
 fuera de dominio se evalúa sobre ISIC2017 y PH2 sin reentrenamiento.
 Como referencias no adaptadas se incluyen SAM2 \emph{zero-shot} sin
-\emph{fine-tuning} y un \emph{Convolutional AutoEncoder} (CAE-seg)
+fine-tuning y un \emph{Convolutional AutoEncoder} (CAE-seg)
 entrenado desde cero con idéntica pérdida y optimización.
 
 \paragraph{Comparación controlada entre arquitecturas de
@@ -673,7 +673,7 @@ pareada de cinco arquitecturas de segmentación \emph{promptable}:
 MedSAM2-tiny~\cite{medsam2}, SAM2.1-tiny y SAM2.1-Large (familia
 SAM2~\cite{sam2}), y SAM-Med2D~\cite{sammed2d} y MedSAM
 v1~\cite{medsam} (familia SAM~\cite{sam2023}). Todas se entrenan
-bajo un régimen común (\emph{fine-tuning} denso del decodificador y
+bajo un régimen común (fine-tuning denso del decoder y
 el \emph{promptable encoder}, encoder visual congelado, \emph{prompt}
 de \emph{bounding box} derivada de la máscara de referencia) sobre un
 dataset dermatoscópico ampliado y deduplicado por hash MD5 de píxel
@@ -686,7 +686,7 @@ pareado~\cite{wilcoxon1945}.
 \paragraph{Análisis complementarios.}
 Para interpretar las diferencias observadas entre arquitecturas se
 realizan cuatro análisis complementarios. Un control automático sin
-caja ---una U-Net con codificador ResNet-101 preentrenado en
+caja ---una U-Net con encoder ResNet-101 preentrenado en
 ImageNet--- se evalúa sin recibir \emph{bounding box} para aislar la
 contribución del \emph{prompt}. La estabilidad de la mejor
 configuración se estima por validación cruzada de cinco pliegues
@@ -702,7 +702,7 @@ contextualiza frente al acuerdo inter-anotador del propio dataset.
 \label{sec:zs}
 
 La clasificación zero-shot mide qué pueden clasificar los modelos
-vision-lenguaje sin entrenamiento específico sobre las clases objetivo,
+vision-language sin entrenamiento específico sobre las clases objetivo,
 aprovechando su espacio compartido imagen-texto. Cada clase candidata se
 formula como una o varias frases de plantilla, que el encoder textual
 codifica y ---cuando hay varias por clase--- promedia en un único
@@ -714,15 +714,15 @@ mayor similitud coseno. Sobre HAM10000 se comparan tres formulaciones de
 nombre simple de cada enfermedad por varias descripciones clínicas y
 visuales más informativas; y (iii)~una versión enriquecida de A3 con
 descriptores clínicos (modalidad, localización, criterios visuales).
-Para caracterizar la sensibilidad al tokenizador, el protocolo se
-ejecuta con los dos tokenizadores de la familia DermLIP: PubMedBERT
-a $256$ tokens (v1/v2) y GPT-2 con tokenizador de CLIP a $77$
+Para caracterizar la sensibilidad al tokenizer, el protocolo se
+ejecuta con los dos tokenizers de la familia DermLIP: PubMedBERT
+a $256$ tokens (v1/v2) y GPT-2 con tokenizer de CLIP a $77$
 tokens (original). Sobre HIBA, MSKCC, DDI y Derm7pt clínico se corre
 la versión binaria melanoma/no-melanoma con \emph{prompts}
 genéricos y A3. De este modo, el protocolo permite aislar el efecto
 de tres componentes fundamentales del rendimiento zero-shot: el
 modelo multimodal utilizado, la formulación textual de las clases y
-el tokenizador empleado por la rama lingüística.
+el tokenizer empleado por la rama lingüística.
 
 \subsection{Comparación con modelos de lenguaje multimodales}
 \label{sec:llm}
@@ -742,8 +742,8 @@ Para situar a los encoders frente a los grandes modelos
 generalistas, el protocolo evalúa GPT-4o (API OpenAI),
 Gemini~2.5~Pro (API Google), MedGemma~4B~Vision (local) y
 MedGemma~27B Text (local en BF16) sobre el mismo \emph{split} de
-test de HAM10000 ($1\,232$ imágenes) usado en sondeo lineal y
-ajuste fino. El \emph{prompt} clínico estandarizado (unas $300$
+test de HAM10000 ($1\,232$ imágenes) usado en linear probe y
+fine-tuning. El \emph{prompt} clínico estandarizado (unas $300$
 palabras) plantea la tarea como apoyo al diagnóstico —no
 sustitución del juicio clínico—, presenta las siete categorías de
 HAM10000 con una descripción breve y pide el diagnóstico más
@@ -766,7 +766,7 @@ del espectro de fototipos de la escala de Fitzpatrick. Cinco
 encoders (PanDerm Large, PanDerm Base, la rama
 visual de DermLIP v2, DINOv2 ViT-L/14 y BiomedCLIP) se evalúan sobre
 Fitzpatrick17k completo ($16\,577$ imágenes, $114$ patologías,
-$6$ fototipos I-VI) por sondeo lineal (configuración de
+$6$ fototipos I-VI) por linear probe (configuración de
 sección~\ref{sec:lp}, con la normalización canónica de cada
 modelo). Se reportan dos formulaciones: clasificación a $114$
 patologías (grano fino) y a $3$ clases de malignidad
