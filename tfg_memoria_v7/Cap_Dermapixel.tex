@@ -509,14 +509,26 @@ cuantificar la penalización por idioma sobre la long tail.
 \section{Dermapixel R0: adaptación supervisada con LoRA (nivel L2)}
 \label{sec:dermapixel-spanderm-v0}
 
+Llegamos a la parte que más ilusión hacía: el primer modelo propio.
+\textbf{Dermapixel R0} es la primera adaptación de PanDerm al
+castellano, y conviene decir desde el principio qué cabe esperar de
+ella ---y qué no---. Sabemos que las cifras serán modestas, por dos
+razones honestas: el dataset es pequeño (alrededor de mil imágenes, con
+una larga cola de diagnósticos de muy pocos ejemplos) y PanDerm se
+preentrenó sobre material mayoritariamente en inglés, así que llevarlo
+hacia el castellano es empezar cuesta arriba. La gracia, por tanto, no
+es batir ningún récord: es \emph{empezar}. R0 ---la ``versión cero''---
+busca demostrar que se puede especializar un modelo fundacional al
+castellano con recursos muy modestos y dejar una base medible sobre la
+que crecer cuando lleguen más datos, como el banco hospitalario
+(sección~\ref{sec:dermapixel-futuro}). Leídos con esa vara de medir,
+los resultados que siguen son alentadores.
+
 \subsection{Diseño de Dermapixel R0}
 
-Frente a los experimentos anteriores, que evalúan modelos existentes,
-esta subsección aborda la contribución propia: \textbf{Dermapixel R0},
-una adaptación mediante LoRA~\cite{lora} de PanDerm Large sobre
-DermapixelAI~1.0 ---una adaptación de un modelo fundacional
-preexistente, no un preentrenamiento a escala; la denominación R0
-designa una versión base sobre un dataset reducido---. Entrena
+En lo técnico, Dermapixel R0 es una adaptación mediante
+LoRA~\cite{lora} de PanDerm Large sobre DermapixelAI~1.0 ---adaptar un
+modelo preexistente, no preentrenar a escala---. Entrena
 únicamente $524$\,K parámetros ($0{,}17\%$ del modelo) y se orienta al
 nivel L2 ($38$ clases efectivas), donde la disponibilidad de muestras
 permite entrenamiento supervisado; el nivel L3 se evalúa mediante
