@@ -500,13 +500,9 @@ cifras son cota inferior; y la evaluación L3 únicamente en castellano,
 por falta de traducción inglesa validada de sus $224$ clases, impide
 cuantificar la penalización por idioma sobre la cola larga.
 
-\section{Ajuste fino con LoRA: Dermapixel R0 (cabeza supervisada L2)}
+\section{Dermapixel R0: adaptación supervisada con LoRA (nivel L2)}
 \label{sec:dermapixel-spanderm-v0}
 
-% NOTA: el encargo pedía \subsubsection (numeración 4.x.y.z); estas
-% secciones carecen de \subsection intermedia, por lo que
-% \subsubsection numeraba 4.x.0.y. Se emplea \subsection (4.x.y),
-% coherente con el resto del Cap4 y sin el nivel 0 espurio.
 \subsection{Diseño de Dermapixel R0}
 
 Frente a los experimentos anteriores, que evalúan modelos existentes,
@@ -589,22 +585,25 @@ datos. Las cifras completas figuran en el repositorio reproducible
 condicionada al banco hospitalario del HUSLL ($\geq 30$ imágenes/clase,
 sección~\ref{sec:dermapixel-futuro}).
 
-\section{Dermapixel R0: rama contrastiva multimodal castellano
-zero-shot sobre DermapixelAI~1.0}
+\section{Dermapixel R0: rama contrastiva en castellano}
 \label{sec:spanderm-clip}
 
-A diferencia de la cabeza supervisada L2, esta rama mapea texto
-clínico libre en castellano sobre el espacio de imágenes sin
-vocabulario cerrado, condición relevante para la búsqueda documental
-sobre el archivo clínico. La progresión de cinco iteraciones
-(v1$\to$v5) sobre una adaptación de PanDerm Large ---no un
-preentrenamiento a escala--- indica que la palanca decisiva es la
-capacidad del codificador visual, no la escala de datos externos. El
-experimento incluye, de forma deliberada, una ablación de escala cuyo
-resultado informa que ampliar con datos externos genéricos no mejora
-la alineación castellana: un hallazgo, no una carencia. El
-\emph{zero-shot} L3 queda así acotado por el volumen de pares y la
-cobertura de la cola larga del dominio.
+La segunda rama de Dermapixel R0 cambia de objetivo. En lugar de
+clasificar en una lista fija de diagnósticos, aprende a relacionar
+texto clínico libre en castellano con las imágenes, al estilo CLIP: se
+puede consultar el archivo con una frase ---``placa eritematosa
+descamativa en el codo''--- y recuperar los casos parecidos, sin
+vocabulario cerrado. Es la pieza pensada para la búsqueda documental
+sobre el archivo de Dermapixel.
+
+Se entrenaron cinco versiones (v1$\to$v5) sobre una adaptación de
+PanDerm Large ---no un preentrenamiento desde cero--- y la conclusión
+es clara: lo que más mejora el rendimiento es ampliar la capacidad del
+\emph{encoder} visual, no añadir más datos externos. De hecho, una de
+las versiones añade datos genéricos a propósito y empeora: un
+resultado informativo, no un fallo. El alcance en el nivel más fino
+(L3) queda limitado por el número de pares imagen-texto disponibles y
+por la cola larga de diagnósticos raros.
 
 \subsection{Diseño experimental}
 
