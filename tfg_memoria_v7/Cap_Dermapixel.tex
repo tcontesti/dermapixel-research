@@ -347,24 +347,27 @@ dataset actual.
 \section{Validación \emph{zero-shot} multimodal sobre DermapixelAI 1.0}
 \label{sec:dermapixel-zs}
 
-Esta sección evalúa hasta qué punto un modelo fundacional
-dermatológico transfiere al dataset clínico en castellano sin entrenar
-cabeza supervisada. La brecha entre el régimen \emph{zero-shot} y el
-supervisado depende del nivel ontológico: amplia en L1 y L3, pero
-prácticamente nula en L2, donde DermLIP v2 \emph{zero-shot} alcanza
-una AUROC ($0{,}794$) indistinguible de la del sondeo lineal
-supervisado de PanDerm Large ($0{,}793$).
+Esta sección pregunta lo contrario que la anterior: ¿hasta dónde llega
+un modelo fundacional sobre el material en castellano \emph{sin
+entrenar nada}, solo describiendo cada diagnóstico con palabras? La
+distancia entre este régimen \emph{zero-shot} y el supervisado depende
+mucho del nivel de detalle: es grande en L1 y L3, pero casi desaparece
+en L2 ---el resultado más llamativo de la sección---, donde DermLIP v2
+en \emph{zero-shot} alcanza una AUROC ($0{,}794$) indistinguible de la
+del mejor sistema supervisado, el \emph{linear probe} de PanDerm Large
+($0{,}793$).
 
-El experimento opera sobre el mismo test que la
+El experimento usa el mismo test que la
 sección~\ref{sec:dermapixel-results} ($N_{\mathrm{test}} = 36$ en
-L1/L2, $28$ en L3), sin cabeza clasificadora y con no solapamiento
-garantizado ($0 / 507\,657$ coincidencias MD5). Se evalúan tres
-modelos contrastivos ---DermLIP v2 (Derm1M), SigLIP-SO400M (WebLI) y
-BiomedCLIP (PubMed-15M)--- por \emph{argmax} sobre la similitud coseno
-con un \emph{ensemble} de tres plantillas por nivel, contrastando
-\emph{prompt} en castellano frente a inglés; L3 se evalúa sólo en
-castellano por falta de traducción inglesa validada para sus $224$
-clases (tabla~\ref{tab:dermapixel-zs}).
+L1/L2, $28$ en L3), sin entrenar ningún clasificador y con no
+solapamiento garantizado ($0 / 507\,657$ coincidencias MD5). Se
+comparan tres modelos contrastivos ---DermLIP v2 (Derm1M),
+SigLIP-SO400M (WebLI) y BiomedCLIP (PubMed-15M)--- eligiendo para cada
+imagen la clase de mayor similitud coseno con un \emph{ensemble} de
+tres plantillas de texto por nivel, y se contrasta el \emph{prompt} en
+castellano frente al inglés; L3 se evalúa solo en castellano por falta
+de una traducción inglesa validada de sus $224$ clases
+(tabla~\ref{tab:dermapixel-zs}).
 
 \begin{table}[htbp]
 \centering
