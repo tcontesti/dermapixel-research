@@ -990,6 +990,32 @@ $\leq 0{,}043$) indica que el alineamiento no se concentra en una
 \emph{feature} aislada: el SAE codifica los conceptos mediante un
 pequeño subconjunto coherente de activaciones.
 
+La figura~\ref{fig:sae-concepts} hace visible este alineamiento: para
+cuatro criterios del \emph{Seven-Point Checklist}, las imágenes que más
+activan la \emph{feature} correspondiente comparten el rasgo clínico
+---estructuras vasculares, retículo pigmentado, velo azul-blanquecino y
+estrías---.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{fig_sae_concepts.png}
+\caption{Alineamiento de \emph{features} del SAE con conceptos
+dermatoscópicos del \emph{Seven-Point Checklist} (E1, sobre las
+$1\,011$ lesiones de Derm7pt). Cada fila es un criterio y una
+\emph{feature} del SAE de dirección positiva: las cinco imágenes que más
+la activan comparten el concepto clínico (\emph{precision}@5 $= 1{,}0$
+en las cuatro). AUROC efectivo de cada \emph{feature}: estructuras
+vasculares $0{,}785$ (feat.~4740), retículo pigmentado $0{,}742$
+(feat.~2040), velo azul-blanquecino $0{,}722$ (feat.~14541) y estrías
+$0{,}680$ (feat.~1967). Se muestra, por criterio, una \emph{feature}
+representativa con \emph{top-5} íntegramente concepto-positivo; su AUROC
+puede quedar algo por debajo del máximo absoluto del criterio, que
+incluye \emph{features} de dirección negativa. Las etiquetas
+presente/ausente proceden del \emph{ground-truth} del \emph{Seven-Point
+Checklist}.}
+\label{fig:sae-concepts}
+\end{figure}
+
 E2 construye un CBM jerárquico de dos etapas: una head logística
 sobre las $16\,384$ activaciones estima la probabilidad de los siete
 criterios, y un meta-clasificador logístico predice
