@@ -31,9 +31,9 @@ tabla~\ref{tab:datasets-resumen} resume sus características.
 $N_{\mathrm{test}}$: tamaño nominal del \emph{split} de evaluación
 canónico; ``Clases'': número de categorías diagnósticas o conceptos
 en la convención propia del dataset. El asterisco
-(\textsuperscript{$\ast$}) marca los datasets con solapamiento
-documentado frente al dataset de preentrenamiento Derm1M
-(auditoría en sección~\ref{sec:auditoria}). Las dos variantes de Derm7pt
+(\textsuperscript{$\ast$}) marca Dermnet, el único dataset con
+solapamiento exacto frente al dataset de preentrenamiento Derm1M
+(auditoría en sección~\ref{sec:auditoria-resultados}). Las dos variantes de Derm7pt
 (clínica y dermatoscópica) comparten origen
 (Seven-Point Checklist) y se reportan como un único dataset en el
 conteo agregado de doce datasets externos.}
@@ -49,8 +49,8 @@ DDI~\cite{ddi}                       & 137     & 2        & Clínica          & 
 Dermnet~\cite{dermnet}               & 4\,002  & 23       & Clínica          & LP\textsuperscript{$\ast$} \\
 Derm7pt clínico~\cite{kawahara2019}  & 168     & 2        & Clínica          & LP \\
 Derm7pt dermo~\cite{kawahara2019}    & 225     & 2        & Dermoscopia      & LP \\
-HIBA                                 & 334     & 2        & Dermoscopia      & LP\textsuperscript{$\ast$} \\
-MSKCC                                & 1\,664  & 2        & Dermoscopia      & LP, FT\textsuperscript{$\ast$} \\
+HIBA                                 & 334     & 2        & Dermoscopia      & LP \\
+MSKCC                                & 1\,664  & 2        & Dermoscopia      & LP, FT \\
 WSI patches                          & 12\,354 & 16       & Histopatología   & LP \\
 ISIC2018~\cite{isic2018}             & 2\,594  & binaria  & Dermoscopia      & Segmentación \\
 Fitzpatrick17k~\cite{fitzpatrick17k} & 16\,577 & 114 + FP & Clínica          & Equidad \\
@@ -72,6 +72,35 @@ cutáneo (escala Fitzpatrick I-VI), y SkinCon aporta anotación densa
 de $48$ conceptos clínicos visuales para los Concept Bottleneck
 Models. En todos los casos se respetan las particiones
 \emph{train/val/test} canónicas de cada dataset, sin reasignación.
+
+
+\subsection{Independencia frente al preentrenamiento: solapamiento con Derm1M}
+\label{sec:auditoria-resultados}
+
+La validez de toda comparación de transferencia y \emph{zero-shot}
+del trabajo depende de que los conjuntos de test no se solapen con el
+dataset de preentrenamiento, por lo que conviene comprobarlo antes de
+emplearlos. La auditoría ---cuyo protocolo se detalla en la
+sección~\ref{sec:auditoria}--- intersecta los hashes MD5 de los doce
+datasets externos con los $415\,451$ hashes únicos de la fracción
+accesible de Derm1M e identifica un único dataset con solapamiento
+exacto: \textbf{Dermnet}, cuyas $18\,302$ imágenes están todas
+contenidas en Derm1M ($100\%$). Los once datasets restantes no
+arrojan ninguna coincidencia. En particular, HIBA y MSKCC ---cuyo
+origen en el ISIC archive motivaba una sospecha de procedencia---
+presentan $0$ coincidencias MD5, por lo que esa sospecha no se
+traduce en solapamiento exacto. El resultado completo por dataset
+figura en el repositorio reproducible (\ref{cap:repo},
+sección~\ref{sec:repo-reproducibilidad}).
+
+El solapamiento de Dermnet no invalida las cifras que se reportan en
+la sección~\ref{sec:rep-panderm} para PanDerm, DINOv2,
+ConvNeXt-Large, EfficientNetV2-Large y SigLIP-Large, cuyo
+preentrenamiento no incluye Derm1M. Sí condiciona, en cambio, la
+interpretación de las cifras zero-shot de la familia DermLIP sobre
+Dermnet (sección~\ref{sec:zs-results}), ya que DermLIP se entrenó
+sobre Derm1M y vio durante el preentrenamiento la totalidad de ese
+conjunto.
 
 \section{Ontología jerárquica L1/L2/L3}
 \label{sec:ontologia}
@@ -755,8 +784,8 @@ dataset de preentrenamiento de la familia PanDerm y DermLIP.
 La auditoría lo cuantifica: cada imagen se reduce
 a su hash MD5 (biblioteca estándar de Python) y la intersección de
 hashes identifica las imágenes presentes en ambos datasets. La
-cardinalidad se reporta por dataset en el
-capítulo~\ref{cap:resultados}. Se auditan los doce datasets
+cardinalidad se reporta por dataset en la
+sección~\ref{sec:auditoria-resultados}. Se auditan los doce datasets
 externos, salvo SkinCon (no evaluado sobre clases diagnósticas).
 
 El alcance de esta auditoría se declara con precisión. El hash MD5

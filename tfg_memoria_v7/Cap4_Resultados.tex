@@ -6,11 +6,11 @@
 Este capítulo presenta los resultados de la evaluación de modelos
 fundacionales dermatológicos y de las contribuciones originales del
 trabajo, que concretan sus objetivos formales
-(sección~\ref{sec:objetivos}). La secuencia es acumulativa: se verifica
-primero la independencia entre los conjuntos de evaluación y el
-preentrenamiento (sección~\ref{sec:auditoria-resultados}); sobre esa
-base se estudia la transferencia supervisada (sondeo lineal, ajuste
-fino, eficiencia en etiquetas), las tareas de segmentación,
+(sección~\ref{sec:objetivos}). La secuencia es acumulativa: establecida en la metodología la
+independencia entre los conjuntos de evaluación y el preentrenamiento
+(sección~\ref{sec:auditoria-resultados}), se estudia la transferencia
+supervisada (sondeo lineal, ajuste fino, eficiencia en etiquetas), las
+tareas de segmentación,
 clasificación \emph{zero-shot} y razonamiento multimodal, y los
 aspectos de equidad y seguridad diagnóstica; y, finalmente, las
 contribuciones propias sobre DermapixelAI~1.0 y Dermapixel R0, la
@@ -20,32 +20,6 @@ impacto del preentrenamiento específico de dominio, las distintas
 estrategias de adaptación y el papel de los datos en la transferencia
 de modelos fundacionales a un entorno clínico dermatológico en
 castellano.
-
-\section{Validez experimental: auditoría de solapamiento con Derm1M}
-\label{sec:auditoria-resultados}
-
-La validez de toda comparación de transferencia y \emph{zero-shot}
-de este capítulo depende de que los conjuntos de test no se solapen
-con el dataset de preentrenamiento; por ello el capítulo abre
-comprobándolo. La auditoría intersecta los hashes MD5 de los doce
-datasets externos con los $415\,451$ hashes únicos de la fracción
-accesible de Derm1M e identifica un único dataset con solapamiento
-exacto: \textbf{Dermnet}, cuyas $18\,302$ imágenes están todas
-contenidas en Derm1M ($100\%$). Los once datasets restantes no
-arrojan ninguna coincidencia. En particular, HIBA y MSKCC ---cuyo
-origen en el ISIC archive motivaba una sospecha de procedencia---
-presentan $0$ coincidencias MD5, por lo que esa sospecha no se
-traduce en solapamiento exacto. El resultado completo por dataset
-figura en el repositorio reproducible (\ref{cap:repo}, sección~\ref{sec:repo-reproducibilidad}).
-
-El solapamiento de Dermnet no invalida las cifras que se reportan en
-la sección~\ref{sec:rep-panderm} para PanDerm, DINOv2,
-ConvNeXt-Large, EfficientNetV2-Large y SigLIP-Large, cuyo
-preentrenamiento no incluye Derm1M. Sí condiciona, en cambio, la
-interpretación de las cifras zero-shot de la familia DermLIP sobre
-Dermnet (sección~\ref{sec:zs-results}), ya que DermLIP se entrenó
-sobre Derm1M y vio durante el preentrenamiento la totalidad de ese
-conjunto.
 
 \section{Reproducción de PanDerm: sondeo lineal sobre diez datasets}
 \label{sec:rep-panderm}
