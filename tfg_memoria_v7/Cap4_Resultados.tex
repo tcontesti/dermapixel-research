@@ -955,40 +955,37 @@ generalistas, conclusión que se retoma en la discusión
 dermatoscópicos clásicos}
 \label{sec:sae-derm7pt}
 
-Esta sección analiza si las representaciones internas del modelo se
-corresponden con los conceptos que usa un dermatólogo, base de la
-interpretabilidad clínica. Las \emph{features} del autoencoder disperso
-se alinean con los criterios dermatoscópicos clásicos, aunque forzar un
-cuello de botella conceptual cuesta exactitud, como muestran los
-experimentos sobre Derm7pt.
+De todas las ideas exploradas en este trabajo, esta es la que más
+ilusión despierta de cara a la consulta: para que un dermatólogo
+confíe en una IA no basta con que acierte, necesita saber \emph{por
+qué} lo dice. La pregunta de esta sección es si el modelo, por dentro,
+``razona'' con los mismos conceptos que usa un especialista al mirar
+una dermatoscopia ---retículo pigmentado, glóbulos, velo
+azul-blanquecino, vasos--- o si es una caja negra.
 
-La línea de interpretabilidad mediante Sparse Autoencoders (SAE),
-documentada en el repositorio reproducible (\ref{cap:repo}, sección~\ref{sec:repo-sae}), introduce un SAE Large de $16\,384$
-\emph{features} entrenado sobre las activaciones de PanDerm Large y
-validado sobre los $48$ conceptos visuales de SkinCon~\cite{skincon}.
-Esta sección extiende la validación a Derm7pt~\cite{kawahara2019}
+La herramienta para averiguarlo es un \emph{Sparse Autoencoder} (SAE):
+una red auxiliar que toma la representación interna de PanDerm ---un
+vector denso y opaco--- y la descompone en un diccionario de $16\,384$
+\emph{features} dispersas, cada una idealmente asociada a un patrón
+visual concreto. Se entrenó sobre las activaciones de PanDerm Large y
+se contrastó contra dos vocabularios de conceptos ya anotados por
+dermatólogos: los $48$ de SkinCon~\cite{skincon} y los siete criterios
+del \emph{Seven-Point Checklist} de Derm7pt~\cite{kawahara2019}
 ($1\,011$ lesiones dermatoscópicas, \emph{splits} oficiales
-$413$/$203$/$395$, $24{,}5\%$ melanomas) y explota las anotaciones del
-\emph{Seven-Point Checklist}. Se realizan cuatro experimentos
-complementarios para evaluar si las representaciones del SAE codifican
-conceptos dermatoscópicos clínicamente relevantes (E1 alineamiento
-\emph{single-feature}; E3 cruce con el Grupo~A de la Dra.~R.~Taberner) y
-si dichos conceptos pueden sostener modelos interpretables sin penalizar
-el rendimiento (E2 \emph{Concept Bottleneck Model}; E4 fine-tuning
-multitarea). Todos sobre DGX Spark GB10.
+$413$/$203$/$395$, $24{,}5\%$ melanomas). El detalle del entrenamiento
+del SAE figura en el repositorio reproducible (\ref{cap:repo},
+sección~\ref{sec:repo-sae}).
 
-E1 evalúa, para cada uno de los siete criterios binarizados, la AUROC
-efectiva $\max(\mathrm{AUROC}, 1-\mathrm{AUROC})$ de cada una de las
-$16\,384$ \emph{features} como predictor binario, sobre Derm7pt
-completo ($N = 1\,011$). Las mejores \emph{features} alcanzan AUROC
-efectivo entre $0{,}681$ y $0{,}823$ según el criterio evaluado
-(máximo sobre \emph{vascular structures}; desglose por criterio en el
-repositorio reproducible, \ref{cap:repo}, sección~\ref{sec:repo-sae}).
-La estabilidad entre el AUROC de la mejor \emph{feature} (\emph{top-1})
-y el promedio de las diez mejores (\emph{top-10}; diferencia
-$\leq 0{,}043$) indica que el alineamiento no se concentra en una
-\emph{feature} aislada: el SAE codifica los conceptos mediante un
-pequeño subconjunto coherente de activaciones.
+\paragraph{¿El modelo ya ``ve'' los conceptos del dermatólogo?}
+La respuesta es que sí, y sin que nadie se lo enseñara. Tomando cada
+una de las $16\,384$ \emph{features} como un posible detector de cada
+criterio, las mejores distinguen el concepto con una AUROC de entre
+$0{,}68$ y $0{,}82$ según cuál sea ---la más alta, las estructuras
+vasculares; desglose por criterio en el repositorio reproducible,
+\ref{cap:repo}, sección~\ref{sec:repo-sae}---. Y no se trata de una
+única ``neurona mágica'': cada concepto se reparte en un pequeño grupo
+coherente de \emph{features} ---la mejor y el promedio de las diez
+mejores apenas se diferencian ($\leq 0{,}043$ de AUROC)---.
 
 La figura~\ref{fig:sae-concepts} hace visible este alineamiento: para
 cuatro criterios del \emph{Seven-Point Checklist}, las imágenes que más
@@ -1000,7 +997,7 @@ estrías---.
 \centering
 \includegraphics[width=\textwidth]{fig_sae_concepts.png}
 \caption{Alineamiento de \emph{features} del SAE con conceptos
-dermatoscópicos del \emph{Seven-Point Checklist} (E1, sobre las
+dermatoscópicos del \emph{Seven-Point Checklist} (sobre las
 $1\,011$ lesiones de Derm7pt). Cada fila es un criterio y una
 \emph{feature} del SAE de dirección positiva: las cinco imágenes que más
 la activan comparten el concepto clínico (\emph{precision}@5 $= 1{,}0$
@@ -1016,52 +1013,63 @@ Checklist}.}
 \label{fig:sae-concepts}
 \end{figure}
 
-E2 construye un CBM jerárquico de dos etapas: una head logística
-sobre las $16\,384$ activaciones estima la probabilidad de los siete
-criterios, y un meta-clasificador logístico predice
-melanoma/no-melanoma a partir de esas siete estimaciones. Las cifras
-de E2 se reportan junto al fine-tuning multitarea en la
-tabla~\ref{tab:sae-d7pt-e4-comp}.
+\paragraph{¿Y si lo obligamos a decidir solo con esos conceptos?}
+El siguiente paso es pasar de ``detectar conceptos'' a ``decidir a
+través de ellos''. La forma más transparente es un \emph{Concept
+Bottleneck Model}: el modelo primero estima los siete criterios y, solo
+a partir de esas siete estimaciones, decide melanoma/no-melanoma. Es
+máximamente explicable ---toda la decisión pasa por conceptos con
+nombre---, pero cuesta precisión: la AUROC baja de $0{,}890$ a $0{,}832$
+($-5{,}8$\,pp). A cambio, hay un detalle tranquilizador: el modelo da
+más peso al velo azul-blanquecino y a las estructuras de regresión,
+justo los dos criterios que el \emph{Seven-Point
+Checklist}~\cite{kawahara2019} puntúa más alto. Las cifras se comparan
+en la tabla~\ref{tab:sae-d7pt-e4-comp}.
 
-La pérdida de $5{,}8$\,pp de AUROC ($0{,}890 \to 0{,}832$) cuantifica el
-coste de obligar al modelo a razonar exclusivamente mediante conceptos
-explícitos. Los pesos del meta-clasificador identifican \emph{blue
-whitish veil} y \emph{regression structures} como conceptos dominantes
-para la decisión melanoma, jerarquía coherente con el peso que el
-\emph{Seven-Point Checklist}~\cite{kawahara2019} asigna a ambos
-(criterios mayores de $2$ puntos); el desglose completo figura en el
-repositorio reproducible (\ref{cap:repo}, sección~\ref{sec:repo-sae}).
+\paragraph{Hacia un vocabulario propio, en castellano, con la
+Dra.~Taberner.}
+Hasta aquí los conceptos venían ``prestados'' de escalas en inglés
+(SkinCon, \emph{Seven-Point Checklist}). La idea que da sentido a toda
+esta línea es construir un vocabulario propio junto a un especialista.
+Como primer paso se propusieron $16$ conceptos dermatoscópicos
+(Grupo~A) a la Dra.~R.~Taberner: al cruzarlos con el \emph{Seven-Point
+Checklist}, $11$ tienen equivalencia directa y $7$ de ellos ya están
+capturados por alguna \emph{feature} del SAE con AUROC $\geq 0{,}70$
+---incluido uno con apenas $15$ casos positivos, señal de que el SAE
+detecta también patrones poco frecuentes---. Los $5$ restantes no
+figuran en las escalas clásicas: son precisamente los que justifican ir
+más allá.
 
-E3 cruza los $16$ conceptos del Grupo~A propuestos a la
-Dra.~R.~Taberner (sección~\ref{sec:dermapixel}) con el \emph{Seven-Point
-Checklist}: $11$ admiten \emph{mapping} operativo y $7$ quedan cubiertos
-por al menos una \emph{feature} SAE con AUROC efectivo $\geq 0{,}70$
-(incluido un concepto con sólo $15$ positivos, lo que sugiere que el SAE
-captura conceptos poco frecuentes sin contaminación por la clase
-mayoritaria). Los $5$ sin \emph{mapping} corresponden a estructuras no
-contempladas en la escala original y definen el contenido de la
-anotación clínica colaborativa (detalle completo en el
-repositorio reproducible, \ref{cap:repo}, sección~\ref{sec:repo-sae}).
+Para ello se ha desarrollado una plataforma de anotación con la que la
+Dra.~Taberner está definiendo un vocabulario dermatoscópico propio y
+mucho más amplio: una matriz que asocia alrededor de $35$ estructuras
+---retículo pigmentado, velo blanco-azulado, telangiectasias
+arboriformes, lagunas rojas, estructuras en hoja de arce, lágrimas
+amarillas o el signo del ala delta, entre otras--- con $15$
+diagnósticos, indicando qué buscar en cada uno. Este vocabulario
+ampliado todavía no se ha usado para entrenar ---es trabajo en
+curso---, pero es la pieza que permitirá, en el futuro, que las
+explicaciones del modelo se expresen en los mismos términos que un
+dermatólogo emplearía ante el paciente.
 
-\subsection*{Fine-tuning multitarea: heads conceptuales y
-melanoma}
+\subsection*{Explicación y rendimiento a la vez}
 \label{sec:sae-d7pt-e4}
 
-E4 replica el protocolo multitarea de
-Kawahara et~al.~\cite{kawahara2019} sustituyendo la red convolucional
-por PanDerm Large, con LoRA ($r = 16$) sobre los dos últimos bloques
-(\emph{blocks.22-23}), idéntico al protocolo de Dermapixel R0
-(sección~\ref{sec:dermapixel-spanderm-v0}). Sobre la representación
-adaptada se conectan ocho heads paralelas (una por criterio del
-\emph{Seven-Point Checklist} más una binaria de melanoma), optimizadas
-con la suma equiponderada de entropías cruzadas
-$\mathcal{L} = \sum_{i=1}^{7} \mathrm{CE}(\hat{c}_i, c_i) +
-\mathrm{CE}(\hat{m}, m)$ y \emph{class weight} balanceado ($0{,}56$\,M
-parámetros entrenables, $0{,}18\%$ del encoder). La
-tabla~\ref{tab:sae-d7pt-e4-comp} compara E4 con el linear probe
-directo (E2 Direct LP) y el CBM jerárquico (E2 CBM) sobre el test
-Derm7pt ($N_{\mathrm{test}} = 395$, $n_{\mathrm{mel}} \approx 98$),
-con IC95\% por \emph{bootstrap}.
+La pregunta final es si se puede tener lo mejor de los dos mundos:
+explicación \emph{y} precisión. La respuesta es que sí. En lugar del
+cuello de botella estricto del apartado anterior, se entrena el modelo
+para predecir a la vez el melanoma y los siete conceptos ---ocho
+\emph{heads} (salidas) en paralelo, siguiendo el esquema multitarea de
+Kawahara et~al.~\cite{kawahara2019}--- con una adaptación ligera: LoRA
+($r = 16$) sobre los dos últimos bloques de PanDerm Large, el mismo
+esquema que Dermapixel R0 (sección~\ref{sec:dermapixel-spanderm-v0}),
+con solo $0{,}56$\,M parámetros entrenables ($0{,}18\%$ del modelo).
+Sobre el test de Derm7pt ($N_{\mathrm{test}} = 395$), el resultado
+(tabla~\ref{tab:sae-d7pt-e4-comp}) es el mejor posible: la salida de
+melanoma alcanza una AUROC de $0{,}891$ ---idéntica a la del modelo sin
+ninguna restricción ($0{,}890$) y $5{,}9$\,pp por encima del
+\emph{Concept Bottleneck}--- y, además, entrega los siete conceptos en
+la misma pasada, sin coste apreciable.
 
 \begin{table}[htbp]
 \centering
@@ -1069,37 +1077,31 @@ con IC95\% por \emph{bootstrap}.
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{0.95}
 \caption{Comparativa sobre la tarea binaria melanoma/no-melanoma
-entre linear probe directo sobre las $16\,384$ \emph{features}
-del SAE Large (E2 Direct LP), CBM jerárquico de siete conceptos
-(E2 CBM) y fine-tuning multitarea LoRA con ocho heads
-paralelas (E4). Conjunto de test Derm7pt
-($N_{\mathrm{test}} = 395$, $n_{\mathrm{mel}} \approx 98$), mismo
-\emph{split} oficial. AUROC en negrita.}
+entre el linear probe directo sobre las $16\,384$ \emph{features}
+del SAE Large, el \emph{Concept Bottleneck} de siete conceptos y el
+fine-tuning multitarea LoRA con ocho \emph{heads} paralelas. Conjunto
+de test Derm7pt ($N_{\mathrm{test}} = 395$, $n_{\mathrm{mel}} \approx
+98$), mismo \emph{split} oficial. AUROC en negrita.}
 \label{tab:sae-d7pt-e4-comp}
 \begin{tabular}{lrrrrrr}
 \hline
 Método                                       & Params entr. & Acc@1     & BAcc      & AUROC              & W-F1      & Kappa     \\
 \hline
-E2 Direct LP (SAE $\to$ melanoma)             & $16$\,K       & $0{,}841$ & $0{,}735$ & $0{,}890$          & $0{,}829$ & $0{,}527$ \\
-E2 CBM (SAE $\to$ $7$ conceptos $\to$ mel)    & $\sim 120$    & $0{,}825$ & $0{,}681$ & $0{,}832$          & $0{,}801$ & $0{,}440$ \\
-\textbf{E4 FT multitarea LoRA}                & $0{,}56$\,M   & $\mathbf{0{,}841}$ & $\mathbf{0{,}804}$ & $\mathbf{0{,}891}$ & $\mathbf{0{,}843}$ & $\mathbf{0{,}590}$ \\
+Linear probe directo (SAE $\to$ mel)          & $16$\,K       & $0{,}841$ & $0{,}735$ & $0{,}890$          & $0{,}829$ & $0{,}527$ \\
+Concept Bottleneck (SAE $\to$ $7$ conc.\ $\to$ mel) & $\sim 120$ & $0{,}825$ & $0{,}681$ & $0{,}832$          & $0{,}801$ & $0{,}440$ \\
+\textbf{Multitarea LoRA ($8$ salidas)}        & $0{,}56$\,M   & $\mathbf{0{,}841}$ & $\mathbf{0{,}804}$ & $\mathbf{0{,}891}$ & $\mathbf{0{,}843}$ & $\mathbf{0{,}590}$ \\
 \hline
 \end{tabular}
 \end{table}
 
-La head melanoma del fine-tuning multitarea alcanza AUROC test
-$= 0{,}891$ (IC95\% $[0{,}856,\,0{,}927]$), que iguala al linear probe
-directo ($0{,}890$) y mejora el CBM jerárquico en $+5{,}9$\,pp.
-\textbf{A diferencia del CBM jerárquico, el aprendizaje multitarea
-conserva la capacidad discriminativa del modelo mientras mantiene
-salidas conceptuales explícitas}, ofreciendo predicción de melanoma e
-inferencia sobre los siete criterios en una sola pasada sin coste
-apreciable, cuando los conceptos auxiliares son taxonómicamente
-coherentes con la tarea principal ---como ocurre con el \emph{Seven-Point
-Checklist}~\cite{kawahara2019}---. En síntesis, el SAE Large codifica
-conceptos dermatoscópicos clásicos sin supervisión explícita (E1), el
-CBM cuantifica el compromiso interpretabilidad--precisión ($-5{,}8$\,pp
-AUROC, E2) y el multitarea LoRA iguala al linear probe preservando
-inferencia concepto-a-concepto (E4), lo que refuerza la viabilidad del
-módulo de interpretabilidad del prototipo (repositorio reproducible,
+En conjunto, esta línea deja tres mensajes. Primero, que las
+representaciones de PanDerm ya están organizadas en torno a conceptos
+clínicos, sin habérselo pedido. Segundo, que sobre ellas se puede
+construir un sistema que explica sus decisiones en el lenguaje del
+dermatólogo sin sacrificar precisión, siempre que los conceptos encajen
+con la tarea ---como ocurre con el \emph{Seven-Point
+Checklist}~\cite{kawahara2019}---. Y tercero, que el paso siguiente
+---un vocabulario dermatoscópico propio, definido con la
+Dra.~Taberner--- ya está en marcha. Es la base sobre la que se apoya el
+módulo de explicabilidad del prototipo (repositorio reproducible,
 \ref{cap:repo}, sección~\ref{sec:repo-prototipo}).
