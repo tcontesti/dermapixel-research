@@ -1046,11 +1046,26 @@ mucho más amplio: una matriz que asocia alrededor de $35$ estructuras
 ---retículo pigmentado, velo blanco-azulado, telangiectasias
 arboriformes, lagunas rojas, estructuras en hoja de arce, lágrimas
 amarillas o el signo del ala delta, entre otras--- con $15$
-diagnósticos, indicando qué buscar en cada uno. Este vocabulario
-ampliado todavía no se ha usado para entrenar ---es trabajo en
-curso---, pero es la pieza que permitirá, en el futuro, que las
-explicaciones del modelo se expresen en los mismos términos que un
-dermatólogo emplearía ante el paciente.
+diagnósticos, indicando qué buscar en cada uno
+(figura~\ref{fig:rosa-matrix}). Este vocabulario ampliado todavía no se
+ha usado para entrenar ---es trabajo en curso---, pero es la pieza que
+permitirá, en el futuro, que las explicaciones del modelo se expresen
+en los mismos términos que un dermatólogo emplearía ante el paciente.
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{fig_rosa_matrix.png}
+\caption{Vocabulario dermatoscópico que la Dra.~R.~Taberner está
+definiendo en la plataforma de anotación: $37$ estructuras
+dermatoscópicas (filas) asociadas a $15$ diagnósticos (columnas,
+coloreadas por familia: melanocíticas, queratinocíticas o epiteliales,
+otras tumorales/vasculares e infecciosas). Cada celda marca qué
+estructura buscar en cada diagnóstico; ``T/A'' señala las estructuras
+con distinción típico/atípico. Más amplio que las escalas clásicas, es
+la base prevista para que, en el futuro, el modelo explique sus
+decisiones en castellano (todavía no usado para entrenar).}
+\label{fig:rosa-matrix}
+\end{figure}
 
 \subsection*{Explicación y rendimiento a la vez}
 \label{sec:sae-d7pt-e4}
