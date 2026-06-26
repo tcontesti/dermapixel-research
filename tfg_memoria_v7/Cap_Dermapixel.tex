@@ -742,6 +742,25 @@ mismo problema: la LoRA visual (v4) y las \emph{captions} externas (v5)
 reesculpen el espacio embebido a favor de la primera y en contra de la
 segunda.
 
+La figura~\ref{fig:retrieval-es} muestra esta recuperación de forma
+concreta: a partir de una consulta de texto libre en castellano, el
+sistema devuelve los casos visualmente más parecidos del archivo.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{fig_retrieval_es.png}
+\caption{Recuperación cross-modal texto$\to$imagen en castellano con la
+rama contrastiva de Dermapixel R0 (checkpoint de mejor recuperación,
+v2; régimen \emph{rich-caption} sobre los $107$ pares de validación).
+Cada fila es una consulta de texto libre ---un resumen clínico real del
+registro de la Dra.~R.~Taberner--- y sus cinco imágenes recuperadas por
+similitud coseno; el marco verde señala el caso correcto (\emph{ground
+truth}). Tres de las cuatro consultas recuperan el caso correcto en el
+\emph{top-5}, en línea con la métrica global i2t R@$5 = 0{,}654$; la
+última (exantema de sarampión) es un fallo honesto (rango $15$).}
+\label{fig:retrieval-es}
+\end{figure}
+
 La calibración de los logits \emph{zero-shot} de la rama contrastiva
 por \emph{temperature scaling} reduce el \emph{Expected Calibration
 Error} (ECE) L3 un $\sim 97\%$ sobre v4 ($0{,}7262 \to 0{,}0213$,
