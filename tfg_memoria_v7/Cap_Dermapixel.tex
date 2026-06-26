@@ -31,35 +31,27 @@ PanDerm al castellano ---con una cabeza supervisada y una rama
 contrastiva imagen-texto--- cerrando con una síntesis comparativa de
 todos los métodos.
 
-\section{Validación en castellano sobre DermapixelAI 1.0}
+\section{Evaluación de los modelos fundacionales sobre DermapixelAI}
 \label{sec:dermapixel-results}
 
-Los bloques anteriores evalúan los modelos sobre datasets externos
-anglosajones. El objetivo de generalización planteado en la
-sección~\ref{sec:objetivos} requiere comprobar si los hallazgos se
-sostienen sobre material clínico en castellano, independiente y libre
-de fuga frente al preentrenamiento. DermapixelAI~1.0 reúne ambas
-condiciones. El bloque que se extiende hasta la
-sección~\ref{sec:spanderm-clip} responde a si los modelos
-fundacionales transfieren a este material y comparte un hallazgo
-transversal: no existe un método óptimo único, sino que la mejor
-configuración depende del nivel ontológico evaluado. El bloque
-contrasta cuatro sistemas: sondeo lineal sobre el codificador
-congelado (PanDerm LP, §\ref{sec:dermapixel-results}); el modelo
-visión-lenguaje externo sin cabeza entrenada (DermLIP \emph{zero-shot},
-§\ref{sec:dermapixel-zs}); la rama supervisada de Dermapixel R0 con
-adaptación LoRA $r=16$ sobre L2 (§\ref{sec:dermapixel-spanderm-v0}); y
-su rama contrastiva castellana \emph{zero-shot} de vocabulario abierto
-(§\ref{sec:spanderm-clip}).
+El capítulo empieza por la pregunta más básica: ¿transfieren los
+modelos fundacionales a este material clínico en castellano sin
+reentrenarlos? Esta sección los evalúa con sus representaciones
+congeladas ---usando lo que ya aprendieron, sin adaptarlos--- sobre
+DermapixelAI~1.0, en los tres niveles de la ontología (L1, L2 y L3).
+Aparece ya un hallazgo que se repetirá a lo largo del capítulo: no hay
+un método óptimo único; la mejor opción depende del nivel de detalle
+diagnóstico.
 
-Frente al solapamiento de Dermnet
-(sección~\ref{sec:auditoria-resultados}), DermapixelAI~1.0
-(documento de entrega en el repositorio reproducible, \ref{cap:repo}, sección~\ref{sec:repo-datasheet}) es completamente independiente del
-preentrenamiento de la familia PanDerm/DermLIP: la auditoría por hash
-MD5 sobre $507\,657$ imágenes catalogadas (Derm1M $415\,451$ ítems más
-los once datasets externos del capítulo) reporta intersección nula
-($0$ coincidencias sobre las $1\,062$ imágenes evaluables). Esta
-evaluación no está, por tanto, sujeta a fuga de información.
+Una propiedad importante de DermapixelAI~1.0 es que es completamente
+independiente del preentrenamiento de PanDerm y DermLIP. A diferencia
+de Dermnet (sección~\ref{sec:auditoria-resultados}), la auditoría por
+hash MD5 sobre $507\,657$ imágenes catalogadas (Derm1M más los once
+datasets externos del capítulo anterior) no encuentra ninguna
+coincidencia ($0$ sobre las $1\,062$ imágenes evaluables). Esta
+evaluación está, por tanto, libre de fuga de información (documento de
+entrega del dataset en el repositorio reproducible, \ref{cap:repo},
+sección~\ref{sec:repo-datasheet}).
 
 \subsection{Transferencia congelada: sondeo lineal y validación cruzada}
 
@@ -125,15 +117,18 @@ L3 (224 clases) & Large & $\mathbf{0{,}179}$ [$0{,}143$--$0{,}214$]
 \end{tabular}}
 \end{table}
 
-PanDerm Large supera a Base en las cinco métricas y los tres niveles, y
-el rendimiento decrece monótonamente con la granularidad: la BAcc de
-Large cae de $0{,}735$ (L1) a $0{,}265$ (L2) y $0{,}184$ (L3, $224$
-diagnósticos), si bien aún multiplica el azar por
-$2{,}9\times / 10{,}2\times / 40{,}9\times$. La cifra L1
-BAcc $= 0{,}735$ (IC95\% [$0{,}637$--$0{,}835$]) se sitúa dentro del
-rango de los diez datasets externos (tabla~\ref{tab:lp-panderm}), lo
-que ubica a DermapixelAI~1.0 como \emph{benchmark} exigente en
-castellano sin marcas dermatoscópicas estandarizadas.
+De aquí salen dos lecturas claras. La primera: PanDerm Large vuelve a
+ser mejor que Base en las cinco métricas y los tres niveles, igual que
+sobre los datasets externos. La segunda: cuanto más fino es el
+diagnóstico, más cuesta ---la BAcc de Large baja de $0{,}735$ (L1,
+cuatro grandes familias) a $0{,}265$ (L2) y $0{,}184$ (L3, $224$
+diagnósticos)---, aunque incluso en L3 el modelo acierta casi $41$
+veces más que el azar ($2{,}9\times$ en L1, $10{,}2\times$ en L2,
+$40{,}9\times$ en L3). El rendimiento en L1 (BAcc $0{,}735$, IC95\%
+[$0{,}637$--$0{,}835$]) cae dentro del rango de los diez datasets
+externos (tabla~\ref{tab:lp-panderm}): DermapixelAI~1.0 es, por tanto,
+un \emph{benchmark} exigente en castellano y sin las marcas
+estandarizadas de la dermatoscopia.
 
 
 \paragraph{Validación cruzada agrupada por caso.}
@@ -171,15 +166,18 @@ L3 (250 cls)    & $0{,}124 \pm 0{,}007$ & $0{,}232 \pm 0{,}028$ & $0{,}108 \pm 0
 \end{tabular}
 \end{table}
 
-La validación cruzada agrupada por caso es la estimación defendible
-del rendimiento esperado. El test fijo sobrestima la media de los
-cinco \emph{folds} en BAcc ($+29{,}5$\,pp en L1, $+9{,}7$\,pp en L2,
-$+7{,}6$\,pp en L3) por la distribución favorable del split publicado,
-mientras que la AUROC se mantiene estable frente a la partición (caídas
-$<5$\,pp). Las cifras del test fijo (tabla~\ref{tab:dermapixel-lp}) se
-conservan como punto operativo y base de comparación con el experimento
-\emph{zero-shot} (sección~\ref{sec:dermapixel-zs}), que reutiliza el
-mismo test.
+Con un test de solo $36$ imágenes conviene no fiarse de una única
+partición. Por eso la validación cruzada agrupada por caso ---que
+reparte los casos en cinco grupos sin que dos imágenes del mismo
+paciente caigan a la vez en \emph{train} y \emph{test}--- es la
+estimación más honesta del rendimiento esperable. Comparado con ella,
+el test fijo resulta optimista en BAcc ($+29{,}5$\,pp en L1,
+$+9{,}7$\,pp en L2, $+7{,}6$\,pp en L3) porque le tocó un reparto
+favorable; la AUROC, en cambio, apenas cambia con la partición (menos
+de $5$\,pp). Las cifras del test fijo (tabla~\ref{tab:dermapixel-lp})
+se conservan como punto operativo y como base de comparación con el
+experimento \emph{zero-shot} (sección~\ref{sec:dermapixel-zs}), que usa
+el mismo test.
 
 
 \subsection{Validación del procedimiento de etiquetado}
@@ -319,8 +317,9 @@ L3 (224 cls) & $0{,}179$ [$0{,}143$--$0{,}214$] & $0{,}286$ [$0{,}214$--$0{,}357
 \end{table}
 
 El ajuste fino denso parcial mejora al sondeo lineal en L1 y L2, pero
-no es la forma de adaptación más eficiente, como revela la comparación
-directa con la adaptación de bajo rango (subsección siguiente). En
+no es la forma de adaptación más eficiente: la adaptación de bajo rango
+(LoRA) de Dermapixel R0 (sección~\ref{sec:dermapixel-spanderm-v0})
+rinde mejor entrenando muchos menos parámetros. En
 conjunto, ni la combinación de codificadores ni el ajuste fino
 identifican una opción óptima universal: \textbf{el rendimiento
 depende simultáneamente del nivel ontológico, de la estrategia de
@@ -328,25 +327,6 @@ adaptación y del criterio de evaluación}, de modo que la búsqueda de un
 único codificador \emph{ganador} resulta una simplificación excesiva
 del problema (lectura de diseño en
 sección~\ref{sec:disc-especializacion}).
-
-\subsection{LoRA frente a ajuste fino denso}
-
-Sobre el nivel L2, el FT parcial denso ($25{,}2$\,M parámetros
-entrenables) alcanza BAcc $0{,}324$ y AUROC $0{,}852$, cifras que la
-adaptación de bajo rango (LoRA~\cite{lora}) del protocolo Dermapixel
-R0 (sección~\ref{sec:dermapixel-spanderm-v0}) supera ---BAcc
-$0{,}363 \pm 0{,}007$ y AUROC $0{,}855 \pm 0{,}006$ frente a BAcc
-$0{,}324$ y AUROC $0{,}852$--- movilizando $48$ veces menos parámetros
-($524$\,K frente a $25{,}2$\,M). La comparativa completa de los tres
-protocolos sobre L2 figura en el repositorio reproducible
-(\ref{cap:repo}, sección~\ref{sec:repo-ablaciones}).
-
-Bajo el régimen de datos disponible ($N_{\mathrm{train}} = 874$), el
-cuello de botella no es la capacidad del modelo sino la eficiencia de
-la adaptación: LoRA supera al FT denso parcial movilizando el $2\%$ de
-sus parámetros ($524\,K$ frente a $25{,}2$\,M, $48\times$ menos), lo
-que justifica la decisión arquitectónica de Dermapixel R0
-(sección~\ref{sec:dermapixel-spanderm-v0}).
 
 \subsection{Limitaciones del ajuste fino en la cola larga}
 
