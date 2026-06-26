@@ -254,8 +254,7 @@ sampler}, Mixup, CutMix y \emph{layer decay}--- para aprender las
 clases minoritarias bajo desbalance acusado.
 
 El comportamiento se invierte cuando el dataset es pequeño. Sobre
-DDI ($N_{\mathrm{train}} = 427$), el linear probe supera al ajuste
-fino en las cuatro métricas, con un descenso de AUROC
+DDI ($N_{\mathrm{train}} = 427$), el linear probe supera al fine-tuning en las cuatro métricas, con un descenso de AUROC
 especialmente diagnóstico ($0{,}827 \to 0{,}682$): el encoder ajustado
 pierde capacidad de \emph{ranking} sobre el \emph{test}, compatible con
 sobreajuste pese a las augmentaciones. Sobre MSKCC la mejora es
@@ -266,8 +265,7 @@ ese umbral, congelar el encoder actúa como regularización implícita y
 preserva la capacidad de \emph{ranking} heredada del preentrenamiento.
 
 Estos tres casos delimitan un régimen operativo cuantificable. Para
-datasets con $N_{\mathrm{train}} \lesssim 500$ imágenes, el sondeo
-lineal sobre PanDerm Large es la opción de referencia. Para
+datasets con $N_{\mathrm{train}} \lesssim 500$ imágenes, el linear probe sobre PanDerm Large es la opción de referencia. Para
 $N_{\mathrm{train}} \gtrsim 5\,000$, el fine-tuning con la receta
 original es preferible, siempre que existan clases minoritarias
 clínicamente relevantes que el linear probe no logre discriminar.
@@ -280,8 +278,7 @@ DermapixelAI~1.0 (sección~\ref{sec:dermapixel-ft}) mejora la BAcc frente
 al ajuste denso parcial con $48$ veces menos parámetros, una tercera vía
 intermedia que materializa la arquitectura de Dermapixel R0
 (sección~\ref{sec:dermapixel-spanderm-v0}). La evidencia ordena así las
-tres estrategias en una regla escalonada por volumen de datos: sondeo
-lineal con $N_{\mathrm{train}} \lesssim 500$; LoRA en el régimen
+tres estrategias en una regla escalonada por volumen de datos: linear probe con $N_{\mathrm{train}} \lesssim 500$; LoRA en el régimen
 intermedio, preferible al ajuste denso por su menor exposición al
 sobreajuste; y fine-tuning denso con la receta original sólo con
 $N_{\mathrm{train}} \gtrsim 5\,000$ y clases minoritarias clínicamente

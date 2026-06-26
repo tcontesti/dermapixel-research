@@ -256,8 +256,7 @@ encoder de referencia.
 \paragraph{Régimen de aplicabilidad del linear probe.}
 La comparación cuantitativa sobre cuatro datasets
 (sección~\ref{sec:disc-lp-vs-ft}) delimita un régimen operativo: para
-datasets con $N_{\mathrm{train}} \lesssim 500$ imágenes, el sondeo
-lineal sobre PanDerm Large supera al fine-tuning completo en las cuatro
+datasets con $N_{\mathrm{train}} \lesssim 500$ imágenes, el linear probe sobre PanDerm Large supera al fine-tuning completo en las cuatro
 métricas. El umbral se identifica sobre DDI ($N_{\mathrm{train}} = 427$),
 donde el linear probe mantiene AUROC $0{,}827$ frente a $0{,}682$ del
 fine-tuning, descenso diagnóstico de sobreajuste pese a las
@@ -325,8 +324,7 @@ receta de PanDerm Large en datasets con
 $N_{\mathrm{train}} \gtrsim 5\,000$ y desbalance acusado.
 Segmentación con SAM2.1-Large adaptado mediante fine-tuning
 del decoder cuando la tarea requiera localización de lesión. Ensemble OR \emph{top-3}
-de M1 (PanDerm Large \emph{fine-tuned}) y SigLIP-Large con sondeo
-lineal cuando la tarea sea cribado oportunista de melanoma con
+de M1 (PanDerm Large \emph{fine-tuned}) y SigLIP-Large con linear probe cuando la tarea sea cribado oportunista de melanoma con
 prioridad de \emph{recall}.
 
 \paragraph{Ontología armonizada como columna vertebral.}

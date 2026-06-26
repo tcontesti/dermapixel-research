@@ -57,8 +57,9 @@ sección~\ref{sec:repo-datasheet}).
 
 \paragraph{Linear probe sobre el \emph{split} fijo.}
 Se aplica el protocolo de linear probe (sección~\ref{sec:lp}) sobre
-las $1\,062$ imágenes con \texttt{label\_source=ontology} (train
-$N = 874$, validación $N = 152$, test $N = 36$), con PanDerm Base
+las $1\,062$ imágenes evaluables (\texttt{label\_source=ontology} y
+modalidad clínica o dermatoscópica; train $N = 874$, validación
+$N = 152$, test $N = 36$), con PanDerm Base
 ($768$-D) y Large ($1\,024$-D) como extractores congelados y head
 \emph{LogisticRegression}. La evaluación L2 usa las $38$ subcategorías
 efectivas tras consolidar las dos variantes ortográficas de
@@ -330,9 +331,9 @@ sección~\ref{sec:disc-especializacion}).
 
 \subsection{Limitaciones del fine-tuning en la long tail}
 
-Sobre el nivel L3, el fine-tuning denso parcial no supera al sondeo
-lineal congelado (BAcc $0{,}184$ en ambos): la long tail severa del
-nivel ($77\%$ de las clases con $\leq 5$ ejemplos) anula el beneficio
+Sobre el nivel L3, el fine-tuning denso parcial no supera al linear probe congelado (BAcc $0{,}184$ en ambos): la long tail severa del
+nivel ($193$ de las $250$ clases L3 efectivas, el $77\%$, con $\leq 5$
+imágenes) anula el beneficio
 del fine-tuning, lo que reserva L3 al ranking por prototipos coseno de
 Dermapixel R0 (repositorio reproducible, \ref{cap:repo}, sección~\ref{sec:repo-ablaciones}) o a la
 ampliación del dataset vía banco hospitalario del HUSLL.
@@ -576,8 +577,9 @@ tanto, al fine-tuning parcial denso en este régimen de datos.
 \subsection{Limitaciones en L3}
 
 El rendimiento cae notablemente en L3 (ranking por prototipos coseno,
-Acc@1 $= 0{,}167$, $\times 42$ sobre el azar), donde $178$ de las $250$
-clases disponen de cinco o menos imágenes de \emph{train}: la principal
+Acc@1 $= 0{,}167$, $\times 42$ sobre el azar), donde $178$ de las $224$
+clases L3 presentes en \emph{train} disponen de cinco o menos
+imágenes: la principal
 limitación deja de ser el modelo y pasa a ser la disponibilidad de
 datos. Las cifras completas figuran en el repositorio reproducible
 (\ref{cap:repo}, sección~\ref{sec:repo-ablaciones}); la head L3 directa queda

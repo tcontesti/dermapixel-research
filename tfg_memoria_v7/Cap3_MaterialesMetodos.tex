@@ -161,7 +161,8 @@ el repositorio reproducible (\ref{cap:repo}, sección~\ref{sec:repo-ablaciones})
 imágenes vinculadas a $669$ casos clínicos, cada uno con su texto
 narrativo asociado (mediana de $223$ palabras). Predomina la
 fotografía clínica ($1\,036$ imágenes), con un subconjunto
-dermatoscópico reducido ($49$).
+dermatoscópico reducido ($49$) y cuatro imágenes de otras modalidades
+(lámpara de Wood, ecografía e histología).
 
 Las imágenes se etiquetan según la ontología L1/L2/L3 y se
 particionan bajo regla \emph{case-aware} ($891 / 157 / 41$
@@ -181,8 +182,7 @@ repositorio reproducible (\ref{cap:repo}, sección~\ref{sec:repo-ablaciones}), y
 sección~\ref{sec:repo-datasheet}. La validación experimental sobre
 DermapixelAI~1.0 forma parte de los resultados de este trabajo: las
 secciones~\ref{sec:dermapixel-results} y~\ref{sec:dermapixel-zs} del
-capítulo~\ref{cap:resultados} evalúan sobre este dataset el sondeo
-lineal supervisado y la clasificación zero-shot multimodal en los
+capítulo~\ref{cap:resultados} evalúan sobre este dataset el linear probe supervisado y la clasificación zero-shot multimodal en los
 tres niveles ontológicos.
 
 \section{Modelos evaluados}
@@ -263,8 +263,7 @@ Todos los experimentos corren sobre una NVIDIA DGX Spark con chip
 Grace Hopper GB10, $128$\,GB de memoria unificada compartida entre
 CPU y GPU, Linux ARM aarch64 y CUDA~13.0. La precisión nativa es
 BF16 (\emph{brain floating-point} de 16 bits) en inferencia y
-entrenamiento, con FP32 en optimizador y pérdida durante el ajuste
-fino (precisión mixta canónica). La memoria unificada es clave para
+entrenamiento, con FP32 en optimizador y pérdida durante el fine-tuning (precisión mixta canónica). La memoria unificada es clave para
 este trabajo: permite mantener cargados modelos del orden de
 $55$\,GB en BF16 sin \emph{offloading} ni cuantización, de modo
 que incluso MedGemma~27B opera localmente y sin comprimir. El
