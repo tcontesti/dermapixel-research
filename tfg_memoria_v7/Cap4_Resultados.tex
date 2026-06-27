@@ -149,6 +149,20 @@ SigLIP-Large SO400M     & Vis-leng.\ gen.& $400$\,M & $\mathbf{0{,}900}$ & $0{,}
 \end{tabular}}
 \end{table}
 
+\begin{figure}[!ht]
+\centering
+\includegraphics[width=0.88\textwidth]{fig_lp_per_dataset.png}
+\caption{Linear probe: AUROC por modelo y dataset sobre los diez
+datasets externos. Cinco modelos (DermLIP v2, PanDerm Large, PanDerm
+Base, DINOv2 ---evaluado solo en cuatro datasets--- y BiomedCLIP);
+``N/A'' indica no evaluado. La celda en rojo, DermLIP v2 sobre Dermnet,
+señala el único dataset con solapamiento exacto frente al dataset de
+preentrenamiento Derm1M de DermLIP v2
+(sección~\ref{sec:auditoria-resultados}); HIBA y MSKCC no presentan
+solapamiento.}
+\label{fig:lp-per-dataset}
+\end{figure}
+
 PanDerm Large supera en accuracy a la mejor CNN supervisada (la mejor
 de ConvNeXt-L y EfficientNetV2-L por métrica) sobre los tres
 datasets, con ventaja no uniforme: $+0{,}5$\,pp en HAM10000
@@ -170,20 +184,6 @@ DermLIP v2 y BiomedCLIP y el encoder general DINOv2: ningún modelo
 domina en todos los datasets. La única cifra que debe leerse con
 cautela es la de DermLIP v2 sobre Dermnet, dataset que forma parte de
 su preentrenamiento (Derm1M; sección~\ref{sec:auditoria-resultados}).
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.92\textwidth]{fig_lp_per_dataset.png}
-\caption{Linear probe: AUROC por modelo y dataset sobre los diez
-datasets externos. Cinco modelos (DermLIP v2, PanDerm Large, PanDerm
-Base, DINOv2 ---evaluado solo en cuatro datasets--- y BiomedCLIP);
-``N/A'' indica no evaluado. La celda en rojo, DermLIP v2 sobre Dermnet,
-señala el único dataset con solapamiento exacto frente al dataset de
-preentrenamiento Derm1M de DermLIP v2
-(sección~\ref{sec:auditoria-resultados}); HIBA y MSKCC no presentan
-solapamiento.}
-\label{fig:lp-per-dataset}
-\end{figure}
 
 No existe, por tanto, una jerarquía universal entre familias: los
 sistemas vision-language generalistas igualan o superan a los
