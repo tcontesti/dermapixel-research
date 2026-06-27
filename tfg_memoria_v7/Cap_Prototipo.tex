@@ -1,0 +1,536 @@
+%!TeX root=MemoriaTFG.tex
+%
+% ============================================================================
+% NOTA PARA EL AGENTE QUE INTEGRA EL CAPITULO
+% ----------------------------------------------------------------------------
+% 1) Este capitulo es el puente investigacion -> producto: documenta el
+%    PROTOTIPO DESPLEGADO (dermapixel.eu), distinto del capitulo de
+%    EVALUACION (\ref{cap:dermapixel}) y del Anexo arquitectonico M1--M11
+%    (\ref{cap:anexoh}). Reusa esas referencias en vez de duplicar contenido.
+% 2) Verificar que existen las labels referenciadas antes de compilar:
+%    cap:resultados, cap:dermapixel, cap:anexoh, cap:metodos, sec:zs,
+%    sec:dermapixel-m11, sec:spanderm-clip, sec:linea-prospectivo,
+%    sec:alcance. Si alguna cambia de nombre, ajustar \ref aqui.
+% 3) FIGURAS: los \includegraphics estan COMENTADOS para que compile sin las
+%    imagenes. Capturar los pantallazos indicados en cada bloque
+%    "% CAPTURAR:", guardarlos en figures/ con el nombre indicado y
+%    descomentar la linea. Lista completa al final de la introduccion.
+% 4) Cifras y nombres de modulo verificados contra codigo real
+%    (pipeline.py, spark_adapter.py, docker-compose.yml, models.py,
+%    ontology.csv). No introducir cifras sin fuente.
+% ============================================================================
+
+\chapter{El prototipo DermApIxel: del banco de pruebas al asistente clínico}
+\label{cap:prototipo}
+
+Los capítulos anteriores responden a una pregunta de investigación: qué
+modelos fundacionales sirven, y para qué tarea, sobre material
+dermatológico ---incluido el material clínico en castellano de
+DermapixelAI~1.0 (capítulo~\ref{cap:dermapixel})---. Este capítulo responde
+a otra complementaria: \emph{cuánto de lo estudiado sobrevive al pasar de
+un \texttt{notebook} de evaluación a un sistema que un dermatólogo puede
+usar de verdad}. No todo lo que mejora una métrica merece desplegarse, y el
+prototipo es donde esa distinción se vuelve operativa. No es objeto
+experimental del trabajo (sección~\ref{sec:alcance}) ---la defensa empírica
+descansa en los modelos del capítulo~\ref{cap:resultados} bajo protocolos
+estándar---: lo que aporta es la \emph{traslación}, materializar esos
+modelos en una interfaz clínica multicanal y tomar las decisiones de
+seguridad clínica que un benchmark no obliga a tomar pero un sistema en
+producción sí.
+
+La arquitectura interna de los once módulos (M1--M11) se detalla en el
+repositorio reproducible (\ref{cap:repo}, sección~\ref{sec:repo-prototipo});
+aquí se describe su papel dentro del producto y las capas que el
+repositorio no cubre: el asistente conversacional, los tres canales (web,
+WhatsApp y voz) y las herramientas externas. A fecha de cierre, el sistema
+está en producción \emph{end-to-end} en un servidor público
+(\texttt{dermapixel.eu}), con la Dra.~R.~Taberner como evaluadora clínica de
+referencia; sigue sin validarse sobre cohorte prospectiva ni integrarse en
+infraestructura hospitalaria (sección~\ref{sec:proto-estado}), su línea de
+continuación inmediata (sección~\ref{sec:linea-prospectivo}).
+
+% ---------------------------------------------------------------------------
+% PLAN DE FIGURAS (pantallazos a capturar). Capturar en dermapixel.eu con
+% una cuenta de rol experto y un caso de ejemplo no sensible:
+%   figures/proto_consenso.png   -> Vista de analisis: banner de consenso
+%                                   multi-modulo + veredicto + urgencia.
+%   figures/proto_7puntos.png    -> Tab 7-POI sobre imagen DERMATOSCOPICA
+%                                   (panel visible) con los 7 criterios.
+%   figures/proto_seg.png        -> Tab SEG: overlay de mascara sobre lesion.
+%   figures/proto_zeroshot.png   -> Tab Z-SHOT: comparacion abierta con tags
+%                                   L1/L2/L3 y badge de cascada principal.
+%   figures/proto_ragES.png      -> Tab RAG-I (M4-bis): casos similares del
+%                                   archivo de la Dra. Taberner + voto.
+%   figures/proto_chat_web.png   -> Asistente conversacional web con citas
+%                                   al blog Dermapixel.
+%   figures/proto_whatsapp.png   -> Conversacion WhatsApp (movil) con analisis
+%                                   de imagen.
+%   figures/proto_voz.png        -> Widget de voz activo + captura cross-device
+%                                   (QR a la PWA movil).
+%   figures/proto_historial.png  -> Historial paginado (grid de thumbnails).
+%   figures/proto_arquitectura.png-> (Opcional) diagrama de microservicios.
+% ---------------------------------------------------------------------------
+
+\section{De la evaluación al producto: qué se traslada}
+\label{sec:proto-mapeo}
+
+La tabla~\ref{tab:proto-mapeo} resume la correspondencia entre cada bloque
+estudiado en el trabajo y su materialización en el prototipo. La columna
+\emph{Estado} distingue tres situaciones: desplegado y expuesto al
+clínico, desplegado como capa interna (no visible directamente), y
+estudiado pero \emph{no} desplegado por una decisión justificada.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.05}
+\caption{Trazabilidad estudio~$\to$~prototipo. Los nombres de módulo
+(M1--M11) se conservan tal como aparecen en \texttt{pipeline.py} para
+preservar la correspondencia código--documento (repositorio
+reproducible, sección~\ref{sec:repo-prototipo}).}
+\label{tab:proto-mapeo}
+\adjustbox{max width=\textwidth}{%
+\begin{tabular}{lll}
+\hline
+Estudiado en el trabajo & Materialización en el prototipo & Estado \\
+\hline
+Clasificación supervisada PanDerm (\ref{cap:resultados}) & M1 (HAM10000) / M7 (jerárquico \emph{merged43}+TTA) & Desplegado, visible \\
+Dermapixel R0, head L2 castellana (\ref{cap:dermapixel}) & M9 (PanDerm + LoRA $r{=}16$) & Desplegado, visible \\
+Segmentación promptable (\ref{cap:resultados}) & M2/segmentación + corrección experta & Desplegado, visible \\
+Interpretabilidad por SAE + SkinCon (\ref{cap:resultados}) & M3 (32 conceptos por imagen) & Desplegado, visible \\
+\emph{Seven-Point Checklist} multitarea (\ref{cap:resultados}) & M10 + puntuación Argenziano (capa \emph{backend}) & Desplegado, visible \\
+Zero-shot multimodal DermLIP (\ref{sec:zs}) & M6 (clase abierta) + glosario ES$\to$EN & Desplegado, visible \\
+Recuperación visual densa (\ref{cap:resultados}) & M4 (Derm1M) / M4-bis (DermapixelAI~ES) & Desplegado, visible \\
+Comparación con LLM multimodales (\ref{cap:resultados}) & Razonamiento clínico estructurado (M5) & Desplegado, visible \\
+Ensemble por complementariedad (\ref{sec:repo-prototipo}) & M11 + banner de consenso de 5 módulos & Desplegado, visible \\
+Ontología jerárquica L1/L2/L3 (\ref{cap:metodos}) & Coherencia de niveles + traducción EN$\to$ES & Desplegado, interno \\
+Texto clínico como contexto (\ref{cap:dermapixel}) & RAG conversacional sobre el archivo Dermapixel & Desplegado, visible \\
+Dermapixel R0, rama contrastiva (\ref{sec:spanderm-clip}) & SpanDerm-CLIP (búsqueda textual ES) & \textbf{No desplegado} \\
+\hline
+\end{tabular}}
+\end{table}
+
+La lectura transversal de la tabla expone el mensaje central del
+capítulo: el prototipo no es una demostración de un único modelo, sino la
+integración de \emph{varias} líneas del trabajo, cada una en el papel para
+el que el banco de pruebas la encontró útil. El clasificador jerárquico
+M7 aporta cobertura sobre las clases del archivo de la Dra.~R.~Taberner; la
+adaptación ligera M9 aporta el vocabulario castellano; el zero-shot M6
+aporta apertura a clases no vistas; la recuperación M4-bis aporta casos
+comparables del propio archivo; y el razonamiento M5 los integra en una
+explicación textual. Ninguno sustituye al juicio clínico: el prototipo se
+diseña como apoyo, no como decisor.
+
+\section{Arquitectura del sistema desplegado}
+\label{sec:proto-arq}
+
+El prototipo evolucionó desde el despliegue local documentado en el
+repositorio reproducible (\ref{cap:repo}, sección~\ref{sec:repo-prototipo};
+PC Windows~$+$~DGX~Spark sobre red LAN, estado 2026-04) hacia un despliegue
+en servidor accesible públicamente. El cambio
+no es solo de ubicación: introduce la necesidad de autenticación,
+cumplimiento de protección de datos y los tres canales de interacción
+descritos en la sección~\ref{sec:proto-asistente}.
+
+\subsection{Topología de microservicios}
+\label{sec:proto-micro}
+
+El \emph{backend} se organiza como microservicios en contenedores
+(Docker Compose) repartidos en dos redes: una expuesta al exterior (proxy
+inverso y salida a APIs externas) y otra interna sin acceso directo a
+Internet, por mínima exposición. La tabla~\ref{tab:proto-services} resume
+los servicios principales.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.98}
+\caption{Servicios del \emph{backend} de producción. Los servicios MCP
+(\emph{Model Context Protocol}) exponen herramientas externas al
+orquestador conversacional (sección~\ref{sec:proto-mcp}).}
+\label{tab:proto-services}
+\begin{tabular}{lll}
+\hline
+Servicio (contenedor) & Tecnología & Función \\
+\hline
+\texttt{auth-svc} (\texttt{dpai-auth})    & FastAPI       & Identidad, 2FA, JWT RS256, auditoría \\
+\texttt{blog-svc} (\texttt{dpai-blog})    & FastAPI       & API principal, RAG, asistente, análisis \\
+\texttt{whatsapp-svc} (\texttt{dpai-wha.})& FastAPI       & \emph{Webhook} Meta Cloud API \\
+\texttt{spark-svc} (\texttt{dpai-spark})  & FastAPI       & Proxy resiliente a la inferencia GPU \\
+\texttt{nginx} (\texttt{dpai-nginx})      & Nginx         & Proxy inverso, TLS, ficheros estáticos \\
+MySQL (\texttt{dpai-mysql})               & MySQL $8.0$   & Persistencia (BD \texttt{dpai\_auth}, \texttt{dpai\_blog}) \\
+Redis (\texttt{dpai-redis})               & Redis $7$     & Caché y estado conversacional efímero \\
+RabbitMQ (\texttt{dpai-rabbitmq})         & RabbitMQ $3.13$& Mensajería asíncrona \\
+Qdrant (\texttt{dpai-qdrant})             & Qdrant        & Índice vectorial del RAG conversacional \\
+MCP \texttt{pubmed/drugs/ontology/spark}  & FastMCP       & Herramientas externas (sección~\ref{sec:proto-mcp}) \\
+\hline
+\end{tabular}
+\end{table}
+
+Las dos bases de datos están separadas por servicio (identidad y datos
+clínicos), sin enlace directo entre ellas: la relación usuario--estudio se
+comprueba en la aplicación. El aislamiento cuesta algún paso extra en
+operaciones como el borrado, a cambio de limitar el alcance de un posible
+incidente sobre datos de salud.
+
+\subsection{Separación cliente / inferencia GPU}
+\label{sec:proto-spark}
+
+La inferencia pesada (modelos M1--M11) corre en el servidor GPU propio
+(DGX~Spark), separado del \emph{backend} y accesible solo por una red
+privada (Tailscale). El \emph{backend} no llama a la GPU directamente,
+sino a través del servicio \texttt{spark-svc}, que la convierte en una
+dependencia tolerante a fallos: reintenta los errores, deja de insistir si
+la GPU falla repetidamente y guarda en caché lo ya calculado. Así, una
+caída momentánea de la GPU degrada el servicio con elegancia ---el estudio
+queda \emph{en proceso} y un proceso de limpieza lo marca como fallido
+pasado un tiempo--- en lugar de propagar el error al clínico.
+
+El acceso a la inferencia se expone además como herramienta del asistente
+conversacional mediante un servicio MCP dedicado
+(\texttt{mcp-spark}), que publica las operaciones
+\texttt{analyze\_dermatology\_image}, \texttt{zero\_shot\_classify},
+\texttt{find\_similar\_cases} y \texttt{extract\_clinical\_concepts}. De
+este modo el mismo \emph{pipeline} de diagnóstico es accesible tanto desde
+la vista de análisis (uso directo) como desde una conversación en
+lenguaje natural (uso orquestado por el LLM).
+
+\subsection{Persistencia, trazabilidad y rendimiento}
+\label{sec:proto-persistencia}
+
+Cada estudio diagnóstico se persiste en la tabla \texttt{derm\_studies}
+con su imagen (almacenamiento de objetos cifrado en reposo), un
+\emph{thumbnail} pre-renderizado, el canal de origen
+(\texttt{web}/\texttt{whatsapp}/\texttt{voice}), la salida cruda de la
+inferencia, el razonamiento generado y el tipo de imagen detectado
+(clínica o dermatoscópica). Las validaciones del experto, el
+\emph{feedback} y las sesiones de anotación se enlazan a este registro y
+alimentan el aprendizaje activo (sección~\ref{sec:proto-anotacion}). Toda
+acción sensible se registra en una tabla de auditoría con la IP
+\emph{hasheada} (SHA-256, sin IP en claro), conforme a protección de
+datos; \texttt{auth-svc} mantiene además una bitácora de auditoría
+encadenada criptográficamente (\emph{hash} encadenado) orientada al
+Esquema Nacional de Seguridad.
+
+Una optimización con impacto directo en la experiencia fue generar las
+miniaturas del historial al subir la imagen y servirlas por una URL
+firmada y temporal, en lugar de incrustar cada imagen dentro de la
+respuesta: el historial pasó a cargar mucho más rápido y dejó de fallar al
+pedir muchas miniaturas a la vez.
+
+\section{El pipeline diagnóstico integrado}
+\label{sec:proto-pipeline}
+
+La vista de análisis expone el resultado de los módulos M1--M11 en
+pestañas y, sobre ellas, un \emph{banner} de consenso que resume la
+lectura de malignidad de cinco clasificadores independientes (M1, M7, M9,
+sondeo lineal SigLIP y M10) más un sexto indicador con la ontología del
+vecino \emph{top-1} castellano (M4-bis). Cuando dos o más módulos votan
+melanoma con probabilidad alta, el sistema emite un aviso explícito de
+derivación urgente. El diseño replica el patrón clínico de segunda
+opinión: no se confía en un único clasificador, se busca convergencia
+entre criterios que explotan representaciones parcialmente distintas
+---justamente la complementariedad demostrada en la
+sección~\ref{sec:repo-prototipo}---.
+
+Las principales vistas de la interfaz clínica del prototipo se recogen, en
+miniatura, en las figuras~\ref{fig:proto-interfaz}
+y~\ref{fig:proto-interfaz2} (al final del capítulo).
+
+El veredicto que se muestra al clínico no es la salida de un único modelo
+sino el ensemble ponderado M11, cuya jerarquía L1/L2/L3 se hace coherente
+\emph{top-down} (si L1 indica patología tumoral y L3 indica melanoma, L2
+no puede indicar una categoría benigna) y cuyas etiquetas se unifican
+mediante un \emph{mapping} EN$\to$ES que colapsa las duplicaciones entre
+el M7 (que emite la ontología en inglés) y los módulos castellanos M9 y
+M4-bis. La coherencia de niveles se apoya en la ontología jerárquica
+validada con la Dra.~R.~Taberner (4~categorías L1, 43~subcategorías L2 y
+$\sim$367 diagnósticos L3; repositorio reproducible,
+sección~\ref{sec:repo-prototipo}).
+
+\subsection{Tres modos de interpretación, una misma red de seguridad}
+\label{sec:proto-modos}
+
+Una decisión de diseño central es que el clínico elige \emph{cuánto}
+quiere que la IA interprete el caso, mediante un selector con tres modos
+que comparten el mismo análisis de base pero dan distinto peso al
+razonamiento clínico estructurado (M5):
+
+\begin{itemize}
+  \item \textbf{Determinista.} El veredicto procede únicamente de los
+  clasificadores (el ensemble M11); el módulo de razonamiento no
+  interviene. Es reproducible ---la misma entrada da siempre el mismo
+  resultado--- y está siempre disponible, también como respaldo si el
+  razonamiento falla.
+  \item \textbf{Híbrido (IA-asistido)}, el modo por defecto. Parte del
+  veredicto determinista y lo \emph{refina} con las señales de M5: solo
+  cambia el diagnóstico principal si el razonamiento propone otro
+  \emph{con alta confianza}, y puede aportar el resumen narrativo y el
+  diagnóstico diferencial ordenado.
+  \item \textbf{Interpretación IA máxima.} El razonamiento de M5 lleva la
+  voz cantante: el diagnóstico principal se sustituye por el que propone y
+  el \emph{pipeline} de modelos queda como contexto. Si M5 no ofrece un
+  diagnóstico claro, el sistema vuelve al determinista.
+\end{itemize}
+
+Sobre los tres modos rige una misma red de seguridad innegociable:
+\textbf{la urgencia nunca baja por acción de la IA} ---el razonamiento
+puede \emph{subir} el nivel de alarma ante una lesión sospechosa, nunca
+rebajarlo--- y el veredicto determinista se conserva siempre como base
+auditable. Así el clínico gana interpretabilidad sin que la capa
+generativa pueda relajar una señal de seguridad, una decisión que un banco
+de pruebas no obliga a tomar pero un sistema en producción sí.
+
+% CAPTURAR: el selector de modo (Determinista / Híbrido / Interpretación
+% IA máxima) puede mostrarse en la misma figura de la vista de análisis
+% (fig:proto-consenso) o como recorte propio.
+
+\subsection{La Lista de los 7 puntos: modelo de concepto y capa clínica}
+\label{sec:proto-7pc}
+
+El módulo M10 detecta por imagen los siete criterios dermatoscópicos del
+\emph{Seven-Point Checklist} más una \emph{head} binaria de melanoma. La
+separación de responsabilidades es deliberada: M10 solo emite las
+probabilidades de cada criterio (una \emph{softmax} por concepto), y la
+puntuación ponderada de Argenziano ---los tres criterios mayores valen
+$2$, los menores $1$, melanoma a partir de $3$--- la calcula la capa
+clínica del \emph{backend}, no la red, de modo que el esquema de puntuación
+se puede auditar y ajustar sin reentrenar el modelo. La versión inicial
+sumaba por conteo de criterios; el paso a puntuación ponderada es
+conservador en seguridad: todos los pesos son~$\geq 1$, así que nunca se
+pierde una alarma y se gana sensibilidad en las lesiones cargadas de
+criterios mayores.
+
+Una segunda decisión de seguridad es \emph{cuándo} mostrar el panel. La
+Lista de los 7 puntos es dermatoscópica; aplicarla a una fotografía clínica
+daría criterios falsos. Por eso solo se muestra sobre imagen
+dermatoscópica, con doble comprobación ---el detector de modalidad (M0) y,
+si hace falta, el experto--- y con un \emph{gate} \emph{fail-closed}: ante
+duda, el panel no se aplica. La corrección del experto se guarda como
+verdad de referencia para reentrenar (aprendizaje activo).
+
+\subsection{Segmentación con corrección experta}
+\label{sec:proto-seg}
+
+La segmentación de la lesión, estudiada en el capítulo~\ref{cap:resultados}
+como tarea promptable, se traslada al prototipo como una máscara
+automática que el clínico ve superpuesta sobre la imagen y, si procede,
+corrige. La capa de anotación registra explícitamente el \emph{origen} de
+cada máscara aprobada ---máscara aceptada automáticamente, corregida a
+partir de una propuesta automática, o dibujada desde cero--- lo que
+permite distinguir, de cara al reentrenamiento, qué casos requirieron
+intervención humana y cuáles no.
+
+\subsection{Zero-shot abierto y el idioma del espacio latente}
+\label{sec:proto-zeroshot}
+
+El módulo M6 (DermLIP) permite comparar una imagen contra una lista
+arbitraria de descripciones, complementando a los clasificadores cerrados
+con apertura a clases no previstas. Su integración en el prototipo
+documenta un hallazgo operativo con valor metodológico: \emph{la
+sensibilidad de un modelo contrastivo al idioma de la consulta}. DermLIP
+se entrenó con texto biomédico en inglés; al recibir nombres de
+diagnóstico en castellano sin traducir, el \emph{ranking} se degradaba
+hasta producir ordenaciones clínicamente erróneas (un carcinoma basocelular
+quedaba por debajo de un melanoma en casos donde no debía). La causa no era
+el modelo sino el cableado: faltaba la traducción ES$\to$EN para los
+términos comunes. La corrección ---un glosario clínico ampliado mediante un
+generador reproducible y marcado para revisión de la Dra.~R.~Taberner antes
+de su validación--- restauró el comportamiento esperado.
+
+Este episodio refuerza la disciplina de validación que recorre todo el
+trabajo: una métrica de cabecera puede esconder un artefacto de régimen, y
+conviene reproducirla en las condiciones reales de uso antes de construir
+sobre ella (sección~\ref{sec:proto-noproducto}).
+
+\section{El asistente conversacional multicanal}
+\label{sec:proto-asistente}
+
+La aportación que más distingue al prototipo de un clasificador de
+imágenes es el asistente conversacional anclado al archivo de la
+Dra.~R.~Taberner. Aquí se materializa la segunda vía que el trabajo
+defiende como poco explorada (sección~\ref{sec:proto-mapeo}): el texto
+clínico como contexto.
+
+\subsection{RAG sobre el archivo Dermapixel}
+\label{sec:proto-rag}
+
+El asistente responde con \emph{retrieval-augmented generation} (RAG)
+sobre el archivo del blog Dermapixel: busca los textos más relevantes
+---combinando coincidencia de palabras y similitud semántica--- y, antes
+de responder, comprueba si lo recuperado basta para hacerlo, para
+responder con cautela o para declinar. El modelo por defecto es
+\texttt{gpt-4o-mini} (con Claude Sonnet conmutable para comparar), y cada
+respuesta incluye citas a las entradas del blog que la sustentan, para que
+el clínico verifique la fuente.
+
+\subsection{Tres canales: web, WhatsApp y voz}
+\label{sec:proto-canales}
+
+El asistente se expone por tres canales con una garantía explícita de
+\emph{paridad}: una misma imagen y un mismo contexto producen el mismo
+veredicto determinista con independencia del canal.
+
+\begin{itemize}
+  \item \textbf{Web.} Conversación en la propia aplicación, con acceso a la
+  vista de análisis, al historial y a la validación experta.
+  \item \textbf{WhatsApp.} Integración con la API Cloud de Meta mediante
+  \emph{webhook} verificado por firma. Soporta conversación multi-turno
+  (estado efímero en Redis) y análisis de imagen clínica, con vinculación
+  del número a una cuenta autenticada y un límite diario de análisis por
+  usuario. El número se almacena \emph{hasheado}, nunca en claro.
+  \item \textbf{Voz.} Conversación hablada en tiempo real (API Realtime de
+  OpenAI); el \emph{backend} solo entrega una credencial temporal de
+  sesión. Durante la conversación el asistente puede pedir una foto: el
+  usuario la arrastra o, desde otro dispositivo, escanea un código QR que
+  abre una página de captura con la cámara; la imagen entra en el mismo
+  \emph{pipeline} de análisis.
+\end{itemize}
+
+El canal de voz destapó problemas que un banco de pruebas no revela
+---por ejemplo, un bucle de eco en el altavoz del iPhone, en el que el
+asistente captaba su propia voz y se reiniciaba---, resueltos caso por
+caso. Son la clase de problema que solo aparece al desplegar.
+
+\subsection{Herramientas externas (MCP)}
+\label{sec:proto-mcp}
+
+El asistente no se limita al blog: dispone de herramientas externas (vía
+\emph{Model Context Protocol}) que el LLM usa cuando hacen falta
+---consultar PubMed, la información de medicamentos de la AEMPS y la
+ontología clínica---. El acceso sigue una lista blanca: solo se permiten
+las herramientas explícitamente autorizadas.
+
+\subsection{Guardarraíles clínicos}
+\label{sec:proto-guardrails}
+
+El asistente incorpora una capa de seguridad con varios mecanismos:
+validación del \emph{prompt} de entrada contra patrones de inyección y de
+extracción de instrucciones; validación de la respuesta para evitar fugas
+de secretos o de detalles de infraestructura; reglas clínicas explícitas
+acordadas con la Dra.~R.~Taberner (preferencia por el principio activo
+frente al nombre comercial salvo petición explícita; distinción cuidadosa
+entre entidades con nombres parcialmente solapados); y un disparador de
+urgencia (\emph{``llame al 112''}) que nunca es suprimido por los
+guardarraíles de alcance ---la seguridad prima sobre la restricción de
+tema---. Un principio transversal verificado en el trabajo es que una
+inyección en el contexto clínico \emph{no puede} elevar la urgencia del
+veredicto determinista: el texto libre del usuario no altera la salida de
+los clasificadores.
+
+\section{Validación experta y aprendizaje activo}
+\label{sec:proto-anotacion}
+
+El prototipo cierra el ciclo con el experto: el dermatólogo puede validar
+cada análisis (correcto/parcial/incorrecto), corregir el diagnóstico por
+niveles, corregir la modalidad de la imagen y, en el estudio de anotación,
+corregir la máscara de segmentación y registrar los conceptos presentes.
+Estas correcciones se persisten como verdad de referencia y constituyen la
+materia prima de la validación clínica prospectiva planificada
+(sección~\ref{sec:linea-prospectivo}).
+
+\section{Ramas estudiadas no desplegadas}
+\label{sec:proto-noproducto}
+
+La honestidad metodológica exige documentar también lo que \emph{no} se
+desplegó. La rama contrastiva de Dermapixel R0 (SpanDerm-CLIP,
+sección~\ref{sec:spanderm-clip}), concebida como buscador textual en
+castellano (texto~$\to$~imagen), \emph{no} se promovió a producción. Su
+métrica de cabecera más favorable corresponde a un régimen concreto
+(partición de validación, descripciones clínicas largas, un \emph{epoch}
+específico) que no generaliza: en el régimen de uso real ---consulta corta
+del usuario, conjunto de test no visto, archivo completo--- la recuperación
+cae a un nivel cercano al azar. La partición es limpia (verificada
+disjunta por caso e imagen), lo que descarta la contaminación como causa.
+La conclusión honesta es que queda \emph{demostrada la viabilidad técnica
+del espacio dual texto-imagen} (la arquitectura entrena, converge y los
+brazos comparten un espacio recuperable bajo descripciones ricas), pero
+\emph{no la capacidad de recuperación útil} en régimen real. La rama
+permanece no desplegada; la búsqueda visual en producción la cubre M4-bis
+(imagen~$\to$~imagen).
+
+Este caso, junto con el del idioma del zero-shot
+(sección~\ref{sec:proto-zeroshot}), motiva una práctica de aseguramiento
+de calidad que el trabajo eleva a método: \emph{revalidar toda métrica de
+cabecera bajo condiciones realistas de despliegue} (datos no vistos,
+consulta corta, conjunto completo) y reportar con franqueza cuando no
+generaliza. Dos resultados negativos se convierten así en una garantía de
+rigor.
+
+\section{Estado de despliegue y limitaciones}
+\label{sec:proto-estado}
+
+A fecha de cierre, el sistema está en producción \emph{end-to-end} sobre
+\texttt{dermapixel.eu}, con los módulos M1--M11 operativos, el asistente
+conversacional en sus tres canales y la Dra.~R.~Taberner como evaluadora
+clínica de referencia. Este salto a producción no es solo técnico: el
+proyecto fue distinguido con la \emph{Beca de Innovación e Inteligencia
+Artificial} de la Academia Española de Dermatología y Venereología (AEDV),
+dotada con $10\,000$~euros \emph{para su puesta en producción}
+(53.\textsuperscript{er} Congreso Nacional de Dermatología y Venereología,
+Maspalomas, mayo de 2026), lo que financia precisamente la consolidación
+del prototipo como servicio clínico y es, en sí mismo, un aval externo de
+su utilidad. No está validado sobre cohorte prospectiva real ni
+integrado en la infraestructura del centro hospitalario. Las limitaciones y
+condiciones para el despliegue clínico pleno ---validación prospectiva,
+integración con sistemas de información hospitalaria, ponderación del
+consenso calibrada con datos reales, y certificación como producto
+sanitario--- se detallan como líneas de continuación inmediatas en la
+sección~\ref{sec:linea-prospectivo}. El prototipo, en su estado actual,
+demuestra la viabilidad operativa de integrar los hallazgos del trabajo en
+un sistema accesible y usable, y constituye el entorno previsto para esa
+validación.
+
+\begin{figure}[H]
+\centering
+\newcommand{\protothumb}[2]{%
+  \begin{minipage}[t]{0.48\textwidth}\centering
+  \adjustbox{max width=\linewidth,max height=2.9cm,frame=0.4pt}{\includegraphics{#1}}\\[1pt]
+  {\scriptsize #2}
+  \end{minipage}}
+\protothumb{proto_consenso.png}{(a) Veredicto y \emph{banner} de consenso}\hfill
+\protothumb{proto_ensemble.png}{(b) Consenso del ensemble (M11)}
+
+\vspace{2.5mm}
+\protothumb{proto_seg.png}{(c) Segmentación: MedSAM2 $+$ U-Net}\hfill
+\protothumb{proto_ragES.png}{(d) Casos similares del archivo (M4-bis)}
+
+\vspace{2.5mm}
+\protothumb{proto_7puntos.png}{(e) Lista de los 7 puntos (M10)}\hfill
+\protothumb{proto_zeroshot.png}{(f) Zero-shot abierto (M6, DermLIP)}
+\caption{Vista de análisis de DermApIxel ---el análisis de una imagen---:
+(a)~el veredicto con \emph{banner} de consenso (aquí un caso
+\emph{discordante} que dispara aviso de revisión); (b)~el consenso del
+ensemble (M11); (c)~la segmentación con MedSAM2 y U-Net; (d)~los casos
+similares del archivo de la Dra.~R.~Taberner (M4-bis, imagen$\to$imagen);
+(e)~la Lista de los 7 puntos (M10, solo sobre dermatoscopia); y (f)~el
+zero-shot abierto (M6, DermLIP).}
+\label{fig:proto-interfaz}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\newcommand{\protothumb}[2]{%
+  \begin{minipage}[t]{0.48\textwidth}\centering
+  \adjustbox{max width=\linewidth,max height=3.2cm,frame=0.4pt}{\includegraphics{#1}}\\[1pt]
+  {\scriptsize #2}
+  \end{minipage}}
+\protothumb{proto_razonamiento.png}{(g) Razonamiento clínico (M5)}\hfill
+\protothumb{proto_chatweb.png}{(h) Asistente web (citas al blog)}
+
+\vspace{2.5mm}
+\protothumb{proto_whatsapp.png}{(i) WhatsApp (análisis en móvil)}\hfill
+\protothumb{proto_annotation.png}{(j) Annotation Studio (conceptos)}
+
+\vspace{2.5mm}
+\protothumb{proto_historial.png}{(k) Historial de casos}\hfill
+\protothumb{proto_datasets.png}{(l) Datasets de anotación}
+\caption{Asistente conversacional y ciclo de datos de DermApIxel:
+(g)~el razonamiento clínico educativo (M5); (h, i)~el asistente
+conversacional anclado al blog, accesible por web y WhatsApp; y
+(j)--(l)~el ciclo de anotación experta: \emph{Annotation Studio} de
+conceptos, historial de casos y gestión de \emph{datasets} de anotación.}
+\label{fig:proto-interfaz2}
+\end{figure}

@@ -56,12 +56,12 @@ sección~\ref{sec:repo-datasheet}).
 \subsection{Transferencia congelada: linear probe y validación cruzada}
 
 \paragraph{Linear probe sobre el split fijo.}
-Se aplica el protocolo de linear probe (sección~\ref{sec:lp}) sobre
-las $1\,062$ imágenes evaluables (\texttt{label\_source=ontology} y
-modalidad clínica o dermatoscópica; train $N = 874$, validación
-$N = 152$, test $N = 36$), con PanDerm Base
-($768$-D) y Large ($1\,024$-D) como extractores congelados y head
-LogisticRegression. La evaluación L2 usa las $38$ subcategorías
+Se aplica el protocolo de linear probe (sección~\ref{sec:lp})
+---congelar el modelo y entrenar encima solo un clasificador lineal
+sencillo--- sobre las $1\,062$ imágenes evaluables (con etiqueta de
+ontología y modalidad clínica o dermatoscópica; train $N = 874$,
+validación $N = 152$, test $N = 36$), usando PanDerm Base ($768$-D) y
+Large ($1\,024$-D) como extractores congelados. La evaluación L2 usa las $38$ subcategorías
 efectivas tras consolidar las dos variantes ortográficas de
 \emph{Trastornos de la queratinización} (repositorio reproducible,
 \ref{cap:repo}, sección~\ref{sec:repo-ablaciones}).
@@ -133,13 +133,13 @@ estandarizadas de la dermatoscopia.
 
 
 \paragraph{Validación cruzada agrupada por caso.}
-Dado que el test fijo $N = 36$ es un único split, se estima el
-rendimiento esperado mediante validación cruzada de cinco folds
-agrupada por \texttt{case\_id} (StratifiedGroupKFold por L1
-sobre las $1\,062$ imágenes), sin que ninguna imagen del mismo caso
-caiga a la vez en train y test. La
-tabla~\ref{tab:dermapixel-cv} reporta media y desviación sobre los
-cinco folds.
+Como el test fijo ($N = 36$) es una única partición, se estima el
+rendimiento esperado con validación cruzada de cinco \emph{folds}: se
+reparten las $1\,062$ imágenes en cinco grupos ---respetando las
+proporciones de cada familia L1 y manteniendo juntas todas las imágenes
+de un mismo caso---, de modo que ninguna imagen del mismo paciente caiga
+a la vez en train y test. La tabla~\ref{tab:dermapixel-cv} reporta media
+y desviación sobre los cinco \emph{folds}.
 
 \begin{table}[htbp]
 \centering
@@ -210,12 +210,13 @@ el rendimiento sobre DermapixelAI~1.0: combinar encoders
 complementarios y ajustar finamente el encoder.
 
 \paragraph{Combinación de encoders.}
-Para evaluar si las representaciones de distintos encoders son
-complementarias, se entrena una head logística por encoder
-(PanDerm Base, Large y DermLIP v2; protocolo de sección~\ref{sec:lp})
-sobre los embeddings congelados y se contrastan frente a cinco
-estrategias de combinación (promedio de las tres, promedio
-Large$+$DermLIP, máximo por clase y apilado con meta-head). La
+Para ver si distintos encoders se complementan, se entrena un
+clasificador lineal sobre cada uno (PanDerm Base, Large y DermLIP v2;
+protocolo de sección~\ref{sec:lp}) y se comparan con cinco formas de
+combinarlos: promediar sus predicciones (las tres, o solo
+Large$+$DermLIP), quedarse con la clase de mayor puntuación entre los
+tres, o un \emph{apilado} ---un segundo clasificador que aprende a
+fusionarlas---. La
 tabla~\ref{tab:dermapixel-ensemble} reporta los tres niveles en el
 mismo test fijo.
 
@@ -275,12 +276,12 @@ en todo.
 \paragraph{Fine-tuning parcial del encoder.}
 \label{sec:dermapixel-ft}
 \label{sec:dermapixel-ft-l1}
-Este protocolo replica sobre DermapixelAI~1.0 el fine-tuning
-supervisado (FT) de la sección~\ref{sec:ft-results}. El encoder es
-PanDerm Large con las dos últimas capas descongeladas ($25{,}2$\,M
-parámetros entrenables, $8{,}3\%$ del encoder) y head
-fully-connected, con entropía cruzada reponderada por el
-desbalance de \emph{Genodermatosis} (receta en el repositorio
+Este protocolo repite sobre DermapixelAI~1.0 el fine-tuning supervisado
+(FT) de la sección~\ref{sec:ft-results}: en vez de congelar PanDerm
+Large entero, se descongelan sus dos últimas capas ($25{,}2$\,M
+parámetros, el $8{,}3\%$ del modelo) y se entrena un clasificador
+encima, dando más peso a la clase minoritaria (\emph{Genodermatosis})
+para compensar que tiene muy pocos ejemplos (receta en el repositorio
 reproducible, \ref{cap:repo}, sección~\ref{sec:repo-reproducibilidad}).
 
 Sobre el nivel L1, el fine-tuning parcial alcanza BAcc $0{,}622$
@@ -350,6 +351,22 @@ en L1/L2, $N = 28$ en L3) ensancha los IC95\%; la ausencia de
 una clasificación efectiva de tres clases; y la long tail de L3
 limita el rendimiento alcanzable bajo cualquier ajuste denso sobre el
 dataset actual.
+
+En conjunto, esta primera prueba sobre material clínico en castellano
+deja tres ideas claras. La primera: PanDerm Large transfiere bien al
+grano grueso ---las cuatro grandes familias de L1--- y el problema se
+endurece de forma ordenada a medida que el diagnóstico se afina (L2 y,
+sobre todo, L3), aunque siempre muy por encima del azar. La segunda:
+ninguna de las recetas probadas ---linear probe congelado, combinación
+de encoders o fine-tuning parcial--- gana en todos los niveles a la vez;
+cuál conviene depende del nivel de detalle y de la métrica que se
+priorice, de modo que hablar de un único encoder ``ganador'' simplifica
+de más. Y la tercera: en el nivel más fino el cuello de botella deja de
+ser el modelo y pasa a ser el dato ---la long tail de diagnósticos
+raros---, lo que explica por qué la adaptación eficiente de Dermapixel R0
+(sección~\ref{sec:dermapixel-spanderm-v0}) y la futura ampliación con el
+banco hospitalario (sección~\ref{sec:dermapixel-futuro}) son los caminos
+naturales para crecer.
 
 \section{Validación zero-shot multimodal sobre DermapixelAI 1.0}
 \label{sec:dermapixel-zs}
@@ -460,56 +477,59 @@ L3 (224 cls) & DermLIP v2    & es & $\mathbf{0{,}107}$ [$0{,}071$--$0{,}143$]
 \end{tabular}
 \end{table}
 
-La evaluación zero-shot sobre DermapixelAI~1.0 arroja tres
-hallazgos principales. \textit{Primero}, DermLIP v2 obtiene el mejor o
-equivalente rendimiento en las cinco métricas sobre los tres niveles
-(salvo Acc@3 L1, liderada por BiomedCLIP), coherente con su
-preentrenamiento sobre Derm1M, el único dataset específicamente
-dermatológico de los tres~\cite{derm1m}.
+La evaluación zero-shot sobre DermapixelAI~1.0 deja tres
+hallazgos principales.
 
-\textit{Segundo}, traducir el prompt del inglés al castellano
-reduce la Acc@1 en L1 entre $11$ y $14$ puntos porcentuales en los
-modelos anglófonos (DermLIP v2 $-13{,}9$\,pp, de $0{,}500$ a $0{,}361$;
-SigLIP-SO400M $-11{,}1$\,pp), mientras que BiomedCLIP mantiene su
-cifra en ambos idiomas. La penalización es consistente con el
-predominio del inglés en el preentrenamiento ---aunque el diseño no
-permite atribuirla causalmente a ese único factor--- y motiva
-directamente la rama textual castellana de Dermapixel R0: sin
-penalización lingüística, una rama en castellano no estaría
-justificada.
+\textit{Primero, el mejor modelo en este material es DermLIP v2:} gana o
+empata en las cinco métricas y los tres niveles ---la única excepción es
+Acc@3 en L1, donde lidera BiomedCLIP---. No sorprende, porque es el único
+de los tres que se preentrenó específicamente con imágenes de
+dermatología (Derm1M~\cite{derm1m}). Es, de hecho, el modelo que el
+prototipo DermApIxel emplea para su módulo de clasificación zero-shot de
+clase abierta (sección~\ref{sec:repo-prototipo}).
 
-\textit{Tercero}, la comparación con el linear probe supervisado
-(tabla~\ref{tab:dermapixel-lp}) cuantifica la brecha entre un sistema
-entrenado y uno zero-shot: $+29{,}4$\,pp BAcc en L1 y
-$+10{,}5$\,pp en L3 a favor del LP. El comportamiento se invierte, en
-cambio, en L2, y aquí aparece el resultado más llamativo de la
-sección: DermLIP v2 zero-shot en inglés (AUROC $0{,}794$) iguala
-al mejor linear probe supervisado (PanDerm Large, $0{,}793$) dentro de
-los intervalos de confianza. Esto sugiere que, a nivel de
-subcategorías dermatológicas, una parte sustancial del conocimiento
-discriminativo ya está codificada en el espacio multimodal
-preentrenado y puede recuperarse mediante texto, sin entrenamiento
-adicional; el grano grueso L1 y la long tail L3 sí requieren, en
-cambio, clasificador supervisado. La síntesis tabular de estas
-brechas ---penalización por idioma y distancia al linear probe
-supervisado--- figura en el repositorio reproducible (\ref{cap:repo},
+\textit{Segundo, escribir el \emph{prompt} en castellano en vez de en
+inglés penaliza a los modelos entrenados en inglés:} la Acc@1 en L1 cae
+entre $11$ y $14$ puntos (DermLIP v2 pierde $13{,}9$\,pp, de $0{,}500$ a
+$0{,}361$; SigLIP-SO400M, $11{,}1$\,pp), mientras que BiomedCLIP rinde
+igual en ambos idiomas. Encaja con que esos modelos vieron sobre todo
+texto en inglés durante el preentrenamiento ---aunque el experimento no
+permite atribuir la caída únicamente a ese factor--- y es justo lo que
+justifica dotar a Dermapixel R0 de una rama de texto en castellano: si el
+idioma no penalizara, esa rama no tendría sentido.
+
+\textit{Tercero, en una franja concreta el modelo sin entrenar alcanza al
+modelo entrenado.} Comparar el régimen zero-shot con el linear probe
+supervisado (tabla~\ref{tab:dermapixel-lp}) mide cuánto se gana por
+entrenar: $+29{,}4$\,pp de BAcc en L1 y $+10{,}5$\,pp en L3 a favor del
+modelo entrenado. En L2, sin embargo, esa ventaja casi desaparece, y ahí
+está el resultado más llamativo de la sección: DermLIP v2 sin entrenar
+nada, describiendo cada diagnóstico con palabras en inglés (AUROC
+$0{,}794$), iguala al mejor modelo entrenado (PanDerm Large, $0{,}793$)
+dentro de los intervalos de confianza. La lectura es que, en el grano
+intermedio de las subcategorías, buena parte del conocimiento necesario
+para distinguirlas ya está dentro del modelo preentrenado y se puede
+recuperar con texto, sin entrenar; el grano grueso (L1) y la cola de
+diagnósticos raros (L3) sí siguen necesitando un clasificador entrenado.
+La tabla que resume estas brechas ---penalización por idioma y distancia
+al linear probe--- está en el repositorio reproducible (\ref{cap:repo},
 sección~\ref{sec:repo-ablaciones}).
 
-Las cautelas sobre el tamaño del test ($N = 36$ en L1/L2, $N = 28$
-en L3) y la ausencia de solapamiento frente a Derm1M
-(sección~\ref{sec:dermapixel-results}) aplican también aquí. Dos
-caveats son específicos del régimen zero-shot: el
-ensemble de tres plantillas por nivel es una formulación
-mínima de prompt engineering ---la literatura emplea entre
-diez y ochenta plantillas asistidas por LLMs---, por lo que las
-cifras son cota inferior; y la evaluación L3 únicamente en castellano,
-por falta de traducción inglesa validada de sus $224$ clases, impide
-cuantificar la penalización por idioma sobre la long tail.
+Las cautelas sobre el tamaño del test ($N = 36$ en L1/L2, $N = 28$ en L3)
+y la ausencia de solapamiento con Derm1M
+(sección~\ref{sec:dermapixel-results}) valen también aquí. Hay además dos
+propias del régimen zero-shot. Una: para describir cada clase se usaron
+solo tres plantillas de texto por nivel, una versión deliberadamente
+mínima ---la literatura suele emplear entre diez y ochenta plantillas
+generadas con ayuda de LLMs---, así que estas cifras son un suelo, no un
+techo. Y otra: L3 se evaluó solo en castellano, porque no se dispone de
+una traducción inglesa validada de sus $224$ clases, lo que impide medir
+la penalización por idioma sobre la long tail.
 
 \section{Dermapixel R0: adaptación supervisada con LoRA (nivel L2)}
 \label{sec:dermapixel-spanderm-v0}
 
-Llegamos a la parte que más ilusión hacía: el primer modelo propio.
+Llegamos al primer modelo propio.
 \textbf{Dermapixel R0} es la primera adaptación de PanDerm al
 castellano, y conviene decir desde el principio qué cabe esperar de
 ella ---y qué no---. Sabemos que las cifras serán modestas, por dos
@@ -526,14 +546,17 @@ los resultados que siguen son alentadores.
 
 \subsection{Diseño de Dermapixel R0}
 
-En lo técnico, Dermapixel R0 es una adaptación mediante
-LoRA~\cite{lora} de PanDerm Large sobre DermapixelAI~1.0 ---adaptar un
-modelo preexistente, no preentrenar a escala---. Entrena
-únicamente $524$\,K parámetros ($0{,}17\%$ del modelo) y se orienta al
-nivel L2 ($38$ clases efectivas), donde la disponibilidad de muestras
-permite entrenamiento supervisado; el nivel L3 se evalúa mediante
-ranking por prototipos coseno por la extrema escasez de ejemplos por
-clase. La configuración completa (LoRA $r=16$, optimización,
+En lo técnico, Dermapixel R0 no reentrena PanDerm desde cero: parte del
+modelo ya existente y le añade unas pocas piezas entrenables mediante
+LoRA~\cite{lora} ---una técnica que congela el modelo original y solo
+ajusta unos módulos pequeños añadidos---. En total entrena $524$\,K
+parámetros, apenas el $0{,}17\%$ del modelo. Se centra en el nivel L2
+($38$ clases efectivas), el más fino para el que hay suficientes ejemplos
+por clase como para entrenar de forma supervisada; el nivel L3, con muy
+pocas imágenes por diagnóstico, no se entrena, sino que se resuelve por
+parecido: se calcula un \emph{prototipo} de cada clase ---el promedio de
+sus ejemplos--- y se asigna a cada imagen la clase cuyo prototipo es más
+parecido. La configuración completa (LoRA $r=16$, optimización,
 semillas) figura en el repositorio reproducible (\ref{cap:repo},
 sección~\ref{sec:repo-reproducibilidad}).
 
@@ -585,23 +608,24 @@ especializado, con ventaja en las clases minoritarias.
 
 \subsection{Adaptación eficiente frente a ajuste denso}
 
-La adaptación de bajo rango de Dermapixel R0 entrena $524$\,K
-parámetros frente a los $25{,}2$\,M del fine-tuning parcial denso
-(sección~\ref{sec:dermapixel-ft-l1}) y obtiene mejor BAcc L2:
-\textbf{Dermapixel R0 rinde mejor entrenando $48$ veces menos
-parámetros}. La adaptación eficiente de parámetros (PEFT) supera, por
-tanto, al fine-tuning parcial denso en este régimen de datos.
+Dermapixel R0 entrena $524$\,K parámetros frente a los $25{,}2$\,M del
+fine-tuning parcial denso (sección~\ref{sec:dermapixel-ft-l1}) y, aun
+así, obtiene mejor BAcc en L2: \textbf{rinde mejor entrenando $48$ veces
+menos parámetros}. Dicho de otro modo, cuando hay pocos datos, retocar
+unos pocos módulos bien elegidos (LoRA) funciona mejor que reentrenar
+capas enteras del modelo.
 
 \subsection{Limitaciones en L3}
 
-El rendimiento cae notablemente en L3 (ranking por prototipos coseno,
-Acc@1 $= 0{,}167$, $\times 42$ sobre el azar), donde $178$ de las $224$
-clases L3 presentes en train disponen de cinco o menos
-imágenes: la principal
-limitación deja de ser el modelo y pasa a ser la disponibilidad de
-datos. Las cifras completas figuran en el repositorio reproducible
-(\ref{cap:repo}, sección~\ref{sec:repo-ablaciones}); la head L3 directa queda
-condicionada al banco hospitalario del HUSLL ($\geq 30$ imágenes/clase,
+En el nivel más fino (L3, resuelto por parecido a prototipos) el
+rendimiento cae mucho: Acc@1 $= 0{,}167$ ---aún así, $42$ veces mejor que
+el azar---. El motivo es la falta de ejemplos: $178$ de las $224$ clases
+L3 presentes en train tienen cinco imágenes o menos. La principal
+limitación deja de ser, por tanto, el modelo y pasa a ser la cantidad de
+datos disponibles. Las cifras completas están en el repositorio
+reproducible (\ref{cap:repo}, sección~\ref{sec:repo-ablaciones}); entrenar
+un clasificador L3 directo tendrá que esperar al banco hospitalario del
+HUSLL ($\geq 30$ imágenes por clase,
 sección~\ref{sec:dermapixel-futuro}).
 
 \section{Dermapixel R0: rama contrastiva en castellano}
@@ -633,19 +657,20 @@ imagen y texto en un mismo espacio. Se entrenan cinco iteraciones
 pensadas para separar tres factores: mejorar el texto, mejorar la parte
 visual y añadir más datos externos; la meta fijada de antemano era
 llegar a L3 accuracy@1 $\geq 0{,}25$ en zero-shot. La arquitectura, los
-hiperparámetros, las particiones case-aware, la comparación frente a un
-wrapper inglés con traducción ES--EN y la generación de captions están
+hiperparámetros, las particiones que no mezclan imágenes de un mismo
+caso, la comparación frente a un sistema que traduce del castellano al
+inglés y usa un modelo inglés, y la generación de descripciones están
 en el repositorio reproducible (\ref{cap:repo},
 secciones~\ref{sec:repo-reproducibilidad} y~\ref{sec:repo-ablaciones}).
 
 \subsection{Evolución v1$\to$v5}
 
 La tabla~\ref{tab:spanderm-zs} reporta la accuracy@1 sobre las
-$101$ imágenes de test bajo régimen híbrido H6 (logits visuales
-y textuales con pesos $w_v = 0{,}3$, $w_t = 0{,}7$ calibrados sobre
-validación), uniforme a las cinco iteraciones para la comparativa
-cross-checkpoint. Los niveles L1 y L2 zero-shot sólo se reportan
-para v4 y v5.
+$101$ imágenes de test combinando la puntuación visual y la textual con
+pesos fijos ($30\%$ visual, $70\%$ texto, ajustados sobre validación; lo
+llamamos régimen \emph{H6}), idénticos para las cinco versiones de modo
+que la comparación entre ellas sea justa. Los niveles L1 y L2 solo se
+reportan para v4 y v5.
 
 \begin{table}[htbp]
 \centering
@@ -693,20 +718,20 @@ sección~\ref{sec:repo-ablaciones}).
 
 El experimento arroja tres conclusiones diferenciadas.
 
-\paragraph{(1) La adaptación textual aporta mejoras limitadas.}
-Las iteraciones v1$\to$v3, que actúan sobre el encoder textual y
-las captions ricas, quedan empatadas ($0{,}178 \to 0{,}198$,
-ruido experimental): ninguna intervención textual extrae información que
-las features visuales no contengan ya (el diagnóstico de techo
-Linear Probing figura en el repositorio reproducible,
+\paragraph{(1) Mejorar el texto apenas ayuda.}
+Las iteraciones v1$\to$v3 trabajan sobre la parte de texto (el encoder
+textual y las descripciones ricas) y quedan empatadas
+($0{,}178 \to 0{,}198$, dentro del ruido experimental): retocar el texto
+no extrae información que las imágenes no aportaran ya (el techo que marca
+el linear probe figura en el repositorio reproducible,
 \ref{cap:repo}, sección~\ref{sec:repo-ablaciones}).
 
-\paragraph{(2) La adaptación visual es la principal fuente de mejora.}
-El salto $+4{,}95$\,pp entre v3 y v4 ($0{,}198 \to 0{,}248$, idéntico
-régimen H6) se atribuye a la ampliación de capacidad del
-encoder visual (LoRA $r=32$ sobre doce bloques frente a $r=16$ sobre
-cuatro). El cuello de botella era visual, no textual: es la palanca de
-mayor efecto del experimento.
+\paragraph{(2) Mejorar la parte visual es lo que de verdad mueve la
+aguja.} El salto de $+4{,}95$\,pp entre v3 y v4 ($0{,}198 \to 0{,}248$)
+viene de dar más margen de adaptación a la parte visual: más módulos LoRA
+(rango $r=32$ sobre doce bloques, frente a $r=16$ sobre cuatro). El cuello
+de botella estaba en la imagen, no en el texto, y es la palanca de mayor
+efecto del experimento.
 
 \paragraph{(3) Ampliar con datos externos genéricos no mejora la
 alineación castellana.} La quinta iteración prueba a lo grande la idea
@@ -716,11 +741,11 @@ imágenes no traen texto en el registro del archivo, se les generan
 descripciones (captions) sintéticas con un LLM ---Claude Sonnet 4.6, de
 Anthropic, con un prompt que imita el estilo clínico de la
 Dra.~R.~Taberner---. El resultado es que la accuracy@1 L3 \emph{baja} a
-$0{,}2079$ ($-4{,}0$\,pp): la escala genérica no sustituye a tener datos
-del propio dominio. Aunque la parte visual mejora por separado
-(H1 $0{,}168 \to 0{,}238$), las captions externas no suenan como el
-archivo real y estropean la alineación en castellano sobre la que se
-calibra el modo híbrido H6. Y la long tail ni se toca: de las $327$
+$0{,}2079$ ($-4{,}0$\,pp): añadir muchos datos genéricos no sustituye a
+tener datos del propio dominio. La parte puramente visual sí mejora por
+su cuenta (de $0{,}168$ a $0{,}238$), pero las descripciones externas no
+suenan como el archivo real y estropean el encaje entre texto e imagen en
+castellano sobre el que se apoya el sistema combinado. Y la long tail ni se toca: de las $327$
 clases L3 con $\leq 5$ imágenes, ninguna recibe imágenes externas (las
 ocho clases reforzadas ya tenían entre $7$ y $20$ imágenes, o sea,
 fuera de la cola).
@@ -731,40 +756,57 @@ En la misma línea que la sensibilidad de DermLIP al tokenizer
 alineación imagen-texto en un dominio clínico tan específico
 lingüísticamente es frágil}.
 
-Una ablación con el modelo inglés DermLIP v2 ($\approx 403\,000$ pares
-Derm1M~\cite{derm1m}) refuerza el diagnóstico: alcanza
-accuracy@1 L3 $= 0{,}287$ ($+3{,}96$\,pp sobre v4), de modo que
-la palanca limitante es la escala de la alineación cross-modal y
-no la formulación textual. La ventaja de la rama contrastiva no es la
-exactitud ---inferior a la head supervisada cerrada--- sino aceptar
-consultas textuales libres en castellano sin vocabulario fijo, propiedad
-explotada en el módulo de recuperación del prototipo (repositorio
-reproducible, \ref{cap:repo}, sección~\ref{sec:repo-prototipo}).
+Una comprobación con el modelo inglés DermLIP v2 (entrenado con unos
+$403\,000$ pares imagen-texto de Derm1M~\cite{derm1m}) refuerza el
+diagnóstico: alcanza accuracy@1 L3 $= 0{,}287$ ($+3{,}96$\,pp sobre v4),
+lo que indica que lo que limita no es cómo se redacta el texto, sino la
+\emph{cantidad} de pares imagen-texto con que se entrena el encaje entre
+ambos. La ventaja de esta rama no es acertar más ---el clasificador
+supervisado de lista cerrada acierta más--- sino admitir consultas de
+texto libre en castellano, sin un vocabulario fijo de diagnósticos. Esa
+es la propiedad que motivó explorar un buscador por texto en castellano,
+pero \textbf{no se despliega}: su recuperación no generaliza al uso real
+(se cuantifica más abajo). El buscador del prototipo resuelve hoy la
+búsqueda por similitud de imagen con los embeddings de PanDerm Large
+(repositorio reproducible, \ref{cap:repo},
+sección~\ref{sec:repo-prototipo}).
 
 \subsection{Recuperación multimodal}
 
-El segundo eje es la recuperación cross-modal per-imagen sobre los
-$107$ pares (imagen, caption rica) de validación, con script idéntico
-entre versiones, en régimen rich-caption
-(\texttt{llm\_case\_summary}, el más representativo del lenguaje
-clínico real de la Dra.~R.~Taberner). La trayectoria por iteración
-con el lift sobre el azar figura en el repositorio reproducible
+El segundo eje es la búsqueda: dado un texto, recuperar las imágenes más
+parecidas (y al revés), sobre los $107$ pares (imagen, descripción rica)
+de validación, con el mismo procedimiento en todas las versiones
+(descripciones del tipo \texttt{llm\_case\_summary}, las más cercanas al
+lenguaje clínico real de la Dra.~R.~Taberner). La trayectoria por versión
+figura en el repositorio reproducible
 (\ref{cap:repo}, sección~\ref{sec:repo-ablaciones}).
 
-La recuperación cross-modal alcanza su pico en v2: i2t R@$5 = 0{,}654$,
-un lift de $\mathbf{14{,}0\times}$ sobre el azar, y desciende en
-las iteraciones posteriores (v4 $12{,}4\times$, v5 $10{,}8\times$). El
-dato relevante es
-la tensión que revela: v4 es la mejor versión clasificando
-($0{,}2475$ en L3) pero v2 es la mejor recuperando. Optimizar la
-clasificación y optimizar la búsqueda semántica no son, por tanto, el
-mismo problema: la LoRA visual (v4) y las captions externas (v5)
-reesculpen el espacio embebido a favor de la primera y en contra de la
-segunda.
+En su régimen más favorable ---validación, descripciones ricas
+(\texttt{llm\_case\_summary}) y checkpoint v2 (\emph{epoch}~007)--- la
+búsqueda alcanza i2t R@$5 = 0{,}654$ sobre los $107$ pares: el caso
+correcto aparece entre los cinco primeros en el $65{,}4\%$ de las
+consultas. Dentro de ese mismo régimen, v2 es la mejor versión recuperando
+aunque v4 sea la mejor clasificando ($0{,}2475$ en L3), señal de que
+clasificar y buscar no son el mismo objetivo.
 
-La figura~\ref{fig:retrieval-es} muestra esta recuperación de forma
-concreta: a partir de una consulta de texto libre en castellano, el
-sistema devuelve los casos visualmente más parecidos del archivo.
+Ahora bien, ese $0{,}654$ caracteriza ese escenario concreto, no el
+buscador en uso real, y \textbf{no generaliza}. Medida como se usaría de
+verdad ---consulta corta de usuario, imágenes \emph{held-out} no vistas en
+entrenamiento, archivo completo--- la recuperación se desploma a niveles
+de azar: sobre el test \emph{held-out}, la i2t R@$5$ cae al orden de
+$0{,}02$ (frente a un azar de $\sim 0{,}005$ sobre un archivo de
+$\sim 1\,000$ imágenes). Lo que estos experimentos demuestran es, por
+tanto, la \textbf{viabilidad técnica} de un espacio dual texto-imagen en
+castellano ---la arquitectura entrena, converge y es recuperable en
+validación con texto rico---, no un buscador útil. Por eso la rama no se
+despliega: en producción la búsqueda de casos similares la sigue
+resolviendo M4-bis (imagen$\to$imagen, PanDerm Large $+$ FAISS). El
+desglose por régimen y \emph{checkpoint} figura en el repositorio
+reproducible (\ref{cap:repo}, sección~\ref{sec:repo-ablaciones}).
+
+La figura~\ref{fig:retrieval-es} ilustra ese régimen favorable de
+validación: a partir de una consulta de texto rico en castellano, el
+sistema devuelve los casos más parecidos del conjunto de validación.
 
 \begin{figure}[htbp]
 \centering
@@ -777,36 +819,31 @@ registro de la Dra.~R.~Taberner--- y sus cinco imágenes recuperadas por
 similitud coseno; el marco verde señala el caso correcto (\emph{ground
 truth}). Tres de las cuatro consultas recuperan el caso correcto en el
 \emph{top-5}, en línea con la métrica global i2t R@$5 = 0{,}654$; la
-última (exantema de sarampión) es un fallo honesto (rango $15$).}
+última (exantema de sarampión) es un fallo honesto (rango $15$). Esta
+métrica corresponde al régimen de validación con descripción rica y no
+representa el uso real (consulta corta sobre el archivo completo), donde
+la recuperación cae a niveles de azar.}
 \label{fig:retrieval-es}
 \end{figure}
-
-La calibración de los logits zero-shot de la rama contrastiva
-por temperature scaling reduce el \emph{Expected Calibration
-Error} (ECE) L3 un $\sim 97\%$ sobre v4 ($0{,}7262 \to 0{,}0213$,
-$\tau = 0{,}4165$); el procedimiento, el diagrama de fiabilidad y la
-limitación de convergencia sobre v5 figuran en el
-repositorio reproducible (\ref{cap:repo},
-sección~\ref{sec:repo-ablaciones}). El sistema v4 es candidato a
-módulo de búsqueda textual castellano del prototipo DermApIxel
-(sección~\ref{sec:repo-prototipo}), con la calibración escalar $\tau = 0{,}4165$
-como capa final.
 
 \section{Síntesis comparativa de métodos sobre DermapixelAI 1.0}
 \label{sec:dermapixel-extra}
 \label{sec:dermapixel-extra-sintesis}
 
-Las secciones~\ref{sec:dermapixel-results}--\ref{sec:spanderm-clip}
-evalúan encoders de dominio (PanDerm Base/Large, DermLIP v2),
-vision-language médicos (BiomedCLIP, SigLIP-SO400M) y las dos ramas de
-Dermapixel R0 sobre DermapixelAI~1.0. El repositorio reproducible
-(\ref{cap:repo}, sección~\ref{sec:repo-ablaciones}) añade
-dos ablaciones complementarias ---encoders generalistas no
-médicos (DINOv2, CLIP-L) bajo linear probe y dos arquitecturas de
-inferencia (retrieval $k$-NN con FAISS y zero-shot
-jerárquico en cascada)---, integradas en la síntesis. La
-tabla~\ref{tab:dermapixel-extra-sintesis} consolida BAcc y AUROC por
-nivel ontológico para el conjunto completo de métodos.
+A lo largo de las
+secciones~\ref{sec:dermapixel-results}--\ref{sec:spanderm-clip} se han
+evaluado, sobre DermapixelAI~1.0, modelos especializados en dermatología
+(PanDerm Base/Large, DermLIP v2), modelos médicos de imagen y texto
+(BiomedCLIP, SigLIP-SO400M) y las dos ramas de Dermapixel R0. El
+repositorio reproducible (\ref{cap:repo},
+sección~\ref{sec:repo-ablaciones}) añade dos pruebas más, ya integradas
+en esta síntesis: dos modelos generalistas no médicos (DINOv2, CLIP-L)
+con linear probe y dos formas distintas de clasificar ---por vecinos más
+cercanos (\emph{k}-NN con FAISS, es decir, asignar a cada imagen la clase
+de los casos más parecidos del archivo) y zero-shot en cascada, decidiendo
+primero la familia y luego el detalle---. La
+tabla~\ref{tab:dermapixel-extra-sintesis} reúne BAcc y AUROC por nivel
+para el conjunto completo de métodos.
 
 \begin{table}[htbp]
 \centering
@@ -852,25 +889,24 @@ $k$-NN FAISS PanDerm Large         & Rep.~\ref{sec:repo-ablaciones} & $0{,}686$ 
 \end{tabular}
 \end{table}
 
-No existe un método universalmente superior sobre DermapixelAI~1.0: el
-liderazgo cambia de método con cada nivel ontológico (L1--L3) y cada
-criterio de evaluación (clasificación equilibrada, discriminación
-probabilística o recuperación basada en similitud), como muestra la
-alternancia de valores en negrita de la
-tabla~\ref{tab:dermapixel-extra-sintesis}. Las cifras se reportan sobre
-el test fijo ($N = 36$ en L1/L2, $N = 28$ en L3), por lo que las
-jerarquías en L2 y L3 deben leerse como indicio y remitirse a la
-validación cruzada agrupada por caso (tabla~\ref{tab:dermapixel-cv})
-como estimación defendible del linear probe congelado. La elección de
-arquitectura óptima queda así condicionada por el nivel ontológico
-objetivo y por el uso previsto del sistema (clasificación, recuperación
-o soporte explicativo), en línea con la lectura interpretativa de la
-sección~\ref{sec:disc-especializacion}.
+Ningún método gana en todo sobre DermapixelAI~1.0: quién va primero
+cambia con el nivel de detalle (L1--L3) y con la métrica que se mire
+---acierto equilibrado entre clases (BAcc), capacidad de ordenar bien los
+casos (AUROC) o calidad de la búsqueda por parecido---, como refleja el
+baile de negritas en la tabla~\ref{tab:dermapixel-extra-sintesis}. Como
+las cifras salen del test fijo ($N = 36$ en L1/L2, $N = 28$ en L3), las
+clasificaciones en L2 y L3 conviene tomarlas como indicio y contrastarlas
+con la validación cruzada agrupada por caso
+(tabla~\ref{tab:dermapixel-cv}), que es la estimación más fiable. En
+resumen, cuál es la mejor opción depende del nivel que se quiera predecir
+y de para qué se vaya a usar el sistema ---clasificar, buscar casos
+parecidos o dar una explicación---, en la línea de la lectura
+interpretativa de la sección~\ref{sec:disc-especializacion}.
 
-Como exploración aplicada orientada a seguridad clínica, se evaluó un
-ensemble entre modelos dermatológicos y generalistas para
-maximizar la sensibilidad en melanoma; al tratarse de una característica
-del prototipo y no de un resultado central sobre modelos fundacionales,
-los detalles completos (configuración, tabla comparativa y análisis de
-complementariedad) se presentan en el repositorio reproducible
-(\ref{cap:repo}, sección~\ref{sec:repo-prototipo}).
+Por último, con un enfoque orientado a la seguridad clínica, se probó a
+\emph{combinar} un modelo dermatológico con uno generalista para no pasar
+por alto ningún melanoma (maximizar la sensibilidad). Como es una
+característica del prototipo y no un resultado central sobre modelos
+fundacionales, los detalles ---configuración, tabla comparativa y
+análisis de en qué se complementan--- están en el repositorio
+reproducible (\ref{cap:repo}, sección~\ref{sec:repo-prototipo}).

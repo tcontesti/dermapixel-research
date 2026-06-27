@@ -438,9 +438,12 @@ cerrada con LoRA (Dermapixel R0, cabeza L2) alcanza Acc@1 $0{,}250$
 sobre L2, frente a $0{,}133$ de la rama contrastiva \emph{zero-shot
 open-class} (v2) sobre las $23$ clases efectivas del test per-case. La
 diferencia operativa es la capacidad de la rama contrastiva de aceptar
-consultas textuales libres en castellano sin fijar el vocabulario,
-propiedad explotada en el módulo RAG del prototipo
-(Anexo~\ref{cap:anexoh}).
+consultas textuales libres en castellano sin fijar el vocabulario. Esa
+propiedad motivó un futuro buscador textual del prototipo, pero no se
+despliega ---su recuperación no generaliza al uso real
+(sección~\ref{sec:anexoi-sintesis})---; la búsqueda de casos similares en
+producción la resuelve M4-bis (imagen$\to$imagen, PanDerm Large $+$ FAISS;
+Anexo~\ref{cap:anexoh}).
 
 \subsection{Síntesis de las cinco iteraciones}
 \label{sec:anexoi-sintesis}
@@ -501,6 +504,16 @@ homogéneo de esta tabla permite la comparativa cross-\emph{checkpoint}
 (detalle en Anexo~\ref{cap:anexog}).
 \normalsize
 \end{table}
+
+\textbf{Importante:} las cifras de \emph{Lift i2t} R@$5$ de la tabla
+(con pico $14{,}0\times$ en v2, equivalente a R@$5 = 0{,}654$)
+corresponden al régimen de \emph{validación} con descripciones ricas
+(\texttt{llm\_case\_summary}) y caracterizan un escenario favorable, no el
+rendimiento del buscador en uso real. Sobre el test \emph{held-out} y con
+consulta corta, la recuperación cae a niveles de azar (i2t R@$5$ del orden
+de $0{,}02$), por lo que estas cifras deben leerse como evidencia de la
+\emph{viabilidad técnica} del espacio dual texto-imagen, no como capacidad
+de recuperación desplegable.
 
 El experimento articula tres ejes. La capacidad arquitectónica
 (v3$\to$v4) es la palanca efectiva: el cuello de botella reside en el

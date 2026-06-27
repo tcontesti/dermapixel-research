@@ -154,27 +154,16 @@ su preentrenamiento Derm1M (sección~\ref{sec:auditoria-resultados}).}
 \label{fig:lp-per-dataset}
 \end{figure}
 
-PanDerm Large supera en accuracy a la mejor CNN supervisada (la mejor
-de ConvNeXt-L y EfficientNetV2-L por métrica) sobre los tres
-datasets, con ventaja no uniforme: $+0{,}5$\,pp en HAM10000
-(dermatoscopia estandarizada) frente a $+8{,}2$\,pp en PAD-UFES-20
-(fotografía móvil) y $+2{,}9$\,pp en DDI ($+8{,}6$\,pp AUROC; desglose
-en el repositorio reproducible, \ref{cap:repo},
-sección~\ref{sec:repo-tablas}).
-HAM10000 constituye una excepción parcial: SigLIP-Large SO400M obtiene
-la mejor accuracy y AUROC, y ConvNeXt-Large supera ligeramente a
-PanDerm Large en AUROC ($-1{,}3$\,pp). Este comportamiento sugiere que
-los beneficios del preentrenamiento de dominio son menores en entornos
-dermatoscópicos altamente estandarizados; en cambio, PanDerm Large
-encabeza en PAD-UFES-20 y DDI, los datasets clínicos más alejados del
-dominio web.
-
-La figura~\ref{fig:lp-per-dataset} amplía la comparación a los diez
-datasets externos, añadiendo a PanDerm los modelos vision-language
-DermLIP v2 y BiomedCLIP y el encoder general DINOv2: ningún modelo
-domina en todos los datasets. La única cifra que debe leerse con
-cautela es la de DermLIP v2 sobre Dermnet, dataset que forma parte de
-su preentrenamiento (Derm1M; sección~\ref{sec:auditoria-resultados}).
+PanDerm Large supera a las líneas base convolucionales en los tres
+datasets, pero su ventaja no es uniforme: en dermatoscopia muy
+estandarizada (HAM10000) los modelos generalistas la recortan
+---SigLIP-Large logra incluso la mejor accuracy y AUROC---, mientras
+que en los datasets clínicos más alejados del dominio web (PAD-UFES-20
+y DDI) PanDerm encabeza con holgura. La figura~\ref{fig:lp-per-dataset}
+extiende la comparación a los diez datasets y a DermLIP v2, BiomedCLIP
+y DINOv2; la única cifra que debe leerse con cautela es la de DermLIP
+v2 sobre Dermnet, contenido en su preentrenamiento
+(sección~\ref{sec:auditoria-resultados}).
 
 No existe, por tanto, una jerarquía universal entre familias: los
 sistemas vision-language generalistas igualan o superan a los
@@ -573,8 +562,10 @@ sección~\ref{sec:repo-llm}).
 
 El rendimiento depende drásticamente de cómo se construye el texto.
 Pasar de \emph{prompts} genéricos en inglés con tokenizer
-PubMedBERT al conjunto A3 de Derm1M con tokenizer GPT-2/CLIP eleva
-la AUROC de $0{,}366$ a $0{,}854$ ($+48{,}8$\,pp). Los
+PubMedBERT al conjunto A3 de Derm1M ---la plantilla de \emph{prompts}
+que obtuvo el mejor rendimiento en el trabajo original--- con
+tokenizer GPT-2/CLIP eleva la AUROC de $0{,}366$ a $0{,}854$
+($+48{,}8$\,pp). Los
 \emph{prompts} genéricos con PubMedBERT quedan en AUROC$<0{,}5$,
 señal de que proyectan en un espacio no alineado con el encoder
 visual de la variante v1/v2. Cambiar solo el conjunto A3, sin tocar
@@ -935,8 +926,7 @@ ECE${}=0{,}018$ y \emph{Brier}${}=0{,}031$ para DermLIP v2 (curvas de
 fiabilidad por \emph{bin} en el repositorio reproducible,
 \ref{cap:repo}, sección~\ref{sec:repo-calibracion-ham}). El análisis
 sistemático de calibración entre tareas queda fuera del alcance de este
-trabajo (capítulo~\ref{cap:limitaciones}, sección de elementos no
-abordados).
+trabajo (sección~\ref{sec:alcance}, elementos no abordados).
 
 \paragraph{Endpoint 3: malignidad sobre DermapixelAI~1.0 (protocolo
 distinto).} El tercer \emph{endpoint} ---malignidad frente al resto
@@ -984,19 +974,22 @@ de Holm: con $58$ positivos el \emph{endpoint} no tiene potencia para
 ordenar los modelos. Dermapixel R0 queda fuera de este contraste, cuyo
 alcance se circunscribe a los encoders congelados.
 
-En conjunto, el cierre estadístico se concentra en Fitzpatrick17k ---el
-único \emph{endpoint} con potencia suficiente ($226$ positivos)---,
-donde la jerarquía «específico de dominio $>$ generalista» es
-significativa sin sostener una ordenación fina entre los dos líderes
-específicos. Los \emph{endpoints} de HAM10000 ($70$ melanomas) y
-DermapixelAI~1.0 ($58$ malignos) corroboran de forma descriptiva ese
-patrón ---AUROC elevadas y solapadas--- sin alcanzar significación, un
-resultado compatible con la falta de potencia y no con la ausencia de
-efecto. La lectura que habilita el contraste es, por tanto, más sólida
-que coronar a un único modelo: los resultados no identifican un encoder
-dermatológico claramente superior, sino una \emph{familia} de encoders
-dermatológicos que supera de forma consistente a los modelos
-generalistas, conclusión que se retoma en la discusión
+En conjunto, los tres \emph{endpoints} cuentan la misma historia, pero
+con distinto grado de certeza estadística, y la diferencia está en
+cuántos casos positivos aporta cada uno. Solo Fitzpatrick17k reúne los
+suficientes ($226$) para que el test pueda separar a unos modelos de
+otros: ahí la jerarquía «modelo específico de dominio $>$ modelo
+generalista» resulta significativa, aunque sin llegar a distinguir entre
+sí a los dos líderes específicos. Los otros dos \emph{endpoints}
+---HAM10000, con $70$ melanomas, y DermapixelAI~1.0, con $58$ malignos---
+reproducen el mismo patrón de forma descriptiva, con AUROC altas y muy
+solapadas, pero con tan pocos positivos el test no llega a la
+significación. Conviene subrayar la diferencia: eso indica falta de
+potencia estadística ---no hay casos suficientes para confirmar la
+diferencia---, no que la diferencia no exista. La conclusión sólida no
+es, por tanto, coronar a un único modelo, sino constatar que toda una
+\emph{familia} de encoders dermatológicos supera de forma consistente a
+los generalistas, idea que se retoma en la discusión
 (sección~\ref{sec:disc-especializacion}).
 
 \section{Interpretabilidad del SAE: alineamiento con conceptos
