@@ -237,21 +237,6 @@ BLIP-2 (Q-Former)           & Vision-language general    & --- & \cite{blip2_202
 \end{tabular}
 \end{table}
 
-Los encoders difieren en la dimensión de sus \emph{embeddings}:
-$768$ en PanDerm Base; $1\,024$ en PanDerm Large y DINOv2
-ViT-L/14; $1\,152$ en SigLIP-Large SO400M. La cifra de
-$\sim 307$\,M parámetros de PanDerm Large es el valor nominal del
-ViT-L/16 publicado por sus autores. Al cargarlo como extractor de
-características y sustituir la head original por la identidad
-quedan $303{,}3$\,M parámetros efectivos. Esta diferencia no afecta
-al rendimiento, porque la head descartada no interviene en la
-inferencia. La familia DermLIP usa ViT-B/16 como encoder visual y
-dos encoders textuales alternativos: PubMedBERT extendido a $256$
-tokens (variantes v1 y v2) y GPT-2 con tokenizer de CLIP a $77$
-tokens (variante original). DermFM-Zero~\cite{dermfmzero2026} se
-incluye en la discusión pero no en la evaluación empírica, ya que
-sus pesos no estaban disponibles a la fecha de cierre.
-
 \section{Infraestructura experimental}
 \label{sec:infraestructura}
 
