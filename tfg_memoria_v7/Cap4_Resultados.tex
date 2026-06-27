@@ -517,6 +517,25 @@ extremos; y el aumento en test y el \emph{ensemble} de pliegues aportan
 mejoras marginales ($+0{,}13$/$+0{,}14$\,pp) que no compensan su coste,
 por lo que se recomienda un único modelo.
 
+\paragraph{Del experimento al prototipo: segmentación automática en
+cascada.}
+Estos dos hallazgos ---que la caja es lo que más importa y que conviene
+que sea holgada--- se aplican tal cual en el prototipo. La U-Net del
+control, floja como segmentador por sí sola ($0{,}8811$), es en cambio
+un buen \emph{localizador} (recall $0{,}942$), así que se reaprovecha
+para \emph{generar} la caja automáticamente. El modo automático
+encadena dos pasos: la U-Net localiza la lesión y, del mayor componente
+conexo de su máscara, se deriva una \emph{bounding box} a la que se
+añade un $10\%$ de margen ---deliberadamente holgada, nunca apretada,
+siguiendo el resultado de robustez---; esa caja alimenta a MedSAM2-tiny,
+que produce la máscara final (con una caja central de respaldo si la
+U-Net no detecta nada). El sistema segmenta así sin intervención
+humana, cerrando el bucle del régimen \emph{box-prompted}: la baja
+precisión de la U-Net deja de importar, porque su papel no es segmentar,
+sino indicar \emph{dónde mirar}. La configuración de la cascada figura
+en el repositorio reproducible (\ref{cap:repo},
+sección~\ref{sec:repo-prototipo}).
+
 \subsection{El modelo segmenta tan bien como un experto humano}
 \label{sec:seg-techo-anotador}
 
