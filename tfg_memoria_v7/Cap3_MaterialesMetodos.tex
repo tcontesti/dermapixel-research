@@ -631,23 +631,20 @@ detecta si la ventaja de un modelo es consistente y no fruto del azar,
 sin suponer que los valores sigan una distribución normal---.
 
 \paragraph{Análisis complementarios.}
-Para interpretar las diferencias observadas entre arquitecturas se
-realizan cuatro análisis complementarios. Un control automático sin
-caja ---una U-Net con encoder ResNet-101 preentrenado en
-ImageNet--- se evalúa sin recibir \emph{bounding box} para aislar la
-contribución del \emph{prompt}; esta misma U-Net desempeña además un
-segundo papel ---es el localizador que, en el modo automático del
-prototipo, genera la caja que alimenta al segmentador (cascada
-U-Net~$\to$~caja~$\to$~MedSAM2-tiny, sección~\ref{sec:seg-robustez})---.
-La estabilidad de la mejor
-configuración se estima por validación cruzada de cinco pliegues
-estratificados por dataset de origen, junto a una ablación del rango
-de adaptación de bajo rango (\emph{LoRA}, $r\in\{4,8,16,32\}$); su
-robustez frente a la calidad del \emph{prompt} se mide bajo
-perturbaciones controladas de la \emph{bounding box}, y la confianza
-de las máscaras se calibra \emph{a posteriori} mediante
-\emph{temperature scaling}. Por último, el techo de la métrica se
-contextualiza frente al acuerdo inter-anotador del propio dataset.
+Para interpretar las diferencias entre arquitecturas se añaden cuatro
+comprobaciones. (i)~Un \emph{control sin caja} ---una U-Net
+(ResNet-101) que segmenta sin recibir \emph{bounding box}--- mide
+cuánto aporta de verdad el \emph{prompt}; esa misma U-Net es, además,
+el localizador que en el prototipo genera la caja de forma automática
+(cascada U-Net~$\to$~caja~$\to$~MedSAM2-tiny,
+sección~\ref{sec:seg-robustez}). (ii)~Se confirma que el resultado no
+depende de una partición concreta (validación cruzada de cinco
+pliegues) ni del tamaño de la adaptación LoRA ($r\in\{4,8,16,32\}$).
+(iii)~Se mide si aguanta cuando la caja no es perfecta (perturbaciones
+controladas de la \emph{bounding box}) y si la confianza de las
+máscaras está bien calibrada (\emph{temperature scaling}). (iv)~Por
+último, el Dice se compara con el acuerdo entre anotadores humanos del
+propio dataset, para ver cuánto margen de mejora queda realmente.
 
 \subsection{Clasificación zero-shot multimodal}
 \label{sec:zs}
