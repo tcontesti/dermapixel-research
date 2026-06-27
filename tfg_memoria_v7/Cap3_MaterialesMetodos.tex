@@ -687,7 +687,11 @@ Para interpretar las diferencias observadas entre arquitecturas se
 realizan cuatro análisis complementarios. Un control automático sin
 caja ---una U-Net con encoder ResNet-101 preentrenado en
 ImageNet--- se evalúa sin recibir \emph{bounding box} para aislar la
-contribución del \emph{prompt}. La estabilidad de la mejor
+contribución del \emph{prompt}; esta misma U-Net desempeña además un
+segundo papel ---es el localizador que, en el modo automático del
+prototipo, genera la caja que alimenta al segmentador (cascada
+U-Net~$\to$~caja~$\to$~MedSAM2-tiny, sección~\ref{sec:seg-robustez})---.
+La estabilidad de la mejor
 configuración se estima por validación cruzada de cinco pliegues
 estratificados por dataset de origen, junto a una ablación del rango
 de adaptación de bajo rango (\emph{LoRA}, $r\in\{4,8,16,32\}$); su
