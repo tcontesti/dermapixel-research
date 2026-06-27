@@ -114,8 +114,10 @@ dermatológicas en cuatro modalidades (fotografía corporal total,
 dermatoscopia, fotografía clínica e histopatología). El
 preentrenamiento utiliza \emph{masked latent modeling}: la red
 reconstruye representaciones latentes de regiones ocultas en lugar
-de píxeles, con un modelo CLIP-Large congelado como
-\emph{teacher}. Sus autores reportan una mejora media del
+de píxeles, alineándolas con las que produce un codificador CLIP-Large
+congelado como objetivo (\emph{teacher}) ---del que solo se usa la
+rama de imagen, de modo que PanDerm sigue siendo un modelo de
+imagen---. Sus autores reportan una mejora media del
 $+10{,}2\%$ sobre el estado del arte previo en $28$ tareas
 dermatológicas. La disponibilidad simultánea de pesos, código y
 benchmarks lo convierte en el primer modelo fundacional dermatológico
