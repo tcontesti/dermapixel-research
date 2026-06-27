@@ -332,69 +332,34 @@ como apoyo descriptivo.
 \section{Pruebas estadísticas}
 \label{sec:estadistica}
 
-Que un modelo obtenga una cifra mejor que otro no basta para afirmar
-que sea mejor: la diferencia podría deberse al azar de qué imágenes
-concretas cayeron en el conjunto de evaluación. Este riesgo es mayor
-en dermatología, donde los conjuntos de test son moderados, las
-clases están desbalanceadas y los casos son clínicamente
-heterogéneos. Para no confundir una diferencia real con una
-casualidad, el trabajo adopta un protocolo estadístico explícito,
-alineado con las guías de reporte para inteligencia artificial en
-imagen médica (CLAIM~\cite{claim2024} y TRIPOD+AI~\cite{tripodai2024}).
-Lo componen tres herramientas: los intervalos de confianza por
-\emph{bootstrap}, que miden cuánto puede oscilar cada cifra; el test
-de DeLong, que compara dos modelos de forma justa; y la corrección de
-Holm, que evita dar por buenas diferencias surgidas de hacer muchas
-comparaciones.
-
-El \emph{bootstrap} responde a la pregunta ``¿cuánto cambiaría esta
-cifra si el test hubiera estado formado por otras imágenes?''. El
-procedimiento es sencillo: se generan $1\,000$ conjuntos de test
-``alternativos'' tomando imágenes del test real al azar y con
-reemplazo ---conservando la proporción de clases---, y se recalcula la
-métrica en cada uno. La dispersión de esas $1\,000$ cifras describe su
-incertidumbre, y el rango que descarta el $2{,}5\%$ de valores más
-altos y el $2{,}5\%$ más bajos define el intervalo de confianza al
-$95\%$: el margen dentro del cual cabe esperar el valor verdadero.
-Este método no exige suponer que los datos sigan ninguna distribución
-concreta, lo que lo hace apropiado para los conjuntos reducidos y
-desbalanceados de este trabajo, donde las fórmulas estadísticas
-clásicas no son fiables. Los intervalos al $95\%$ ($B = 1\,000$,
-remuestreo estratificado por clase, percentil $2{,}5/97{,}5$) de las
-métricas \emph{headline} que no los incluyen en el cuerpo figuran en
-el repositorio reproducible (\ref{cap:repo},
+Que un modelo dé una cifra mejor que otro no basta para afirmar que
+sea mejor: la diferencia podría deberse al azar de qué imágenes
+cayeron en el test, un riesgo mayor en dermatología por los conjuntos
+moderados y desbalanceados. Para distinguir una ventaja real de una
+casualidad, el trabajo emplea ---en línea con las guías
+CLAIM~\cite{claim2024} y TRIPOD+AI~\cite{tripodai2024}--- tres
+herramientas: intervalos de confianza por \emph{bootstrap} (cuánto
+puede oscilar una cifra al remuestrear el test), el test de
+DeLong~\cite{delong1988} (compara de forma pareada la AUROC de dos
+modelos sobre las mismas imágenes) y la corrección de Holm para las
+comparaciones múltiples. Todas se resumen en el \emph{p}-valor: la
+probabilidad de observar una diferencia tan grande como la medida si
+en realidad no existiera ninguna; un \emph{p}-valor pequeño
+(típicamente $<0{,}05$) indica que es poco probable que la diferencia
+sea fruto del azar. Como al hacer muchas comparaciones alguna puede
+parecer significativa por casualidad, los \emph{p}-valores se dan en su
+valor nominal y corregidos por Holm; en la práctica, las diferencias
+principales son tan grandes (con \emph{p} varios órdenes de magnitud
+por debajo de $0{,}05$) que las conclusiones se mantienen con cualquier
+corrección. Los intervalos y contrastes completos figuran en el
+repositorio reproducible (\ref{cap:repo},
 sección~\ref{sec:repo-bootstrap-ci}).
 
-Para decidir si la diferencia de AUROC entre dos modelos es real, y no
-fruto del azar, se emplea el test de DeLong~\cite{delong1988}. La
-razón de elegirlo es importante: como ambos modelos se evalúan sobre
-exactamente las mismas imágenes, sus aciertos y errores están ligados;
-tratar sus dos AUROC como si procedieran de muestras independientes
-haría parecer las diferencias más significativas de lo que son. El
-test de DeLong tiene en cuenta esa relación y produce una comparación
-pareada correcta. Se aplica a los contrastes entre encoders sobre
-tres tareas binarias de detección de malignidad ---Fitzpatrick17k,
-HAM10000 y DermapixelAI~1.0--- (sección~\ref{sec:equidad-delong};
-tabla detallada en el repositorio reproducible, \ref{sec:repo-tablas}).
-
-Por último, cuando se hacen muchas comparaciones aumenta la
-probabilidad de que alguna parezca significativa solo por azar. Para
-controlarlo, los $p$-valores se reportan de dos maneras: el valor
-nominal (sin corregir) y el valor corregido por el método de Holm
-dentro de cada tarea. Mostrar ambos es deliberado: la corrección
-reduce los falsos positivos, pero también la capacidad de detectar
-diferencias reales, y ofrecer las dos cifras permite al lector juzgar
-por sí mismo la solidez de cada comparación. En la práctica, las
-diferencias observadas son tan grandes (con $p$ varios órdenes de
-magnitud por debajo de $0{,}05$) que las conclusiones principales se
-mantienen con cualquier corrección estándar. Los tamaños de muestra
-por subgrupo ---por fototipo cutáneo y por nivel de la ontología--- se
-recogen en las tablas~\ref{tab:muestral-fst} y~\ref{tab:muestral-nivel},
-que ayudan a ver qué análisis tienen más respaldo: en particular, el
-escaso número de casos del fototipo~VI ($n = 73$ en test) y la larga
-cola de diagnósticos poco frecuentes de L3 limitan la fiabilidad de
-las conclusiones en esos subgrupos. El detalle por subgrupo acompaña
-además a sus cifras en el capítulo~\ref{cap:resultados}.
+Los tamaños de muestra por subgrupo ---fototipo cutáneo y nivel
+ontológico--- se recogen en las tablas~\ref{tab:muestral-fst}
+y~\ref{tab:muestral-nivel}, que acotan la potencia de cada análisis: el
+reducido fototipo~VI ($n = 73$ en test) y la cola larga de L3 limitan
+la fiabilidad de las conclusiones en esos subgrupos.
 
 \begin{table}[htbp]
 \centering
