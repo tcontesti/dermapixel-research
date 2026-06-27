@@ -626,7 +626,9 @@ dataset dermatoscópico ampliado y deduplicado por hash MD5 de píxel
 PH2), y se evalúan sobre el mismo test canónico de ISIC2018
 ($N = 1\,000$, blindado frente al entrenamiento). La significación
 de las diferencias de Dice se contrasta con el test de Wilcoxon
-pareado~\cite{wilcoxon1945}.
+pareado~\cite{wilcoxon1945} ---que compara el Dice imagen a imagen y
+detecta si la ventaja de un modelo es consistente y no fruto del azar,
+sin suponer que los valores sigan una distribución normal---.
 
 \paragraph{Análisis complementarios.}
 Para interpretar las diferencias observadas entre arquitecturas se
