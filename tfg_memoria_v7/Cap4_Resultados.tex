@@ -293,20 +293,16 @@ $100\%$         & $1\,493$             & $\mathbf{0{,}772}$ & $\mathbf{0{,}642}$
 \end{tabular}
 \end{table}
 
-La AUROC satura tempranamente en ambos datasets: el $1\%$ de HAM10000
-($82$ imágenes) ya recupera AUROC $0{,}918$ y el $5\%$ ($410$) el
-$97{,}7\%$ del máximo; sobre PAD-UFES-20, $14$ imágenes recuperan el
-$95{,}5\%$ de la AUROC final. La \emph{balanced accuracy}, en cambio,
-sigue mejorando con el volumen, reflejando mayor sensibilidad a las
-clases minoritarias. La conclusión práctica es llamativa: con muy pocas imágenes
-etiquetadas ---del orden de unas decenas--- ya se alcanza casi todo el
-rendimiento, porque el encoder preentrenado aporta la mayor
-parte de la capacidad de discriminar y las etiquetas solo afinan la
-frontera de decisión. Esto reduce mucho la dependencia de grandes
-volúmenes de anotación experta, el principal cuello de botella en
-dermatología. Las cifras
-proceden de una única partición y semilla por nivel de submuestreo, por
-lo que delimitan una tendencia y no un margen con cierre estadístico.
+La AUROC satura muy pronto: con el $1\%$ de HAM10000 ($82$ imágenes) ya
+alcanza $0{,}918$, y con el $5\%$ ($410$) el $97{,}7\%$ de su máximo; en
+PAD-UFES-20 bastan $14$ imágenes para recuperar el $95{,}5\%$ de la
+AUROC final. La \emph{balanced accuracy}, en cambio, sigue mejorando
+con el volumen, por ser más sensible a las clases minoritarias. Esto
+confirma lo anticipado al inicio de la sección: la mayor parte de la
+capacidad de discriminar ya está en el encoder preentrenado, y bastan
+unas decenas de etiquetas para aprovecharla. Las cifras proceden de una
+única partición y semilla por nivel de submuestreo, así que marcan una
+tendencia, no un margen con cierre estadístico.
 
 \section{Segmentación binaria de lesión}
 \label{sec:seg-results}
