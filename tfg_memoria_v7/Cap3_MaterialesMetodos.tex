@@ -594,20 +594,22 @@ La evaluación se organiza en dos protocolos complementarios y varios
 análisis de robustez.
 
 \paragraph{Adaptación de SAM2.1-Large al dominio dermatológico.}
-El primer protocolo adapta SAM2.1-Large mediante fine-tuning
-denso de su decoder: se ajustan el decoder de máscaras y
-el \emph{promptable encoder}, mientras que el \emph{image encoder}
-(Hiera-Large preentrenado) permanece congelado, de modo que solo
-$\sim 4{,}2$\,M parámetros resultan entrenables ($\sim 17$\,MB de
-\emph{checkpoint}). La optimización (AdamW, pérdida combinada
-\emph{cross-entropy}$+$\emph{Dice}, normalización uniforme según la
+El primer protocolo adapta SAM2.1-Large a la dermatología de la forma
+más ligera posible: en lugar de reentrenar todo el modelo, se congela
+su parte más pesada ---el \emph{image encoder} (Hiera-Large), que ya
+sabe ``mirar'' imágenes--- y solo se ajustan las dos piezas que
+producen la máscara, el \emph{decoder} y el \emph{promptable encoder}.
+Así apenas se entrenan $\sim 4{,}2$\,M parámetros (un \emph{checkpoint}
+de solo $\sim 17$\,MB). La receta de optimización (AdamW, pérdida
+combinada \emph{cross-entropy}$+$\emph{Dice}, normalización según la
 convención de SAM2) se detalla en el repositorio reproducible
-(\ref{cap:repo}, sección~\ref{sec:repo-reproducibilidad}). El
-entrenamiento es sobre ISIC2018~\cite{isic2018} y la transferencia
-fuera de dominio se evalúa sobre ISIC2017 y PH2 sin reentrenamiento.
-Como referencias no adaptadas se incluyen SAM2 \emph{zero-shot} sin
-fine-tuning y un \emph{Convolutional AutoEncoder} (CAE-seg)
-entrenado desde cero con idéntica pérdida y optimización.
+(\ref{cap:repo}, sección~\ref{sec:repo-reproducibilidad}). Se entrena
+sobre ISIC2018~\cite{isic2018} y, para ver cómo generaliza fuera de su
+dominio, se evalúa tal cual ---sin reentrenar--- sobre ISIC2017 y PH2.
+Como referencias \emph{sin} adaptar se incluyen el propio SAM2 en
+\emph{zero-shot} (sin \emph{fine-tuning}) y un autoencoder
+convolucional (CAE-seg) entrenado desde cero con la misma pérdida y
+optimización.
 
 \paragraph{Comparación controlada entre arquitecturas de
 segmentación.}
