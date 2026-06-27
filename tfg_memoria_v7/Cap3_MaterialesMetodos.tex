@@ -611,13 +611,15 @@ entrenado desde cero con idéntica pérdida y optimización.
 
 \paragraph{Comparación controlada entre arquitecturas de
 segmentación.}
-El segundo protocolo separa los tres factores que determinan el
-rendimiento ---generación de arquitectura, preentrenamiento de
-dominio y tamaño de \emph{backbone}--- mediante una comparativa
-pareada de cinco arquitecturas de segmentación \emph{promptable}:
-MedSAM2-tiny~\cite{medsam2}, SAM2.1-tiny y SAM2.1-Large (familia
-SAM2~\cite{sam2}), y SAM-Med2D~\cite{sammed2d} y MedSAM
-v1~\cite{medsam} (familia SAM~\cite{sam2023}). Todas se entrenan
+El segundo protocolo no busca solo identificar qué modelo segmenta
+mejor, sino entender \emph{por qué}. Para ello compara cinco modelos
+de segmentación \emph{promptable} que permiten analizar por separado
+tres factores: el diseño de la arquitectura, el tipo de datos del
+preentrenamiento (generales o médicos) y el tamaño del \emph{backbone}.
+Los cinco son MedSAM2-tiny~\cite{medsam2}, SAM2.1-tiny y SAM2.1-Large
+(familia SAM2~\cite{sam2}), y SAM-Med2D~\cite{sammed2d} y MedSAM
+v1~\cite{medsam} (familia SAM~\cite{sam2023}); así puede verse qué
+parte de la mejora se debe a cada factor. Todas se entrenan
 bajo un régimen común (fine-tuning denso del decoder y
 el \emph{promptable encoder}, encoder visual congelado, \emph{prompt}
 de \emph{bounding box} derivada de la máscara de referencia) sobre un
