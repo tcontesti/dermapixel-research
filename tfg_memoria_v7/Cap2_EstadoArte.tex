@@ -162,8 +162,11 @@ benchmarks zero-shot evaluados.
 La implementación operativa de la recuperación visual densa sobre
 datasets a gran escala requiere índices vectoriales optimizados para
 búsqueda aproximada del vecino más próximo. FAISS~\cite{faiss2019}
-y estructuras basadas en grafos del tipo Hierarchical Navigable
-Small Worlds permiten consultas en el orden de $10^2$
+---\emph{Facebook AI Similarity Search}, la biblioteca de referencia
+de Meta para búsqueda de similitud y agrupamiento sobre grandes
+colecciones de vectores densos--- y estructuras basadas en grafos del
+tipo Hierarchical Navigable Small Worlds permiten consultas en el
+orden de $10^2$
 milisegundos sobre datasets de centenares de miles a millones de
 \emph{embeddings} precomputados.
 
