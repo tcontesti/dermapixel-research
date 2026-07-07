@@ -104,3 +104,7 @@ tfg_memoria_v5/_legacy/
 # OS files
 Thumbs.db
 .DS_Store
+
+# Deck: excluir videos grandes (viven en el repo publico/wiki)
+deck/assets/*.mp4
+deck/_export.html
