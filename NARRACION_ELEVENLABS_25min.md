@@ -1,6 +1,6 @@
 # Narración para ElevenLabs — TFG EPS0270 · Dermapixel · **VERSIÓN 25 min**
 
-> Versión condensada de `NARRACION_ELEVENLABS.md` (~31 min → ~25 min). **Mismos slides, mismos conceptos y cifras**, texto reducido quitando redundancias y frases de relleno.
+> Versión condensada de `NARRACION_ELEVENLABS.md` (~32 min → ~26 min · 28 slides). **Mismos slides, mismos conceptos y cifras**, texto reducido quitando redundancias y frases de relleno.
 > - Pausas con `…` · `Dr./Dra.` → Doctor/Doctora · `R0` → "R cero" · `.eu` → "punto e u" · `IA` → "inteligencia artificial".
 > - Un audio por slide con el mismo nombre para sincronizar con los PNG.
 
