@@ -24,25 +24,25 @@ Encontré tres retos abiertos. El primero, metodológico: los modelos se evalúa
 Y hay una idea que me gustaría que recordaran. … Después de evaluar los modelos de forma independiente, construir un recurso clínico en español y llevarlo a un prototipo, la conclusión principal no es cuál es el mejor modelo: es que, en inteligencia artificial médica, el factor que más determina el rendimiento no es la arquitectura del modelo, sino la calidad de los datos sobre los que se entrena y se evalúa.
 
 ## slide06
-El trabajo persigue tres objetivos: comparar de forma independiente los modelos fundacionales; evaluar qué estrategias aportan valor —LoRA, zero-shot, multimodalidad, interpretabilidad—; y trasladar el reconocimiento sobre fotografía clínica, la modalidad menos explorada, a un prototipo funcional; es decir, demostrar que la transferencia a un entorno clínico real es posible. Pero la idea que resume el espíritu es esta: no propone un modelo más; propone una forma de evaluarlos. De ahí sus cuatro aportaciones: un benchmark independiente; DermapixelAI, recurso clínico en español; evidencia metodológica, incluida la adaptación Dermapixel R cero; y un prototipo funcional. Una precisión de método: todas las comparaciones priorizan modelos con pesos y código abiertos, por reproducibilidad; los cerrados, como GPT-4o, solo como referencia.
+El trabajo persigue tres objetivos: comparar de forma independiente los modelos fundacionales; evaluar los protocolos definidos —linear probing, fine-tuning, segmentación, zero-shot, LLM, equidad por fototipo, conceptos con Sparse Autoencoders—; y trasladar el reconocimiento sobre fotografía clínica, la modalidad menos explorada, a un prototipo funcional; es decir, demostrar que la transferencia a un entorno clínico real es posible. Pero la idea que resume el espíritu es esta: no propone un modelo más; propone una forma de evaluarlos. De ahí sus cuatro aportaciones: un benchmark independiente; DermapixelAI, recurso clínico en español; evidencia metodológica, incluida la adaptación Dermapixel R cero; y un prototipo funcional. Una precisión de método: todas las comparaciones priorizan modelos con pesos y código abiertos, por reproducibilidad; los cerrados, como GPT-4o, solo como referencia.
 
 ## slide07
-Y para que esa comparación tuviera solidez, el alcance tenía que ser amplio: no dos o tres modelos, sino catorce, sobre doce datasets, más de setenta mil imágenes armonizadas y varios protocolos. Con ese alcance, la siguiente pregunta era cómo compararlos a todos de forma justa.
-
-## slide08
 Necesito introducir las dos referencias del trabajo. La primera, PanDerm, el primer modelo fundacional dermatológico abierto. Un modelo fundacional se preentrena sobre muchos datos y luego se adapta a otras tareas con muy pocos. Técnicamente es un encoder visual Vision Transformer, un ViT, en dos tamaños: Base, unos 86 millones de parámetros, y Large, unos 307 millones. Se entrenó sobre 2,1 millones de imágenes de cuatro modalidades, fotografía corporal total, dermatoscopia, fotografía clínica e histopatología, mediante masked latent modeling: aprende ocultando partes de la imagen y reconstruyéndolas, sin etiquetas. Sus autores reportan una mejora cercana al 10% sobre el estado del arte. Pero su ventaja clave aquí es que publica pesos, código y benchmarks, lo que permitió una evaluación independiente y reproducible. Por eso es la referencia central.
 
-## slide09
+## slide08
 La segunda referencia es DermLIP, que extiende PanDerm con una rama textual mediante entrenamiento contrastivo tipo CLIP, usando Derm1M, más de un millón de pares imagen-texto. Ya no aprende solo representaciones visuales, sino la relación entre imagen y descripción clínica. Esa alineación imagen-texto es la que hace posible el zero-shot y la recuperación de casos. La pregunta: ¿cómo se comportan estos dos paradigmas evaluados de forma independiente y bajo un mismo protocolo?
 
-## slide10
+## slide09
 Construimos un banco común de doce datasets públicos, más de setenta mil imágenes, en tres modalidades: dermatoscopia, fotografía clínica e histopatología, de hospitales, atención primaria y repositorios internacionales. La diversidad era intencionada: no optimizar para un único conjunto, sino ver hasta qué punto generaliza al cambiar la modalidad, el dispositivo, la población o el contexto. Respetamos las particiones originales. Por eso, las medias entre datasets solo indican una tendencia, nunca un ranking: cada dataset es un problema distinto, y el mejor modelo cambia según el escenario. Y donde la diferencia entre dos modelos importa de verdad, no me quedo en la media: la contrasto con un test estadístico, el de DeLong, para saber si es significativa o puede deberse al azar. Lo veremos más adelante.
 
-## slide11
+## slide10
 Un aspecto del que estoy orgulloso: antes de comparar, auditamos si algún dataset de evaluación ya se había usado en el preentrenamiento, en Derm1M. Por hash MD5, solo DermNet aparecía contaminado, al cien por cien; el resto, cero. Eso nos permitió señalar qué comparaciones podían estar afectadas y leerlas con cautela. Todo con semillas fijas y predicciones guardadas. Porque comparar solo tiene sentido si todos juegan con las mismas reglas.
 
-## slide12
+## slide11
 Antes de comparar apareció un problema: cada dataset habla un idioma distinto; un mismo diagnóstico recibe nombres diferentes, y sin vocabulario común la comparación no es justa. Con la Doctora Taberner construimos una ontología de tres niveles: cuatro familias, cuarenta y tres subcategorías y más de trescientos diagnósticos, vinculados a SNOMED CT y CIE-10. Con ella armonizamos más de setenta y dos mil imágenes de once datasets bajo un único lenguaje. Antes de comparar modelos, primero hicimos que todos hablaran el mismo idioma. Y esta ontología es también la base del prototipo.
+
+## slide12
+Sobre este banco aplicamos siete protocolos, que estructuran los resultados que vienen: linear probing y eficiencia de etiquetas, para la calidad de las representaciones y el rendimiento con pocas etiquetas; fine-tuning, para el rendimiento máximo; segmentación, para la localización; zero-shot, para la clasificación guiada por texto; LLM, para el razonamiento clínico; equidad por fototipo, para el sesgo por tono de piel; y conceptos con Sparse Autoencoders, para la interpretabilidad.
 
 ## slide13
 Empezamos por linear probing. Primero: PanDerm Large mejora a Base de forma consistente, cerca de nueve puntos de balanced accuracy. Pero lo interesante es otra cosa: la ventaja del preentrenamiento dermatológico no es constante, aumenta a medida que el escenario se aleja de la dermatoscopia estandarizada y se acerca a la práctica real. En benchmarks muy estandarizados como HAM10000, generalistas como SigLIP igualan a los especialistas, un 90% de accuracy; pero en fotografía clínica, imágenes de móvil o cohortes heterogéneas, PanDerm es claramente el mejor. El beneficio del dominio no es universal: depende de la distancia entre el escenario de evaluación y los datos de entrenamiento. En una idea que reaparecerá: el mejor modelo depende del escenario. Y esto nos llevó a preguntarnos si esa ventaja seguía con solo unas pocas decenas de imágenes.
@@ -95,28 +95,16 @@ Resumo el trabajo en tres ideas. Primera: no existe un modelo universalmente sup
 Y en una idea: los modelos fundacionales han cambiado la pregunta. El reto ya no es modelos más grandes, sino mejores datos. Por eso el trabajo no termina como un benchmark, sino como una plataforma abierta. Y esa plataforma es el prototipo que os enseño ahora.
 
 ## slide25
-Hasta aquí, investigación. Quería comprobar si eso se traslada a un sistema real: Dermapixel, en dermapixel punto e u. Un apunte de arquitectura: está desacoplada; el backend nunca ejecuta modelos, toda la inferencia ocurre en un servidor GPU independiente, lo que permite escalar y mantener la resiliencia. Así, si la GPU falla, el servicio se degrada con elegancia en vez de caerse. Y cada estudio queda auditado.
-
-## slide26
 El prototipo integra once módulos de inteligencia artificial, muchos de este trabajo. No los recorro uno a uno: los vais a ver funcionando en un caso real ahora mismo.
 
-## slide27
-Tres ideas que quiero que veáis. Primera, el veredicto: no lo genera un modelo de lenguaje, es una síntesis determinista y auditable del consenso de cinco clasificadores, y nunca rebaja la urgencia. Segunda, el diagnóstico es jerárquico y coherente: familia, subcategoría y diagnóstico, sin combinaciones imposibles; es la ontología de la investigación. Y tercera, cuando los módulos discrepan, el sistema lo dice: muestra la incertidumbre y recomienda valoración presencial.
-
-## slide28
-Aquí veis la investigación funcionando. La segmentación aplica el hallazgo de que lo que manda es la caja: una U-Net localiza la lesión y MedSAM2 traza la máscara, que el clínico corrige. Y el sistema recupera casos parecidos del archivo de la Doctora Taberner por similitud visual, con su diagnóstico y su texto. Coherente con lo que conté: desplegamos la búsqueda imagen-imagen, no la contrastiva por texto, porque esa aún no generaliza.
-
-## slide29
-Sobre el veredicto, un modelo de lenguaje añade el razonamiento clínico, con una regla innegociable: la inteligencia artificial puede subir la urgencia, nunca bajarla; asiste, no decide. Responde con recuperación aumentada sobre el archivo, citando siempre sus fuentes, y declina si no tiene contexto. Y sobre dermatoscopia aplica la Lista de los Siete Puntos con la puntuación de Argenziano. Está diseñado con criterios de seguridad clínica y trazabilidad, no solo de precisión. Y el círculo se cierra con el experto: la Doctora Taberner valida y anota cada caso, y esas correcciones realimentan el entrenamiento. No sustituye al dermatólogo: aprende de él. … Y ahora os lo enseño funcionando en directo.
-
-## slide30 — (DEMOSTRACIÓN EN VIVO — sin narración continua)
+## slide26 — (DEMOSTRACIÓN EN VIVO — sin narración continua)
 > - Entrada: «Voy a hacer exactamente lo que haría un dermatólogo.»
 > - Cierre: «Y todo lo que acabáis de ver usa, por dentro, los mismos modelos que he evaluado en la primera parte.»
 
-## slide31
+## slide27
 Y esto abre las líneas futuras, todas en la misma dirección: el dato. Primera, explotar los conceptos: llevar el Sparse Autoencoder y la matriz de la Doctora Taberner a un Concept Bottleneck operativo, un diagnóstico que razona con conceptos que el clínico puede inspeccionar. Segunda, datos propios de procedencia conocida: construir el corpus del banco del hospital en español, con trazabilidad total, y preentrenar sobre datos controlados, en lugar de solo adaptar con LoRA sobre un corpus web opaco. Tercera, un modelo por tarea: detectar y curar los datos específicos de cada tarea y entrenar el mejor modelo para cada una, en vez de un único modelo monolítico. Cuarta, fusión multimodal de texto e imagen: entrenar un clasificador sobre la descripción clínica y combinarlo con la imagen, para medir cuánto aporta la anamnesis frente a la imagen sola; lo habilita el texto en español de Dermapixel. Quinta, inteligencia artificial agéntica clínica: varios agentes especializados, verificables y combinados bajo control del médico, que reproducen el razonamiento en dos pasos del dermatólogo —localizar y describir primero, decidir después—, en la línea de los sistemas multiagente de Anthropic o AMIE de DeepMind. Y sexta, el desarrollo del propio Dermapixel: llevar el prototipo a producto clínico validado, con despliegue hospitalario, validación prospectiva y ruta a marcado CE. Todas comparten la misma conclusión: el límite ya no es el modelo, es el dato.
 
-## slide32
+## slide28
 Antes de terminar: este proyecto ha recibido la Beca de Innovación e Inteligencia Artificial de la Academia Española de Dermatología, dotada con diez mil euros para continuar su desarrollo y llevarlo hacia producción clínica. Lo digo no como premio personal, sino como una validación externa de que esta línea merece la pena.
 …
 Y, curiosamente, todas las líneas futuras apuntan en la misma dirección: disponer de mejores datos. Más casos en español, más validación clínica prospectiva, y una mayor integración con el banco de imágenes del hospital para seguir mejorando los modelos y su capacidad de explicación.
